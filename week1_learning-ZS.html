@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learn · Map a Product</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#faf9f7;--surface:#ffffff;--border:#e8e3db;--text:#1a1814;
+  --muted:#6b6560;--hint:#9c9590;--accent:#2563eb;--accent-bg:#eff6ff;
+  --green:#16a34a;--green-bg:#f0fdf4;--amber:#d97706;--amber-bg:#fffbeb;
+  --purple:#7c3aed;--purple-bg:#f5f3ff;--red:#dc2626;--red-bg:#fef2f2;
+  --teal:#0d9488;--teal-bg:#f0fdfa;
+  --radius:10px;--font:'Inter',system-ui,sans-serif;--mono:'Fira Mono','Courier New',monospace
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;line-height:1.7}
+
+.shell{display:flex;min-height:100vh}
+.sidebar{width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:24px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.main{flex:1;padding:48px 40px 80px;display:flex;justify-content:center}
+.main-inner{width:100%;max-width:780px}
+
+.sb-brand{padding:0 20px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.sb-tag{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);margin-bottom:4px}
+.sb-title{font-size:17px;font-weight:700;color:var(--text)}
+.sb-meta{font-size:12px;color:var(--muted);margin-top:4px}
+.sb-progress{margin:12px 20px 4px;background:#f0ece6;border-radius:99px;height:5px}
+.sb-bar{height:5px;border-radius:99px;background:var(--accent);transition:width .4s}
+.sb-pct{font-size:11px;color:var(--hint);padding:0 20px;margin-bottom:12px}
+.sb-section{padding:0 12px;margin-bottom:8px}
+.sb-section-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--hint);padding:6px 8px 4px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;cursor:pointer;transition:background .15s;font-size:13px;color:var(--muted);border:none;background:none;width:100%;text-align:left}
+.sb-item:hover{background:#f4f1ec}
+.sb-item.active{background:var(--accent-bg);color:var(--accent);font-weight:600}
+.sb-item.done .sb-num{background:var(--green-bg);color:var(--green)}
+.sb-item.done{color:var(--green)}
+.sb-num{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;background:#f0ece6;color:var(--hint)}
+.sb-item.active .sb-num{background:var(--accent);color:#fff}
+
+.lesson{display:none}
+.lesson.active{display:block}
+.lesson-eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--hint);margin-bottom:8px}
+.lesson-title{font-size:30px;font-weight:800;line-height:1.2;margin-bottom:6px}
+.lesson-title em{font-style:normal;color:var(--accent)}
+.lesson-sub{font-size:15px;color:var(--muted);margin-bottom:32px;line-height:1.6}
+h3{font-size:16px;font-weight:700;margin:28px 0 10px}
+p{color:#3d3830;margin-bottom:14px;line-height:1.75}
+.divider{border:none;border-top:1px solid var(--border);margin:32px 0}
+
+.callout{border-radius:var(--radius);padding:14px 16px;margin:20px 0;font-size:14px;line-height:1.6}
+.callout.blue{background:var(--accent-bg);border-left:3px solid var(--accent);color:#1e40af}
+.callout.green{background:var(--green-bg);border-left:3px solid var(--green);color:#166534}
+.callout.amber{background:var(--amber-bg);border-left:3px solid var(--amber);color:#92400e}
+.callout.purple{background:var(--purple-bg);border-left:3px solid var(--purple);color:#4c1d95}
+.callout.red{background:var(--red-bg);border-left:3px solid var(--red);color:#991b1b}
+.callout strong{font-weight:700}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:20px 0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.card-icon{font-size:22px;margin-bottom:8px}
+.card strong{display:block;font-size:13px;font-weight:700;margin-bottom:4px}
+.card p{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
+
+.code-block{background:#1e1b16;border-radius:var(--radius);padding:16px 18px;margin:16px 0;overflow-x:auto}
+.code-block code{font-family:var(--mono);font-size:13px;color:#e8e0d0;line-height:1.7;white-space:pre}
+
+.map-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin:24px 0}
+.map-section-title{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);margin-bottom:16px}
+.map-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
+.map-label{font-size:11px;font-weight:700;width:100px;flex-shrink:0;padding-top:6px;color:var(--muted)}
+.map-chips{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+.chip{font-size:12px;padding:4px 10px;border-radius:20px;font-weight:500;opacity:0;transform:translateY(5px);transition:opacity .4s,transform .4s}
+.chip.show{opacity:1;transform:translateY(0)}
+.chip.u{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+.chip.a{background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe}
+.chip.d{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.chip.s{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+
+.dep-box{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:13px 16px;margin:8px 0;font-size:13px;line-height:1.6;opacity:0;transform:translateX(-8px);transition:opacity .5s,transform .5s}
+.dep-box.show{opacity:1;transform:translateX(0)}
+.dep-x{color:var(--red);font-weight:600}
+.dep-y{color:var(--green);font-weight:600}
+.dep-z{color:var(--purple)}
+
+.failure-stage{background:#0f0f0f;border-radius:12px;padding:22px 20px;margin:20px 0;font-family:var(--mono);font-size:13px}
+.failure-line{opacity:0;margin-bottom:7px;transition:opacity .5s;line-height:1.6;display:flex;align-items:flex-start;gap:10px}
+.failure-line.show{opacity:1}
+.f-icon{flex-shrink:0;margin-top:1px}
+.f-ok{color:#4ade80}
+.f-warn{color:#facc15}
+.f-bad{color:#f87171}
+.f-dim{color:#4b5563}
+.f-text{color:#d4d4d4}
+.f-textbad{color:#fca5a5}
+.f-textwarn{color:#fde68a}
+
+.terminal{background:#0f0f0f;border-radius:12px;overflow:hidden;margin:20px 0}
+.term-bar{background:#2a2a2a;padding:10px 16px;display:flex;align-items:center;gap:6px}
+.term-dot{width:10px;height:10px;border-radius:50%}
+.term-title{font-size:12px;color:#666;margin-left:6px;font-family:var(--mono)}
+.term-body{padding:16px 18px;font-family:var(--mono);font-size:13px;line-height:1.9;color:#d4d4d4}
+.t-prompt{color:#4ade80}
+.t-out{color:#94a3b8}
+.t-comment{color:#4b5563}
+
+.lesson-nav{display:flex;justify-content:space-between;align-items:center;margin-top:40px;padding-top:24px;border-top:1px solid var(--border)}
+.btn{padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text);transition:all .15s}
+.btn:hover{background:#f0ece6}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.primary:hover{background:#1d4ed8}
+.btn:disabled{opacity:.3;cursor:not-allowed}
+
+.play-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--muted);transition:all .15s;margin-bottom:14px}
+.play-btn:hover{background:var(--accent-bg);color:var(--accent);border-color:var(--accent)}
+
+.tag{font-size:12px;padding:3px 10px;border-radius:20px;font-weight:500;display:inline-block}
+.tag-row{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+
+.example-table{width:100%;border-collapse:collapse;font-size:13px;margin:16px 0}
+.example-table th{background:#f7f4ef;padding:9px 14px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--hint);border-bottom:1px solid var(--border)}
+.example-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:#3d3830;vertical-align:top}
+.example-table tr:last-child td{border-bottom:none}
+
+@media(max-width:700px){.sidebar{display:none}.main{padding:24px 20px 60px}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-tag">Week 1 · No code</div>
+    <div class="sb-title">Map a Product</div>
+    <div class="sb-meta">5 Lessons · ~60 min</div>
+  </div>
+  <div class="sb-progress"><div class="sb-bar" id="progressBar" style="width:0%"></div></div>
+  <div class="sb-pct" id="progressPct">Progress 0%</div>
+  <div class="sb-section">
+    <div class="sb-section-label">Concepts</div>
+    <button class="sb-item active" onclick="go(0)" id="nav0"><span class="sb-num">1</span>What is a system?</button>
+    <button class="sb-item" onclick="go(1)" id="nav1"><span class="sb-num">2</span>Users &amp; actions</button>
+    <button class="sb-item" onclick="go(2)" id="nav2"><span class="sb-num">3</span>Data &amp; states</button>
+    <button class="sb-item" onclick="go(3)" id="nav3"><span class="sb-num">4</span>Dependencies</button>
+    <button class="sb-item" onclick="go(4)" id="nav4"><span class="sb-num">5</span>Silent failures</button>
+  </div>
+</nav>
+
+<main class="main"><div class="main-inner">
+
+<!-- LESSON 0 — What is a system -->
+<div class="lesson active" id="lesson0">
+  <div class="lesson-eyebrow">Lesson 01 of 05</div>
+  <h1 class="lesson-title">What is a <em>system?</em></h1>
+  <p class="lesson-sub">Every product you use daily is not just an app — it is a system. This lesson teaches you how to see it that way.</p>
+
+  <h3>Two ways to look at the same product</h3>
+  <p>When you open an ATM, you see a machine that gives you cash. That is the user's view. When a developer looks at an ATM, they see something completely different.</p>
+
+  <div class="cards">
+    <div class="card"><div class="card-icon">🧑</div><strong>User sees</strong><p>Insert card → enter PIN → get cash. Simple.</p></div>
+    <div class="card"><div class="card-icon">⚙️</div><strong>Developer sees</strong><p>Card reader authenticates the user. PIN is verified against the bank's server. Balance is checked. Cash dispenser is triggered. Transaction is logged.</p></div>
+  </div>
+
+  <p>Same machine. Completely different mental model. A developer's job is to hold the second view in their head — always.</p>
+
+  <hr class="divider">
+
+  <h3>Every system has four layers</h3>
+  <p>No matter which product you look at — a bank ATM, a food delivery app, a messaging tool — every system can be broken down into the same four things:</p>
+
+  <div class="cards">
+    <div class="card"><div class="card-icon">👤</div><strong>Users</strong><p>Who interacts with the system and what role does the system give them?</p></div>
+    <div class="card"><div class="card-icon">⚡</div><strong>Actions</strong><p>What can each user type actually do inside the system?</p></div>
+    <div class="card"><div class="card-icon">💾</div><strong>Data</strong><p>What information changes in the system when an action happens?</p></div>
+    <div class="card"><div class="card-icon">🔄</div><strong>States</strong><p>What different modes can the system be in at any moment?</p></div>
+  </div>
+
+  <div class="callout blue"><strong>Why does this matter?</strong> When a developer joins a company, no one sits them down and explains the whole product. They read code, explore the product, and build this mental model themselves. The faster they can do that — the better the developer they are. This week, you practice exactly that skill.</div>
+
+  <div class="lesson-nav">
+    <button class="btn" disabled>← Previous</button>
+    <button class="btn primary" onclick="go(1)">Users &amp; actions →</button>
+  </div>
+</div>
+
+<!-- LESSON 1 — Users & actions -->
+<div class="lesson" id="lesson1">
+  <div class="lesson-eyebrow">Lesson 02 of 05</div>
+  <h1 class="lesson-title">Users &amp; <em>actions</em></h1>
+  <p class="lesson-sub">Not everyone who uses a system has the same role. And not every role can do the same things.</p>
+
+  <h3>Users are roles — not people</h3>
+  <p>In system thinking, a "user" is not a human being — it is a role that the system recognises and gives specific permissions to. The same person can have different roles in different contexts.</p>
+  <p>Think of a library. A <strong>member</strong> can borrow books and return them. A <strong>librarian</strong> can add new books, remove damaged ones, and see everyone's borrowing history. Both are humans. But the system treats them completely differently.</p>
+
+  <div class="callout amber"><strong>The key test —</strong> Two people are different user types only if the system gives them different permissions. If they can do exactly the same things, they are technically the same user type — even if they behave differently.</div>
+
+  <h3>A real example — an online library system</h3>
+  <table class="example-table">
+    <thead><tr><th>User type</th><th>What they can do</th><th>What they cannot do</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe">Member</span></td><td>Search books, borrow a book, return a book, renew a loan, see own history</td><td>Cannot add books, cannot see other members' history, cannot remove books</td></tr>
+      <tr><td><span class="tag" style="background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe">Librarian</span></td><td>Everything a member can do + add/remove books, view all borrowing history, send reminders</td><td>Cannot change system settings</td></tr>
+      <tr><td><span class="tag" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0">Admin</span></td><td>Everything a librarian can do + manage user accounts, configure the system</td><td>No restrictions</td></tr>
+    </tbody>
+  </table>
+
+  <hr class="divider">
+
+  <h3>Actions — be specific</h3>
+  <p>Once you know your user types, list every action each type can take. Vague actions are useless. Specific actions are what developers actually build.</p>
+
+  <div class="cards">
+    <div class="card" style="border-color:#fecaca"><strong style="color:var(--red)">Too vague</strong><p>"Uses the library system"<br>"Manages books"<br>"Does admin things"</p></div>
+    <div class="card" style="border-color:#bbf7d0"><strong style="color:var(--green)">Specific enough</strong><p>"Borrows a book"<br>"Marks a book as damaged"<br>"Sends overdue reminder to member"</p></div>
+  </div>
+
+  <div class="callout green"><strong>How to find actions —</strong> Imagine watching someone use the product for 10 minutes. Every distinct thing they tap, type, or trigger is an action. Write each one down separately.</div>
+
+  <div class="lesson-nav">
+    <button class="btn" onclick="go(0)">← What is a system?</button>
+    <button class="btn primary" onclick="go(2)">Data &amp; states →</button>
+  </div>
+</div>
+
+<!-- LESSON 2 — Data & states -->
+<div class="lesson" id="lesson2">
+  <div class="lesson-eyebrow">Lesson 03 of 05</div>
+  <h1 class="lesson-title">Data &amp; <em>states</em></h1>
+  <p class="lesson-sub">Every action a user takes changes something in the system. And the system itself is always in one of several possible modes.</p>
+
+  <h3>Data that changes — the "what changed?" question</h3>
+  <p>For every action a user takes, ask yourself: what is different in the system one second after this happened? Something was created, updated, deleted, or read. That thing is the data that changed.</p>
+  <p>Let's use an online food ordering system at a college canteen as an example:</p>
+
+  <table class="example-table">
+    <thead><tr><th>Action</th><th>Data that changes</th></tr></thead>
+    <tbody>
+      <tr><td>Student adds a meal to cart</td><td>Cart gains one item · item quantity in cart increases by 1</td></tr>
+      <tr><td>Student places the order</td><td>New order record is created · cart becomes empty · canteen gets a notification · student's order history gains one entry</td></tr>
+      <tr><td>Canteen marks order as ready</td><td>Order status changes from "preparing" to "ready" · student gets a notification</td></tr>
+      <tr><td>Student cancels an order</td><td>Order status changes to "cancelled" · payment refund is triggered · canteen's queue removes that order</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout blue"><strong>Notice —</strong> one action (placing an order) changes multiple pieces of data at once. This is normal. The more things a single action changes, the more important — and risky — that action is.</div>
+
+  <hr class="divider">
+
+  <h3>States — what mode is the system in?</h3>
+  <p>A system is never just "on." It exists in different states, and what a user can do often depends on which state the system is currently in. Think of a traffic light — it has only 3 states, but each one determines completely different behaviour.</p>
+
+  <p>States for a single order in the canteen system:</p>
+
+  <div class="tag-row">
+    <span class="tag" style="background:#f7f4ef;color:#6b6560;border:1px solid #e8e3db">Cart (not placed)</span>
+    <span class="tag" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe">Order placed — waiting</span>
+    <span class="tag" style="background:#fffbeb;color:#92400e;border:1px solid #fde68a">Being prepared</span>
+    <span class="tag" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0">Ready for pickup</span>
+    <span class="tag" style="background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe">Picked up</span>
+    <span class="tag" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca">Cancelled</span>
+  </div>
+
+  <div class="callout amber"><strong>Ask yourself —</strong> can a student cancel an order that is already "ready for pickup"? Probably not. That means the "cancel" action depends on which state the order is in. States control which actions are possible. This connection is what makes system maps useful.</div>
+
+  <div class="lesson-nav">
+    <button class="btn" onclick="go(1)">← Users &amp; actions</button>
+    <button class="btn primary" onclick="go(3)">Dependencies →</button>
+  </div>
+</div>
+
+<!-- LESSON 3 — Dependencies -->
+<div class="lesson" id="lesson3">
+  <div class="lesson-eyebrow">Lesson 04 of 05</div>
+  <h1 class="lesson-title"><em>Dependencies</em></h1>
+  <p class="lesson-sub">In any system, some things cannot happen unless other things have already happened. These invisible chains are called dependencies.</p>
+
+  <h3>What a dependency looks like</h3>
+  <p>Think about an ATM. You cannot withdraw cash without first inserting your card. You cannot insert your card and go straight to withdrawal — you must enter your PIN first. Each step depends on the one before it.</p>
+  <p>Dependencies are not obvious until you look for them. But once you start seeing them, you see them everywhere.</p>
+
+  <div class="callout blue"><strong>The format —</strong> Write every dependency as: <span style="font-family:var(--mono);background:#dbeafe;padding:2px 7px;border-radius:4px;font-size:13px">"X depends on Y because Z."</span><br><br>X = the action you want to take. Y = what must already exist or have happened. Z = the reason the system requires this.</div>
+
+  <h3>ATM system — dependency examples</h3>
+  <button class="play-btn" onclick="animateDeps()">▶ Reveal one by one</button>
+
+  <div id="dep0" class="dep-box"><span class="dep-x">"Entering your PIN"</span> depends on <span class="dep-y">"card being inserted and recognised"</span> because <span class="dep-z">the system needs to know which account to verify the PIN against — without a card there is no account to check.</span></div>
+  <div id="dep1" class="dep-box"><span class="dep-x">"Withdrawing cash"</span> depends on <span class="dep-y">"PIN being verified successfully"</span> because <span class="dep-z">the system will not allow any transaction until it confirms the person holding the card is the account owner.</span></div>
+  <div id="dep2" class="dep-box"><span class="dep-x">"Printing a receipt"</span> depends on <span class="dep-y">"a transaction having been completed"</span> because <span class="dep-z">there is nothing to print until something has actually happened — the receipt is a record of an event, not a starting point.</span></div>
+
+  <hr class="divider">
+
+  <h3>Why dependencies matter</h3>
+  <p>When a system breaks, it often breaks because a dependency was not respected. Something happened out of order. Or something that was supposed to exist did not exist yet.</p>
+  <p>Finding dependencies in a product is how a developer learns where the system is fragile — which parts can break and take many other parts down with them.</p>
+
+  <div class="callout amber"><strong>The question to ask —</strong> "What has to be true before a user can do this?" Every answer you find is a dependency. Keep asking it for each action on your map.</div>
+
+  <div class="lesson-nav">
+    <button class="btn" onclick="go(2)">← Data &amp; states</button>
+    <button class="btn primary" onclick="go(4)">Silent failures →</button>
+  </div>
+</div>
+
+<!-- LESSON 4 — Silent failures + Google Meet worked example -->
+<div class="lesson" id="lesson4">
+  <div class="lesson-eyebrow">Lesson 05 of 05</div>
+  <h1 class="lesson-title"><em>Silent failures</em> &amp; the worked example</h1>
+  <p class="lesson-sub">The most dangerous failure in any system is one the user never notices — until the consequences are already real.</p>
+
+  <h3>Loud failure vs silent failure</h3>
+  <p>A loud failure is easy to deal with. The page crashes. The error message appears. The user knows something went wrong and calls support.</p>
+  <p>A silent failure is different. The system appears to work. The user walks away thinking everything is fine. But underneath, something did not happen that should have.</p>
+
+  <h3>Example — a library book return</h3>
+  <p>A student returns a book at the self-checkout machine. The machine beeps, the screen says "Return successful." The student walks away. But the system failed to update the record. Three weeks later the student gets a fine for a book they already returned.</p>
+  <p>That is a silent failure. No crash. No error. Just a wrong outcome that shows up too late.</p>
+
+  <button class="play-btn" onclick="animateFailure()">▶ Watch a silent failure in a booking system</button>
+
+  <div class="failure-stage">
+    <div class="failure-line" id="fl0"><span class="f-icon f-dim">//</span><span class="f-dim">Student books a cricket ground slot online</span></div>
+    <div class="failure-line" id="fl1"><span class="f-icon f-ok">✓</span><span class="f-text">Booking form submitted</span></div>
+    <div class="failure-line" id="fl2"><span class="f-icon f-ok">✓</span><span class="f-text">Confirmation screen shown: "Slot confirmed for 4pm"</span></div>
+    <div class="failure-line" id="fl3"><span class="f-icon f-ok">✓</span><span class="f-text">SMS confirmation sent to student's phone</span></div>
+    <div class="failure-line" id="fl4"><span class="f-icon f-dim">//</span><span class="f-dim">Meanwhile, behind the scenes...</span></div>
+    <div class="failure-line" id="fl5"><span class="f-icon f-bad">✗</span><span class="f-textbad">Database write timed out silently</span></div>
+    <div class="failure-line" id="fl6"><span class="f-icon f-bad">✗</span><span class="f-textbad">Slot was never actually saved in the system</span></div>
+    <div class="failure-line" id="fl7"><span class="f-icon f-warn">⚠</span><span class="f-textwarn">Another student books the same slot — system allows it</span></div>
+    <div class="failure-line" id="fl8"><span class="f-icon f-warn">⚠</span><span class="f-textwarn">Both students arrive at 4pm. Only one can play.</span></div>
+    <div class="failure-line" id="fl9"><span class="f-icon f-bad">✗</span><span class="f-textbad">First student had no idea anything went wrong until that moment.</span></div>
+  </div>
+
+  <div class="callout red"><strong>Write silent failures from the user's perspective —</strong> not "the database threw a timeout exception." Instead: "The student arrives at the ground with their team, finds someone else already playing, and only then discovers their booking never existed in the system."</div>
+
+  <hr class="divider">
+
+  <h3>Worked example — Google Meet mapped</h3>
+  <p>Here is how all five concepts come together when mapping a real product. This is the depth of thinking expected from you.</p>
+
+  <button class="play-btn" onclick="animateMap()">▶ Build the map step by step</button>
+
+  <div class="map-wrap">
+    <div class="map-section-title">Google Meet — full system map</div>
+    <div class="map-row"><div class="map-label" style="color:#1d4ed8">Users</div><div class="map-chips"><span class="chip u" id="c0">Host</span><span class="chip u" id="c1">Participant</span><span class="chip u" id="c2">Guest (not logged in)</span></div></div>
+    <div class="map-row"><div class="map-label" style="color:#6d28d9">Host can</div><div class="map-chips"><span class="chip a" id="c3">Mute all</span><span class="chip a" id="c4">Remove participant</span><span class="chip a" id="c5">Share screen</span><span class="chip a" id="c6">End call for everyone</span></div></div>
+    <div class="map-row"><div class="map-label" style="color:#6d28d9">Participant can</div><div class="map-chips"><span class="chip a" id="c7">Mute/unmute self</span><span class="chip a" id="c8">Camera on/off</span><span class="chip a" id="c9">Raise hand</span><span class="chip a" id="c10">Leave</span></div></div>
+    <div class="map-row"><div class="map-label" style="color:#166534">Data changes</div><div class="map-chips"><span class="chip d" id="c11">Who is muted (list)</span><span class="chip d" id="c12">Camera on/off (list)</span><span class="chip d" id="c13">Who is speaking (detected)</span><span class="chip d" id="c14">Chat messages (append-only)</span></div></div>
+    <div class="map-row"><div class="map-label" style="color:#92400e">States</div><div class="map-chips"><span class="chip s" id="c15">Waiting for host</span><span class="chip s" id="c16">Meeting active</span><span class="chip s" id="c17">Screen sharing</span><span class="chip s" id="c18">Meeting ended</span></div></div>
+  </div>
+
+  <h3>Google Meet — dependencies</h3>
+  <div class="dep-box show">"Share screen" depends on "Meeting active" because you cannot share before the meeting starts — there is no active session to share into.</div>
+  <div class="dep-box show">"Who is speaking" is read simultaneously by the video layout, the participant list, and the live captions — it is the single most-read piece of data in the entire system.</div>
+  <div class="dep-box show">If "Mute all" breaks, the host loses control of audio — but participants can still self-mute. The meeting does not collapse. It just gets noisier. Not every broken dependency crashes the whole system.</div>
+
+  <h3 style="margin-top:28px">Google Meet — silent failure</h3>
+  <div class="callout purple">If the "who is speaking" detection fails silently, the system highlights the wrong person's video as the main view. Every participant sees the wrong face enlarged on their screen. No error message appears anywhere. The meeting feels subtly wrong — conversations feel disconnected from the faces on screen — but nobody can name exactly why. The failure is invisible until someone points it out.</div>
+
+  <hr class="divider">
+
+  <div class="callout green"><strong>You are ready.</strong> You now understand all five concepts — systems, users and actions, data and states, dependencies, and silent failures — using examples that are not the products in your assignment. Now apply this thinking to a product you know well.</div>
+
+  <div class="lesson-nav">
+    <button class="btn" onclick="go(3)">← Dependencies</button>
+    <button class="btn primary" id="doneBtn" onclick="complete()">✓ Mark complete</button>
+  </div>
+</div>
+
+</div></main>
+</div>
+
+<script>
+let current=0;
+const total=5;
+const done=new Set();
+
+function go(n){
+  document.getElementById('lesson'+current).classList.remove('active');
+  document.getElementById('nav'+current).classList.remove('active');
+  done.add(current);
+  document.getElementById('nav'+current).classList.add('done');
+  current=n;
+  document.getElementById('lesson'+n).classList.add('active');
+  document.getElementById('nav'+n).classList.remove('done');
+  document.getElementById('nav'+n).classList.add('active');
+  updateProgress();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function updateProgress(){
+  const pct=Math.round((done.size/total)*100);
+  document.getElementById('progressBar').style.width=pct+'%';
+  document.getElementById('progressPct').textContent='Progress '+pct+'%';
+}
+
+function complete(){
+  done.add(current);
+  document.getElementById('nav'+current).classList.add('done');
+  updateProgress();
+  const b=document.getElementById('doneBtn');
+  b.textContent='✓ Completed!';
+  b.style.background='var(--green)';
+  b.style.borderColor='var(--green)';
+}
+
+function animateDeps(){
+  ['dep0','dep1','dep2'].forEach((id,i)=>setTimeout(()=>document.getElementById(id).classList.add('show'),i*700));
+}
+
+function animateFailure(){
+  for(let i=0;i<10;i++){
+    (function(idx){setTimeout(()=>{const el=document.getElementById('fl'+idx);if(el)el.classList.add('show');},idx*600);})(i);
+  }
+}
+
+let mapDone=false;
+function animateMap(){
+  if(mapDone)return;mapDone=true;
+  document.querySelectorAll('.chip').forEach((c,i)=>setTimeout(()=>c.classList.add('show'),i*130));
+}
+</script>
+</body>
+</html>
