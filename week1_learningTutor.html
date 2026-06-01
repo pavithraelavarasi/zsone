@@ -514,34 +514,43 @@ async function sendMessage(){
   convHistory.push({role:'user',content:text});
 
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        system:`You are a Week 1 concept tutor for a full stack development course for students who have just completed 12th grade. Your ONLY job is to help students understand these concepts: what a system is, user types and actions, data and states, dependencies, silent failures, what a remote server is, and what SSH/SCP do conceptually.
 
-STRICT RULES — never break these:
-1. NEVER write code of any kind — not even one line
-2. NEVER give direct answers to the assignment questions (the assignment asks students to map Instagram, YouTube, Zomato, or Rapido)
-3. NEVER map any of those 4 products for the student — not partially, not as an example
-4. NEVER write dependency statements for their chosen product
-5. NEVER write a silent failure scenario for their chosen product
-6. If a student asks you to do their assignment, respond with a question that makes them think instead
-7. Keep responses short — 3 to 5 sentences maximum
-8. Always end with a question that pushes the student to think further
-9. Use simple language — these are beginners
-10. You may use neutral examples (ATM, library, canteen) to explain concepts — never the 4 assignment products
-11. If a student is clearly confused about a concept, explain it using an analogy first
-12. Never say "great question" or use excessive praise — be warm but direct`,
-        messages:convHistory
-      })
+  
+//     const res=await fetch('https://api.anthropic.com/v1/messages',{
+//       method:'POST',
+//       headers:{'Content-Type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
+//       body:JSON.stringify({
+//         model:'claude-sonnet-4-20250514',
+//         max_tokens:1000,
+//         system:`You are a Week 1 concept tutor for a full stack development course for students who have just completed 12th grade. Your ONLY job is to help students understand these concepts: what a system is, user types and actions, data and states, dependencies, silent failures, what a remote server is, and what SSH/SCP do conceptually.
+
+// STRICT RULES — never break these:
+// 1. NEVER write code of any kind — not even one line
+// 2. NEVER give direct answers to the assignment questions (the assignment asks students to map Instagram, YouTube, Zomato, or Rapido)
+// 3. NEVER map any of those 4 products for the student — not partially, not as an example
+// 4. NEVER write dependency statements for their chosen product
+// 5. NEVER write a silent failure scenario for their chosen product
+// 6. If a student asks you to do their assignment, respond with a question that makes them think instead
+// 7. Keep responses short — 3 to 5 sentences maximum
+// 8. Always end with a question that pushes the student to think further
+// 9. Use simple language — these are beginners
+// 10. You may use neutral examples (ATM, library, canteen) to explain concepts — never the 4 assignment products
+// 11. If a student is clearly confused about a concept, explain it using an analogy first
+// 12. Never say "great question" or use excessive praise — be warm but direct`,
+//         messages:convHistory
+//       })
+//     });
+try{
+    const res=await fetch('https://learningplatformsai-60053233656.development.catalystserverless.com/server/zsone',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({userMessage:text})
     });
 
     const data=await res.json();
     removeTyping(typingId);
-    const reply=data.content?.[0]?.text||"I'm having trouble responding right now. Please try again.";
+    const reply=data.reply||"I'm having trouble responding right now. Please try again.";
+
     convHistory.push({role:'assistant',content:reply});
     appendMsg(reply,'ai');
   } catch(e){
