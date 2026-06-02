@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learn · Trace a Request</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#faf9f7;--surface:#ffffff;--border:#e8e3db;--text:#1a1814;
+  --muted:#6b6560;--hint:#9c9590;--accent:#2563eb;--accent-bg:#eff6ff;
+  --green:#16a34a;--green-bg:#f0fdf4;--amber:#d97706;--amber-bg:#fffbeb;
+  --purple:#7c3aed;--purple-bg:#f5f3ff;--red:#dc2626;--red-bg:#fef2f2;
+  --radius:10px;--font:'Inter',system-ui,sans-serif;--mono:'Fira Mono','Courier New',monospace
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;line-height:1.7}
+.shell{display:flex;min-height:100vh}
+.sidebar{width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:24px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.main{flex:1;padding:48px 40px 80px;display:flex;justify-content:center}
+.main-inner{width:100%;max-width:780px}
+.sb-brand{padding:0 20px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.sb-tag{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);margin-bottom:4px}
+.sb-title{font-size:17px;font-weight:700;color:var(--text)}
+.sb-meta{font-size:12px;color:var(--muted);margin-top:4px}
+.sb-progress{margin:12px 20px 4px;background:#f0ece6;border-radius:99px;height:5px}
+.sb-bar{height:5px;border-radius:99px;background:var(--accent);transition:width .4s}
+.sb-pct{font-size:11px;color:var(--hint);padding:0 20px;margin-bottom:12px}
+.sb-section{padding:0 12px;margin-bottom:8px}
+.sb-section-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--hint);padding:6px 8px 4px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;cursor:pointer;transition:background .15s;font-size:13px;color:var(--muted);border:none;background:none;width:100%;text-align:left}
+.sb-item:hover{background:#f4f1ec}
+.sb-item.active{background:var(--accent-bg);color:var(--accent);font-weight:600}
+.sb-item.done .sb-num{background:var(--green-bg);color:var(--green)}
+.sb-item.done{color:var(--green)}
+.sb-num{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;background:#f0ece6;color:var(--hint)}
+.sb-item.active .sb-num{background:var(--accent);color:#fff}
+.lesson{display:none}
+.lesson.active{display:block}
+.lesson-eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--hint);margin-bottom:8px}
+.lesson-title{font-size:30px;font-weight:800;line-height:1.2;margin-bottom:6px}
+.lesson-title em{font-style:normal;color:var(--accent)}
+.lesson-sub{font-size:15px;color:var(--muted);margin-bottom:32px;line-height:1.6}
+h3{font-size:16px;font-weight:700;margin:28px 0 10px}
+p{color:#3d3830;margin-bottom:14px;line-height:1.75}
+.divider{border:none;border-top:1px solid var(--border);margin:32px 0}
+.callout{border-radius:var(--radius);padding:14px 16px;margin:20px 0;font-size:14px;line-height:1.6}
+.callout.blue{background:var(--accent-bg);border-left:3px solid var(--accent);color:#1e40af}
+.callout.green{background:var(--green-bg);border-left:3px solid var(--green);color:#166534}
+.callout.amber{background:var(--amber-bg);border-left:3px solid var(--amber);color:#92400e}
+.callout.purple{background:var(--purple-bg);border-left:3px solid var(--purple);color:#4c1d95}
+.callout.red{background:var(--red-bg);border-left:3px solid var(--red);color:#991b1b}
+.callout strong{font-weight:700}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:20px 0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.card-icon{font-size:22px;margin-bottom:8px}
+.card strong{display:block;font-size:13px;font-weight:700;margin-bottom:4px}
+.card p{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
+.example-table{width:100%;border-collapse:collapse;font-size:13px;margin:16px 0}
+.example-table th{background:#f7f4ef;padding:9px 14px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--hint);border-bottom:1px solid var(--border)}
+.example-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:#3d3830;vertical-align:top}
+.example-table tr:last-child td{border-bottom:none}
+.tag{font-size:12px;padding:3px 10px;border-radius:20px;font-weight:500;display:inline-block}
+.tag-row{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+
+/* Journey animator */
+.journey-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin:24px 0;overflow:hidden}
+.journey-title{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);margin-bottom:20px}
+.journey-steps{display:flex;flex-direction:column;gap:0}
+.j-step{display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);opacity:0;transform:translateX(-10px);transition:opacity .5s,transform .5s}
+.j-step:last-child{border-bottom:none}
+.j-step.show{opacity:1;transform:translateX(0)}
+.j-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px}
+.j-content strong{display:block;font-size:13px;font-weight:700;margin-bottom:3px}
+.j-content p{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
+.j-arrow{text-align:center;font-size:18px;color:var(--hint);padding:4px 0;opacity:0;transition:opacity .3s}
+.j-arrow.show{opacity:1}
+
+/* Network tab demo */
+.devtools{background:#1e1b16;border-radius:12px;overflow:hidden;margin:20px 0}
+.dt-bar{background:#2a2a2a;padding:8px 14px;display:flex;align-items:center;gap:8px}
+.dt-dot{width:10px;height:10px;border-radius:50%}
+.dt-title{font-size:12px;color:#888;margin-left:6px;font-family:var(--mono)}
+.dt-body{padding:0}
+.dt-header{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;background:#252219;padding:6px 14px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b6560}
+.dt-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:7px 14px;border-bottom:1px solid #2a2520;font-family:var(--mono);font-size:11px;opacity:0;transition:opacity .4s}
+.dt-row.show{opacity:1}
+.dt-row:hover{background:#252219}
+.dt-name{color:#7dd3fc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dt-status.ok{color:#4ade80}
+.dt-status.slow{color:#facc15}
+.dt-status.fail{color:#f87171}
+.dt-type{color:#94a3b8}
+.dt-time{color:#e2e8f0}
+.dt-bar-wrap{padding:8px 14px;background:#1a1714}
+.dt-waterfall{display:flex;flex-direction:column;gap:4px;padding:8px 0}
+.wf-row{display:flex;align-items:center;gap:10px;font-size:11px;font-family:var(--mono);opacity:0;transition:opacity .4s}
+.wf-row.show{opacity:1}
+.wf-label{color:#94a3b8;width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.wf-bar-bg{flex:1;height:8px;background:#2a2520;border-radius:4px;overflow:hidden}
+.wf-bar{height:8px;border-radius:4px;transition:width 1s}
+.wf-time{color:#e2e8f0;width:50px;text-align:right;flex-shrink:0}
+
+/* Failure animator */
+.failure-stage{background:#0f0f0f;border-radius:12px;padding:22px 20px;margin:20px 0;font-family:var(--mono);font-size:13px}
+.failure-line{opacity:0;margin-bottom:7px;transition:opacity .5s;line-height:1.6;display:flex;align-items:flex-start;gap:10px}
+.failure-line.show{opacity:1}
+.f-ok{color:#4ade80}
+.f-warn{color:#facc15}
+.f-bad{color:#f87171}
+.f-dim{color:#4b5563}
+.f-text{color:#d4d4d4}
+.f-textbad{color:#fca5a5}
+.f-textwarn{color:#fde68a}
+
+.lesson-nav{display:flex;justify-content:space-between;align-items:center;margin-top:40px;padding-top:24px;border-top:1px solid var(--border)}
+.btn{padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text);transition:all .15s}
+.btn:hover{background:#f0ece6}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.primary:hover{background:#1d4ed8}
+.btn:disabled{opacity:.3;cursor:not-allowed}
+.play-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--muted);transition:all .15s;margin-bottom:14px}
+.play-btn:hover{background:var(--accent-bg);color:var(--accent);border-color:var(--accent)}
+
+/* Tutor */
+.tutor-fab{position:fixed;bottom:28px;right:28px;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:22px;box-shadow:0 4px 16px rgba(37,99,235,.35);z-index:100;transition:transform .2s}
+.tutor-fab:hover{transform:scale(1.08)}
+.tutor-panel{position:fixed;bottom:92px;right:28px;width:340px;height:480px;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.12);z-index:100;display:none;flex-direction:column;overflow:hidden}
+.tutor-panel.open{display:flex}
+.tutor-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.tutor-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.tutor-info strong{display:block;font-size:13px;font-weight:700}
+.tutor-info span{font-size:11px;color:var(--hint)}
+.tutor-close{margin-left:auto;background:none;border:none;cursor:pointer;font-size:18px;color:var(--hint);line-height:1}
+.tutor-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:88%;font-size:12.5px;line-height:1.6;padding:10px 12px;border-radius:12px}
+.msg.ai{background:#f4f1ec;color:var(--text);align-self:flex-start;border-bottom-left-radius:3px}
+.msg.user{background:var(--accent);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.msg.typing{background:#f4f1ec;align-self:flex-start;padding:12px 16px}
+.typing-dots{display:flex;gap:4px;align-items:center}
+.typing-dots span{width:6px;height:6px;border-radius:50%;background:var(--hint);animation:bounce .9s infinite}
+.typing-dots span:nth-child(2){animation-delay:.15s}
+.typing-dots span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.tutor-input-row{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end}
+.tutor-input{flex:1;resize:none;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:var(--font);outline:none;line-height:1.5;max-height:80px;background:var(--bg)}
+.tutor-input:focus{border-color:var(--accent)}
+.tutor-send{width:32px;height:32px;border-radius:8px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tutor-send:hover{background:#1d4ed8}
+.tutor-send:disabled{background:#c0c8e0;cursor:not-allowed}
+.tutor-disclaimer{font-size:10px;color:var(--hint);text-align:center;padding:0 12px 8px;line-height:1.4}
+@media(max-width:700px){.sidebar{display:none}.main{padding:24px 20px 60px}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-tag">Week 2 · No code</div>
+    <div class="sb-title">Trace a Request</div>
+    <div class="sb-meta">5 Lessons · ~60 min</div>
+  </div>
+  <div class="sb-progress"><div class="sb-bar" id="progressBar" style="width:0%"></div></div>
+  <div class="sb-pct" id="progressPct">Progress 0%</div>
+  <div class="sb-section">
+    <div class="sb-section-label">Concepts</div>
+    <button class="sb-item active" onclick="go(0)" id="nav0"><span class="sb-num">1</span>The tap to screen journey</button>
+    <button class="sb-item" onclick="go(1)" id="nav1"><span class="sb-num">2</span>Requests &amp; responses</button>
+    <button class="sb-item" onclick="go(2)" id="nav2"><span class="sb-num">3</span>What the server does</button>
+    <button class="sb-item" onclick="go(3)" id="nav3"><span class="sb-num">4</span>The network tab</button>
+    <button class="sb-item" onclick="go(4)" id="nav4"><span class="sb-num">5</span>Silent failures in a journey</button>
+  </div>
+</nav>
+
+<main class="main"><div class="main-inner">
+
+<!-- LESSON 0 -->
+<div class="lesson active" id="lesson0">
+  <div class="lesson-eyebrow">Lesson 01 of 05</div>
+  <h1 class="lesson-title">The <em>tap to screen</em> journey</h1>
+  <p class="lesson-sub">Every time something appears on screen after you tap, a journey happened. This lesson teaches you what that journey looks like.</p>
+
+  <h3>What you think happens vs what actually happens</h3>
+  <p>When you tap a button on your phone and something appears, it feels instant. But between your finger lifting and the screen changing, a whole chain of events took place — across multiple machines, travelling hundreds of kilometres in milliseconds.</p>
+
+  <div class="cards">
+    <div class="card"><div class="card-icon">👆</div><strong>What you see</strong><p>Tap → result appears. Simple, instant, invisible.</p></div>
+    <div class="card"><div class="card-icon">⚙️</div><strong>What actually happened</strong><p>Your device sent a message. It travelled to a server. The server did work. It sent something back. Your device drew it on screen.</p></div>
+  </div>
+
+  <p>Understanding this journey is one of the most important mental models a developer can have. Every bug, every slowness, every broken page — comes from something going wrong in this journey.</p>
+
+  <hr class="divider">
+
+  <h3>A simple analogy — ordering at a restaurant</h3>
+  <p>Think of a restaurant. You (the customer) ask a waiter for something. The waiter goes to the kitchen. The kitchen prepares it. The waiter brings it back. You receive it.</p>
+  <p>A web request works exactly the same way:</p>
+
+  <div class="cards">
+    <div class="card"><div class="card-icon">🧑</div><strong>You</strong><p>Your device. You make a request by tapping something.</p></div>
+    <div class="card"><div class="card-icon">🤵</div><strong>The waiter</strong><p>The internet. Carries your request to the right place.</p></div>
+    <div class="card"><div class="card-icon">👨‍🍳</div><strong>The kitchen</strong><p>The server. Does the actual work and prepares the response.</p></div>
+    <div class="card"><div class="card-icon">🍽️</div><strong>The meal</strong><p>The response. What comes back and gets drawn on your screen.</p></div>
+  </div>
+
+  <div class="callout blue"><strong>The key insight —</strong> nothing appears on your screen that didn't first travel from a server. Every image, every piece of text, every number you see — came from somewhere. It was requested, prepared, and delivered. The screen is just the final drawing step.</div>
+
+  <div class="lesson-nav">
+    <button class="btn" disabled>← Previous</button>
+    <button class="btn primary" onclick="go(1)">Requests &amp; responses →</button>
+  </div>
+</div>
+
+<!-- LESSON 1 -->
+<div class="lesson" id="lesson1">
+  <div class="lesson-eyebrow">Lesson 02 of 05</div>
+  <h1 class="lesson-title">Requests &amp; <em>responses</em></h1>
+  <p class="lesson-sub">Every conversation between your device and a server follows the same pattern — one side asks, the other answers.</p>
+
+  <h3>The request — your device asking</h3>
+  <p>When you tap something on a website or app, your device sends a message to a server. That message is called a request. A request says, in effect: "Give me this thing" or "Do this action."</p>
+  <p>Every request has three things:</p>
+
+  <div class="cards">
+    <div class="card"><div class="card-icon">📍</div><strong>A destination</strong><p>A URL — the address of the server and the specific thing being asked for.</p></div>
+    <div class="card"><div class="card-icon">❓</div><strong>A method</strong><p>What kind of request — GET (fetch something), POST (send something), PUT (update something).</p></div>
+    <div class="card"><div class="card-icon">📦</div><strong>Sometimes a body</strong><p>Extra information — like the username and password you typed into a login form.</p></div>
+  </div>
+
+  <hr class="divider">
+
+  <h3>The response — the server answering</h3>
+  <p>After the server receives your request and does its work, it sends a response back. A response contains:</p>
+
+  <table class="example-table">
+    <thead><tr><th>Part</th><th>What it is</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Status code</strong></td><td>Did it work?</td><td>200 = yes, 404 = not found, 500 = server error</td></tr>
+      <tr><td><strong>Headers</strong></td><td>Metadata about the response</td><td>What type of content it is, how long to cache it</td></tr>
+      <tr><td><strong>Body</strong></td><td>The actual content</td><td>HTML, JSON data, an image, a file</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout amber"><strong>Think of it like a letter —</strong> the envelope has the address and stamp (headers). The letter inside is the content (body). The postman confirms delivery (status code). Every response from every server follows this same structure.</div>
+
+  <hr class="divider">
+
+  <h3>One tap, many requests</h3>
+  <p>Here is something that surprises most people: when you load a single page, your device does not send one request. It sends dozens. Sometimes hundreds.</p>
+  <p>The first request gets the HTML — the structure of the page. That HTML tells the browser: "now go fetch these images, this CSS, this JavaScript, this data." So the browser sends more requests. Each one comes back. The browser assembles them all into the page you see.</p>
+
+  <div class="callout blue"><strong>This is why pages load in stages —</strong> the text appears first, then images pop in, then the interactive parts start working. Each stage is a batch of requests completing. You are watching a waterfall of requests, not one single fetch.</div>
+
+  <div class="lesson-nav">
+    <button class="btn" onclick="go(0)">← The journey</button>
+    <button class="btn primary" onclick="go(2)">What the server does →</button>
+  </div>
+</div>
+
+<!-- LESSON 2 -->
+<div class="lesson" id="lesson2">
+  <div class="lesson-eyebrow">Lesson 03 of 05</div>
+  <h1 class="lesson-title">What the <em>server does</em></h1>
+  <p class="lesson-sub">The server is not a magic box. When a request arrives, it does specific, understandable work. This lesson teaches you to describe that work.</p>
+
+  <h3>The server receives, looks up, and responds</h3>
+  <p>When a request reaches a server, the server does three things in sequence: it receives the request and understands what is being asked, it does the work required to fulfil it, and it packages up the result and sends it back.</p>
+  <p>The "work" is the interesting part. Let's look at what different kinds of requests make the server do:</p>
+
+  <table class="example-table">
+    <thead><tr><th>Action</th><th>What the server actually does</th></tr></thead>
+    <tbody>
+      <tr><td>Opening a news article</td><td>Finds the article in the database by its ID, fetches the title, body text, author name, publish date, and related article IDs, packages them as JSON, sends back</td></tr>
+      <tr><td>Logging into a banking app</td><td>Receives the username and password, looks up the username in the database, compares the password hash, if it matches creates a session token, sends the token back</td></tr>
+      <tr><td>Searching for a product</td><td>Receives the search term, queries the database for products matching that term, sorts by relevance or price, paginates results, sends back a list</td></tr>
+      <tr><td>Submitting a contact form</td><td>Receives name, email, message, validates they are not empty, stores in database, sends confirmation email, sends back a success response</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout green"><strong>Notice —</strong> in every case the server is doing something specific and describable. "The server processes the request" tells you nothing. "The server looks up the article by its ID and fetches its content from the database" tells you exactly what happened and where it could go wrong.</div>
+
+  <hr class="divider">
+
+  <h3>The journey animated — booking a train ticket</h3>
+  <button class="play-btn" onclick="animateJourney()">▶ Watch the journey step by step</button>
+
+  <div class="journey-wrap">
+    <div class="journey-title">Train ticket booking — full request journey</div>
+    <div class="journey-steps">
+      <div class="j-step" id="js0">
+        <div class="j-num" style="background:#eff6ff;color:#1d4ed8">1</div>
+        <div class="j-content"><strong>User taps "Search trains"</strong><p>The browser registers the tap. It reads the form values — origin, destination, date. It prepares a request.</p></div>
+      </div>
+      <div class="j-arrow" id="ja0">↓</div>
+      <div class="j-step" id="js1">
+        <div class="j-num" style="background:#f5f3ff;color:#6d28d9">2</div>
+        <div class="j-content"><strong>Request leaves the device</strong><p>A GET request is sent to the server: "Find trains from Chennai to Mumbai on 15 June." It travels through the user's Wi-Fi and the internet.</p></div>
+      </div>
+      <div class="j-arrow" id="ja1">↓</div>
+      <div class="j-step" id="js2">
+        <div class="j-num" style="background:#fffbeb;color:#92400e">3</div>
+        <div class="j-content"><strong>Server receives and works</strong><p>The server queries the database for trains on that route and date. It checks seat availability for each class. It calculates prices. It sorts results by departure time.</p></div>
+      </div>
+      <div class="j-arrow" id="ja2">↓</div>
+      <div class="j-step" id="js3">
+        <div class="j-num" style="background:#f0fdf4;color:#166534">4</div>
+        <div class="j-content"><strong>Response travels back</strong><p>The server sends back a JSON response containing the list of trains, their departure times, available seats, and prices.</p></div>
+      </div>
+      <div class="j-arrow" id="ja3">↓</div>
+      <div class="j-step" id="js4">
+        <div class="j-num" style="background:#fef2f2;color:#991b1b">5</div>
+        <div class="j-content"><strong>Browser draws the result</strong><p>The browser receives the JSON. It reads each train entry and creates a card for it on the page. The search results appear.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lesson-nav">
+    <button class="btn" onclick="go(1)">← Requests &amp; responses</button>
+    <button class="btn primary" onclick="go(3)">The network tab →</button>
+  </div>
+</div>
+
+<!-- LESSON 3 -->
+<div class="lesson" id="lesson3">
+  <div class="lesson-eyebrow">Lesson 04 of 05</div>
+  <h1 class="lesson-title">The <em>network tab</em></h1>
+  <p class="lesson-sub">Every request your browser sends is visible. The network tab in DevTools lets you watch the entire journey happen in real time.</p>
+
+  <h3>What is DevTools?</h3>
+  <p>Every browser has a built-in set of developer tools. You open them by right-clicking anywhere on a page and selecting "Inspect." Inside is a tab called "Network" — and this tab shows you every single request your browser makes and every response it receives.</p>
+
+  <div class="callout blue"><strong>Think of it like an X-ray —</strong> the page looks normal to the user, but the network tab shows you the skeleton underneath — every request, every file fetched, every API call, every millisecond spent waiting for a server to respond.</div>
+
+  <hr class="divider">
+
+  <h3>What you see in the network tab</h3>
+  <button class="play-btn" onclick="animateDevtools()">▶ See a network tab load</button>
+
+  <div class="devtools">
+    <div class="dt-bar">
+      <div class="dt-dot" style="background:#ff5f57"></div>
+      <div class="dt-dot" style="background:#febc2e"></div>
+      <div class="dt-dot" style="background:#28c840"></div>
+      <span class="dt-title">DevTools — Network Tab</span>
+    </div>
+    <div class="dt-header"><span>Name</span><span>Status</span><span>Type</span><span>Time</span></div>
+    <div class="dt-row" id="dr0"><span class="dt-name">/ (main page)</span><span class="dt-status ok">200</span><span class="dt-type">document</span><span class="dt-time">320ms</span></div>
+    <div class="dt-row" id="dr1"><span class="dt-name">main.css</span><span class="dt-status ok">200</span><span class="dt-type">stylesheet</span><span class="dt-time">45ms</span></div>
+    <div class="dt-row" id="dr2"><span class="dt-name">app.js</span><span class="dt-status ok">200</span><span class="dt-type">script</span><span class="dt-time">89ms</span></div>
+    <div class="dt-row" id="dr3"><span class="dt-name">/api/trains?from=Chennai</span><span class="dt-status slow">200</span><span class="dt-type">fetch</span><span class="dt-time">1240ms</span></div>
+    <div class="dt-row" id="dr4"><span class="dt-name">hero-image.jpg</span><span class="dt-status ok">200</span><span class="dt-type">image</span><span class="dt-time">210ms</span></div>
+    <div class="dt-row" id="dr5"><span class="dt-name">/api/user/profile</span><span class="dt-status ok">200</span><span class="dt-type">fetch</span><span class="dt-time">180ms</span></div>
+    <div class="dt-row" id="dr6"><span class="dt-name">ad-tracker.js</span><span class="dt-status fail">404</span><span class="dt-type">script</span><span class="dt-time">55ms</span></div>
+    <div class="dt-bar-wrap">
+      <div class="dt-waterfall">
+        <div class="wf-row" id="wf0"><span class="wf-label">/ (main page)</span><div class="wf-bar-bg"><div class="wf-bar" id="wb0" style="width:0%;background:#4ade80"></div></div><span class="wf-time">320ms</span></div>
+        <div class="wf-row" id="wf1"><span class="wf-label">main.css</span><div class="wf-bar-bg"><div class="wf-bar" id="wb1" style="width:0%;background:#4ade80"></div></div><span class="wf-time">45ms</span></div>
+        <div class="wf-row" id="wf2"><span class="wf-label">app.js</span><div class="wf-bar-bg"><div class="wf-bar" id="wb2" style="width:0%;background:#4ade80"></div></div><span class="wf-time">89ms</span></div>
+        <div class="wf-row" id="wf3"><span class="wf-label">/api/trains</span><div class="wf-bar-bg"><div class="wf-bar" id="wb3" style="width:0%;background:#facc15"></div></div><span class="wf-time">1240ms</span></div>
+        <div class="wf-row" id="wf4"><span class="wf-label">hero-image.jpg</span><div class="wf-bar-bg"><div class="wf-bar" id="wb4" style="width:0%;background:#4ade80"></div></div><span class="wf-time">210ms</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>What each column tells you</h3>
+  <table class="example-table">
+    <thead><tr><th>Column</th><th>What it means</th><th>What to look for</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Name</strong></td><td>The URL of the request</td><td>API calls usually have /api/ in the name</td></tr>
+      <tr><td><strong>Status</strong></td><td>Did it succeed?</td><td>200 = ok, 404 = not found, 500 = server crashed</td></tr>
+      <tr><td><strong>Type</strong></td><td>What kind of thing was fetched</td><td>fetch/xhr = API data, document = HTML page</td></tr>
+      <tr><td><strong>Time</strong></td><td>How long it took</td><td>Anything over 500ms is noticeably slow to users</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout amber"><strong>The slowest request is the most interesting —</strong> sort the network tab by Time. The slowest request is usually the one the user was waiting for. Find it and you find the bottleneck. That one request is often an API call fetching the main content of the page.</div>
+
+  <div class="lesson-nav">
+    <button class="btn" onclick="go(2)">← What the server does</button>
+    <button class="btn primary" onclick="go(4)">Silent failures →</button>
+  </div>
+</div>
+
+<!-- LESSON 4 -->
+<div class="lesson" id="lesson4">
+  <div class="lesson-eyebrow">Lesson 05 of 05</div>
+  <h1 class="lesson-title">Silent failures <em>in a journey</em></h1>
+  <p class="lesson-sub">When something in the request-response journey goes wrong silently, the user experiences a consequence — but has no idea which step caused it.</p>
+
+  <h3>The journey has many places to fail</h3>
+  <p>Every step in a request journey is a potential failure point. The device might send a malformed request. The internet might be slow. The server might fetch stale data. The response might arrive incomplete. The browser might render something incorrectly.</p>
+  <p>Most of these failures show no error to the user. The page still loads. Something just looks or works slightly wrong.</p>
+
+  <hr class="divider">
+
+  <h3>Example — booking a movie ticket</h3>
+  <button class="play-btn" onclick="animateFailure()">▶ Watch a silent failure in a request journey</button>
+
+  <div class="failure-stage">
+    <div class="failure-line" id="fl0"><span class="f-ok">✓</span><span class="f-text">User searches for shows — request sent to server</span></div>
+    <div class="failure-line" id="fl1"><span class="f-ok">✓</span><span class="f-text">Server queries the database for available seats</span></div>
+    <div class="failure-line" id="fl2"><span class="f-warn">⚠</span><span class="f-textwarn">Database returns cached data from 10 minutes ago</span></div>
+    <div class="failure-line" id="fl3"><span class="f-ok">✓</span><span class="f-text">Server sends back seat availability — looks correct</span></div>
+    <div class="failure-line" id="fl4"><span class="f-ok">✓</span><span class="f-text">Browser draws the seat map — seats A1, A2 show as available</span></div>
+    <div class="failure-line" id="fl5"><span class="f-ok">✓</span><span class="f-text">User selects A1 and A2 — taps "Book Now"</span></div>
+    <div class="failure-line" id="fl6"><span class="f-bad">✗</span><span class="f-textbad">Server tries to book — A1 and A2 were sold 10 minutes ago</span></div>
+    <div class="failure-line" id="fl7"><span class="f-bad">✗</span><span class="f-textbad">User gets "Booking failed" after filling in all details</span></div>
+    <div class="failure-line" id="fl8"><span class="f-bad">✗</span><span class="f-textbad">User never knew the seat map was stale. They just feel frustrated.</span></div>
+  </div>
+
+  <div class="callout red"><strong>The failure was in Step 2 —</strong> the server returned stale cached data. But the user experienced it at Step 6, after wasting time selecting seats and filling in details. The gap between where the failure happened and where the user felt it is what makes silent failures so damaging.</div>
+
+  <hr class="divider">
+
+  <h3>How silent failures in a journey connect to your system map</h3>
+  <p>Last week you mapped a product as a system — you found users, actions, data, and states. This week's journey trace zooms into one of those actions. The data the server fetches in Step 3 of your trace is the same data you mapped last week.</p>
+  <p>When a step in the journey returns wrong data, it corrupts one or more pieces of your system map. The connection between the two exercises is real — a broken journey step is always a broken piece of data in the system.</p>
+
+  <div class="callout green"><strong>You are ready.</strong> You now understand what happens between a tap and a screen update, what requests and responses are, what the server actually does, how to read the network tab, and how silent failures happen inside a request journey. Now go apply this to a real action in a product you know.</div>
+
+  <div class="lesson-nav">
+    <button class="btn" onclick="go(3)">← The network tab</button>
+    <button class="btn primary" id="doneBtn" onclick="complete()">✓ Mark complete</button>
+  </div>
+</div>
+
+</div></main>
+
+<!-- AI Tutor -->
+<button class="tutor-fab" onclick="toggleTutor()" title="Ask the tutor">🎓</button>
+<div class="tutor-panel" id="tutorPanel">
+  <div class="tutor-head">
+    <div class="tutor-avatar">🎓</div>
+    <div class="tutor-info"><strong>Week 2 Tutor</strong><span>Concept guide · Won't give answers</span></div>
+    <button class="tutor-close" onclick="toggleTutor()">×</button>
+  </div>
+  <div class="tutor-messages" id="tutorMessages">
+    <div class="msg ai">Hi! I'm your Week 2 concept tutor. I can help you understand <strong>requests, responses, what servers do, the network tab, and silent failures in a journey</strong>.<br><br>I won't give you assignment answers — but I'll help you think through anything you're stuck on. What's confusing you?</div>
+  </div>
+  <div class="tutor-input-row">
+    <textarea class="tutor-input" id="tutorInput" placeholder="Ask a concept question..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="tutor-send" id="tutorSend" onclick="sendMessage()">↑</button>
+  </div>
+  <div class="tutor-disclaimer">This tutor explains concepts only. It will not write your assignment or give direct answers.</div>
+</div>
+
+</div>
+
+<script>
+let current=0;
+const total=5;
+const done=new Set();
+
+function go(n){
+  document.getElementById('lesson'+current).classList.remove('active');
+  document.getElementById('nav'+current).classList.remove('active');
+  done.add(current);
+  document.getElementById('nav'+current).classList.add('done');
+  current=n;
+  document.getElementById('lesson'+n).classList.add('active');
+  document.getElementById('nav'+n).classList.remove('done');
+  document.getElementById('nav'+n).classList.add('active');
+  updateProgress();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function updateProgress(){
+  const pct=Math.round((done.size/total)*100);
+  document.getElementById('progressBar').style.width=pct+'%';
+  document.getElementById('progressPct').textContent='Progress '+pct+'%';
+}
+
+function complete(){
+  done.add(current);
+  document.getElementById('nav'+current).classList.add('done');
+  updateProgress();
+  const b=document.getElementById('doneBtn');
+  b.textContent='✓ Completed!';
+  b.style.background='var(--green)';
+  b.style.borderColor='var(--green)';
+}
+
+// Journey animation
+let journeyDone=false;
+function animateJourney(){
+  if(journeyDone)return;journeyDone=true;
+  const steps=['js0','js1','js2','js3','js4'];
+  const arrows=['ja0','ja1','ja2','ja3'];
+  steps.forEach((id,i)=>{
+    setTimeout(()=>document.getElementById(id).classList.add('show'),i*600);
+    if(arrows[i]) setTimeout(()=>document.getElementById(arrows[i]).classList.add('show'),i*600+300);
+  });
+}
+
+// DevTools animation
+let devtoolsDone=false;
+function animateDevtools(){
+  if(devtoolsDone)return;devtoolsDone=true;
+  const rows=['dr0','dr1','dr2','dr3','dr4','dr5','dr6'];
+  const wfRows=['wf0','wf1','wf2','wf3','wf4'];
+  const wfWidths=[26,4,7,100,17];
+  rows.forEach((id,i)=>setTimeout(()=>document.getElementById(id).classList.add('show'),i*200));
+  wfRows.forEach((id,i)=>{
+    setTimeout(()=>{
+      document.getElementById(id).classList.add('show');
+      setTimeout(()=>document.getElementById('wb'+i).style.width=wfWidths[i]+'%',100);
+    },i*200+800);
+  });
+}
+
+// Failure animation
+function animateFailure(){
+  for(let i=0;i<9;i++){
+    (function(idx){setTimeout(()=>{const el=document.getElementById('fl'+idx);if(el)el.classList.add('show');},idx*600);})(i);
+  }
+}
+
+// Tutor
+function toggleTutor(){
+  const p=document.getElementById('tutorPanel');
+  p.classList.toggle('open');
+  if(p.classList.contains('open')) document.getElementById('tutorInput').focus();
+}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,80)+'px';}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+
+const convHistory=[];
+const PROXY_URL='https://zsone-app-50042017815.development.catalystappsail.in/api/tutor';
+
+async function sendMessage(){
+  const input=document.getElementById('tutorInput');
+  const text=input.value.trim();
+  if(!text)return;
+  appendMsg(text,'user');
+  input.value='';input.style.height='auto';
+  document.getElementById('tutorSend').disabled=true;
+  const typingId=appendTyping();
+  const systemPrompt=`You are a Week 2 concept tutor for a full stack development course for beginner students who just completed 12th grade. Your ONLY job is to help students understand these concepts: what happens between a tap and a screen update, what requests and responses are, what a server does when it receives a request, how to read the network tab in DevTools, and how silent failures happen inside a request journey.
+
+STRICT RULES:
+1. NEVER write any code
+2. NEVER do the assignment for the student — the assignment asks them to trace a request journey for the product they mapped last week
+3. Keep responses to 3-5 sentences maximum
+4. Always end with a question that makes the student think
+5. Use simple language — these are beginners
+6. Use neutral examples (train booking, movie ticket, library search) — never the student's specific product
+7. If asked something unrelated, say: "I am your Week 2 concept tutor. I can only help with requests, responses, server work, the network tab, and silent failures in a journey."`;
+
+  try{
+    const res=await fetch(PROXY_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({userMessage:text+'\n\n[System: '+systemPrompt+']'})
+    });
+    const data=await res.json();
+    removeTyping(typingId);
+    const reply=data.reply||"I'm having trouble responding right now. Please try again.";
+    appendMsg(reply,'ai');
+  }catch(e){
+    removeTyping(typingId);
+    appendMsg("Something went wrong. Please try again.",'ai');
+  }
+  document.getElementById('tutorSend').disabled=false;
+  document.getElementById('tutorInput').focus();
+}
+
+function appendMsg(text,role){
+  const box=document.getElementById('tutorMessages');
+  const div=document.createElement('div');
+  div.className=`msg ${role}`;
+  div.innerHTML=text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  box.appendChild(div);
+  box.scrollTop=box.scrollHeight;
+}
+function appendTyping(){
+  const box=document.getElementById('tutorMessages');
+  const id='typing_'+Date.now();
+  const div=document.createElement('div');
+  div.className='msg typing';div.id=id;
+  div.innerHTML='<div class="typing-dots"><span></span><span></span><span></span></div>';
+  box.appendChild(div);box.scrollTop=box.scrollHeight;
+  return id;
+}
+function removeTyping(id){const el=document.getElementById(id);if(el)el.remove();}
+</script>
+</body>
+</html>
