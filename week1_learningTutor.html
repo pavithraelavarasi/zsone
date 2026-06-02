@@ -539,11 +539,11 @@ async function sendMessage(){
 //       })
 //     });
 try{
-    const res=await fetch('https://learningplatformsai-60053233656.development.catalystserverless.com/server/zsone',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({userMessage:text})
-    });
+      const res = await fetch('/api/tutor', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userMessage: text })
+  });
 
     const data=await res.json();
     removeTyping(typingId);
@@ -588,6 +588,7 @@ function removeTyping(id){
 
 const total=6;
 const done=new Set();
+let current=0;
 
 function go(n){
   document.getElementById('lesson'+current).classList.remove('active');
