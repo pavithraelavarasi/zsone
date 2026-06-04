@@ -55,6 +55,11 @@ p{color:#3d3830;margin-bottom:14px;line-height:1.75}
 .card-icon{font-size:22px;margin-bottom:8px}
 .card strong{display:block;font-size:13px;font-weight:700;margin-bottom:4px}
 .card p{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
+.video-block{margin:24px 0;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px}
+.video-title{font-size:14px;font-weight:700;margin-bottom:12px}
+.video-wrap{position:relative;padding-top:56.25%;border-radius:14px;overflow:hidden;background:#000}
+.video-wrap video, .video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+.video-caption{font-size:13px;color:var(--muted);margin-top:12px;line-height:1.6}
 .example-table{width:100%;border-collapse:collapse;font-size:13px;margin:16px 0}
 .example-table th{background:#f7f4ef;padding:9px 14px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--hint);border-bottom:1px solid var(--border)}
 .example-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:#3d3830;vertical-align:top}
@@ -201,6 +206,17 @@ p{color:#3d3830;margin-bottom:14px;line-height:1.75}
     <div class="card"><div class="card-icon">🤵</div><strong>The waiter</strong><p>The internet. Carries your request to the right place.</p></div>
     <div class="card"><div class="card-icon">👨‍🍳</div><strong>The kitchen</strong><p>The server. Does the actual work and prepares the response.</p></div>
     <div class="card"><div class="card-icon">🍽️</div><strong>The meal</strong><p>The response. What comes back and gets drawn on your screen.</p></div>
+  </div>
+
+  <div class="video-block">
+    <div class="video-title">Video — Trace a request journey</div>
+    <div class="video-wrap">
+      <video controls preload="metadata">
+        <source src="InstagramReqRes.mp4" type="video/mp4">
+        Your browser does not support this video format.
+      </video>
+    </div>
+    <p class="video-caption">Watch this short animation to see how a tap becomes a server request, how the server processes the like action, and how the response updates the screen.</p>
   </div>
 
   <div class="callout blue"><strong>The key insight —</strong> nothing appears on your screen that didn't first travel from a server. Every image, every piece of text, every number you see — came from somewhere. It was requested, prepared, and delivered. The screen is just the final drawing step.</div>
