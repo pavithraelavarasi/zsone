@@ -57,6 +57,11 @@ p{color:#3d3830;margin-bottom:14px;line-height:1.75}
 .card-icon{font-size:22px;margin-bottom:8px}
 .card strong{display:block;font-size:13px;font-weight:700;margin-bottom:4px}
 .card p{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
+.video-block{margin:24px 0;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px}
+.video-title{font-size:14px;font-weight:700;margin-bottom:12px}
+.video-wrap{position:relative;padding-top:56.25%;border-radius:14px;overflow:hidden;background:#000}
+.video-wrap video, .video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+.video-caption{font-size:13px;color:var(--muted);margin-top:12px;line-height:1.6}
 
 /* Jargon term cards */
 .term-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:16px 0}
@@ -232,6 +237,17 @@ p{color:#3d3830;margin-bottom:14px;line-height:1.75}
   <h3>How these four connect</h3>
   <p>These four terms describe the skeleton of every web product. The client asks the server via the API, the server reads from and writes to the database, and sends back an answer.</p>
 
+  <div class="video-block">
+    <div class="video-title">Video — How these four connect in architecture terms</div>
+    <div class="video-wrap">
+      <video controls preload="metadata">
+        <source src="clientserver.mp4" type="video/mp4">
+        Your browser does not support this video format.
+      </video>
+    </div>
+    <p class="video-caption">Watch this short clip to see how client, server, API, and database fit together in architectural terms.</p>
+  </div>
+
   <table class="example-table">
     <thead><tr><th>Term</th><th>Role in the system</th><th>Plain English example</th></tr></thead>
     <tbody>
@@ -269,6 +285,17 @@ p{color:#3d3830;margin-bottom:14px;line-height:1.75}
 
   <h3>Request types — what kind of ask is it?</h3>
   <p>Not all requests are the same. HTTP has different "methods" — each one signals what the client wants to do:</p>
+
+  <div class="video-block">
+    <div class="video-title">Video — GET and POST in architecture terms</div>
+    <div class="video-wrap">
+      <video controls preload="metadata">
+        <source src="getpost.mp4" type="video/mp4">
+        Your browser does not support this video format.
+      </video>
+    </div>
+    <p class="video-caption">See how GET and POST requests differ in the client-server architecture and what each method asks the server to do.</p>
+  </div>
 
   <div class="term-grid">
     <div class="term-card" onclick="revealTerm(this)">
