@@ -18,28 +18,28 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .shell{display:flex;height:100vh;overflow:hidden}
 
 /* Left nav */
-.leftnav{width:230px;flex-shrink:0;background:#1e2a35;border-right:1px solid #2e3d4a;display:flex;flex-direction:column}
-.leftnav-top{padding:16px;border-bottom:1px solid #2e3d4a}
-.brand{font-size:16px;font-weight:700;color:#e8edf0;letter-spacing:-.3px}
-.brand span{color:#0d9488}
-.brand-sub{font-size:11px;color:#5a7080;margin-top:2px}
-.leftnav-search{padding:8px 10px;border-bottom:1px solid #92400e}
-.leftnav-search input{width:100%;padding:6px 10px;border:1px solid #92400e;border-radius:6px;font-size:12px;background:rgba(255,255,255,.08);color:#fef3c7;outline:none}
-.leftnav-search input:focus{border-color:#fbbf24}
-.leftnav-search input::placeholder{color:#b45309}
+.leftnav{width:230px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.leftnav-top{padding:16px;border-bottom:1px solid var(--border)}
+.brand{font-size:16px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+.brand span{color:var(--accent)}
+.brand-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.leftnav-search{padding:8px 10px;border-bottom:1px solid var(--border)}
+.leftnav-search input{width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--surface2);color:var(--text);outline:none}
+.leftnav-search input:focus{border-color:var(--accent)}
+.leftnav-search input::placeholder{color:var(--hint)}
 .leftnav-list{flex:1;overflow-y:auto;padding:8px 0}
-.phase-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b45309;padding:10px 14px 4px}
+.phase-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--hint);padding:10px 14px 4px}
 .week-item{display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:background .12s}
-.week-item:hover{background:rgba(251,191,36,.1)}
-.week-item.active{background:rgba(251,191,36,.15)}
-.week-item.active .week-num{color:#fbbf24;font-weight:700}
-.week-item.active .week-name{color:#fef3c7;font-weight:600}
+.week-item:hover{background:var(--surface2)}
+.week-item.active{background:var(--accent-bg)}
+.week-item.active .week-num{color:var(--accent);font-weight:700}
+.week-item.active .week-name{color:var(--text);font-weight:600}
 .week-item.locked{opacity:.35;cursor:not-allowed}
-.week-num{font-size:10px;font-weight:600;color:#b45309;width:24px;flex-shrink:0}
-.week-name{font-size:12px;color:#fde68a;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.week-num{font-size:10px;font-weight:600;color:var(--accent);width:24px;flex-shrink:0}
+.week-name{font-size:12px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .week-badge{font-size:9px;padding:2px 5px;border-radius:4px;font-weight:600}
-.badge-live{background:rgba(34,197,94,.2);color:#86efac}
-.badge-soon{background:rgba(255,255,255,.08);color:#b45309}
+.badge-live{background:rgba(13,148,136,.15);color:var(--accent)}
+.badge-soon{background:rgba(99,102,241,.12);color:var(--purple)}
 
 /* Center */
 .center{flex:1;overflow-y:auto;background:var(--bg)}
@@ -312,42 +312,65 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
         </div>
         <div class="section-card">
           <div class="section-head" onclick="toggleSection(this)">
-            <div class="section-icon" style="background:var(--purple-bg)">🔬</div>
-            <div><div class="section-title">Deep questions</div><div class="section-sub">Strong submissions only</div></div>
+            <div class="section-icon" style="background:var(--purple-bg)">❓</div>
+            <div><div class="section-title">Easy questions</div><div class="section-sub">Ask every student</div></div>
             <span class="section-chev">▾</span>
           </div>
           <div class="section-body">
             <div class="rq-item" onclick="toggleRQ(this)">
-              <div class="rq-head"><div class="rq-num deep">5</div><div class="rq-q">Which single piece of data in your map is read by the most other parts? What would happen if that data were wrong?</div><span class="rq-tag tag-deep">Deep</span></div>
+              <div class="rq-head"><div class="rq-num">5</div><div class="rq-q">Do you understand what is the meaning of the word - Usecase? Can you list one usecase which is like an edge case for a User? Eg: Lets say, you are analyzing Zomato and in a given restaurant, the particular food you want to order has become empty in the kitchen. How would you want to notify a user about this once they have ordered for the listed Dish?</div><span class="rq-tag tag-core">Easy</span></div>
               <div class="rq-body">
-                <div class="rq-hint">If stuck → "Imagine one row in a database got corrupted. Which row, if wrong, would affect the most things a user sees?"</div>
-                <div class="rq-good"><strong>Good:</strong> Identifies central data (user_id, session token) and chains consequences — "if user_id is wrong, the cart, order history, and notifications would all show wrong data."</div>
-                <div class="rq-bad"><strong>Weak:</strong> Picks peripheral data with no downstream consequences.</div>
+                <div class="rq-hint">Look for a clear definition of use case and a customer-focused edge-case response.</div>
+                <div class="rq-good"><strong>Good:</strong> Defines use case and describes how the product would notify the user about the unavailable dish after order.</div>
+                <div class="rq-bad"><strong>Weak:</strong> Gives a vague definition or no specific user notification behaviour.</div>
               </div>
             </div>
             <div class="rq-item" onclick="toggleRQ(this)">
-              <div class="rq-head"><div class="rq-num deep">6</div><div class="rq-q">If you joined this company as a developer tomorrow, what would you need to know that your map doesn't show?</div><span class="rq-tag tag-deep">Deep</span></div>
+              <div class="rq-head"><div class="rq-num">6</div><div class="rq-q">What is the meaning of the word - State of an Application? Can you describe and show how the state of an application changes when a user performs an action?</div><span class="rq-tag tag-core">Easy</span></div>
               <div class="rq-body">
-                <div class="rq-hint">If stuck → "What happens between when a user taps and when something appears on screen? What's missing?"</div>
-                <div class="rq-good"><strong>Good:</strong> Names server processing, data storage, concurrent users, error recording — things invisible in user-facing behaviour.</div>
-                <div class="rq-bad"><strong>Weak:</strong> "I would need to learn the code." Too generic.</div>
+                <div class="rq-hint">Look for a definition of application state and a clear before/after example.</div>
+                <div class="rq-good"><strong>Good:</strong> Explains state as the current data/view status and gives an example of how it changes after a specific user action.</div>
+                <div class="rq-bad"><strong>Weak:</strong> Uses the word state without explaining how it changes with an action.</div>
               </div>
             </div>
-          </div>
-        </div>
-        <div class="section-card">
-          <div class="section-head" onclick="toggleSection(this)">
-            <div class="section-icon" style="background:var(--amber-bg)">🚀</div>
-            <div><div class="section-title">Stretch</div><div class="section-sub">Exceptional students only</div></div>
-            <span class="section-chev">▾</span>
-          </div>
-          <div class="section-body">
             <div class="rq-item" onclick="toggleRQ(this)">
-              <div class="rq-head"><div class="rq-num stretch">7</div><div class="rq-q">If this product had to handle 10x more users tomorrow — which part of your map would break first?</div><span class="rq-tag tag-stretch">Stretch</span></div>
+              <div class="rq-head"><div class="rq-num">7</div><div class="rq-q">Explain what you have understood about silent failures of an application. Can you explain how a silent failure has to be shown in the UI for a user?</div><span class="rq-tag tag-core">Easy</span></div>
               <div class="rq-body">
-                <div class="rq-hint">Listen for: awareness that the most-read data is likely the bottleneck under load.</div>
-                <div class="rq-good"><strong>Good:</strong> Connects most-read data to load — "order status is read by user, driver, and restaurant simultaneously. Under 10x load that's the first thing that slows."</div>
-                <div class="rq-bad"><strong>Weak:</strong> "The servers would crash." No system-level reasoning.</div>
+                <div class="rq-hint">Look for the difference between silent and loud failures and a UI example.</div>
+                <div class="rq-good"><strong>Good:</strong> Describes silent failure as wrong or missing data without an error message, and gives a UI example of subtle wrong behaviour.</div>
+                <div class="rq-bad"><strong>Weak:</strong> Talks only about errors or crashes instead of silent user-facing behaviour.</div>
+              </div>
+            </div>
+            <div class="rq-item" onclick="toggleRQ(this)">
+              <div class="rq-head"><div class="rq-num">8</div><div class="rq-q">What are the commands you have used in order to connect to the remote host and copy the files inside it?</div><span class="rq-tag tag-core">Easy</span></div>
+              <div class="rq-body">
+                <div class="rq-hint">Look for actual terminal commands, not just the concepts.</div>
+                <div class="rq-good"><strong>Good:</strong> Names the commands used, such as SSH to connect and SCP to copy files.</div>
+                <div class="rq-bad"><strong>Weak:</strong> Describes remote access without naming the commands used.</div>
+              </div>
+            </div>
+            <div class="rq-item" onclick="toggleRQ(this)">
+              <div class="rq-head"><div class="rq-num">9</div><div class="rq-q">Can you explain each part of the Shell Command you used to transfer files from your local to remote system?</div><span class="rq-tag tag-core">Easy</span></div>
+              <div class="rq-body">
+                <div class="rq-hint">Look for a breakdown of the command and what each piece does.</div>
+                <div class="rq-good"><strong>Good:</strong> Explains the command structure, such as username@host, source path, destination path, and protocol.</div>
+                <div class="rq-bad"><strong>Weak:</strong> Recites the command without explaining its parts.</div>
+              </div>
+            </div>
+            <div class="rq-item" onclick="toggleRQ(this)">
+              <div class="rq-head"><div class="rq-num">10</div><div class="rq-q">What is localhost and what is 127.0.0.1?</div><span class="rq-tag tag-core">Easy</span></div>
+              <div class="rq-body">
+                <div class="rq-hint">Look for the explanation that both refer to the local machine and why the numeric address is used.</div>
+                <div class="rq-good"><strong>Good:</strong> Explains that localhost is the local computer and 127.0.0.1 is its loopback IP address.</div>
+                <div class="rq-bad"><strong>Weak:</strong> Says they are different computers or does not connect localhost to the loopback address.</div>
+              </div>
+            </div>
+            <div class="rq-item" onclick="toggleRQ(this)">
+              <div class="rq-head"><div class="rq-num">11</div><div class="rq-q">How do you check whether the remote machine you wish to connect is active, up and running?</div><span class="rq-tag tag-core">Easy</span></div>
+              <div class="rq-body">
+                <div class="rq-hint">Look for a practical check, such as ping or trying to connect with SSH.</div>
+                <div class="rq-good"><strong>Good:</strong> Mentions checking network connectivity, pinging the host, or attempting an SSH connection.</div>
+                <div class="rq-bad"><strong>Weak:</strong> Gives an abstract answer without a concrete check.</div>
               </div>
             </div>
           </div>
@@ -461,83 +484,74 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
         <div class="callout blue"><strong>How to use this —</strong> Core for every student. Check whether they see the web as a journey with dependent steps — not a magic box.</div>
         <div class="section-card open">
           <div class="section-head" onclick="toggleSection(this)">
-            <div class="section-icon" style="background:var(--accent-bg)">🎯</div>
-            <div><div class="section-title">Core questions</div><div class="section-sub">Ask every student · ~15 min</div></div>
+            <div class="section-icon" style="background:var(--accent-bg)">🟢</div>
+            <div><div class="section-title">Easy Questions</div><div class="section-sub">Week 2 reviewer questions</div></div>
             <span class="section-chev">▾</span>
           </div>
           <div class="section-body">
             <div class="rq-item" onclick="toggleRQ(this)">
-              <div class="rq-head"><div class="rq-num core">1</div><div class="rq-q">Walk me through your trace. Point to each step. What is happening at each one?</div><span class="rq-tag tag-core">Core</span></div>
+              <div class="rq-head"><div class="rq-num">1</div><div class="rq-q">What is meant by Client in your understanding? Are you a client or is your device a client? What are all the clients that you know?</div><span class="rq-tag tag-core">Easy</span></div>
               <div class="rq-body">
-                <div class="rq-hint">If stuck → "Start from the tap. What leaves the phone?"</div>
-                <div class="rq-good"><strong>Good:</strong> Names each step with product-specific detail — "my browser asks Notion's server for the page data, the server looks up which blocks are on that page, sends them back, and the browser draws each block."</div>
-                <div class="rq-bad"><strong>Weak:</strong> "It sends a request and gets a response." No product-specific detail.</div>
+                <div class="rq-hint">Look for the difference between a user and the software/hardware that makes the request.</div>
+                <div class="rq-good"><strong>Good:</strong> Explains client as the requesting side, says the device runs the client, and lists examples like browser, mobile app, API client.</div>
+                <div class="rq-bad"><strong>Weak:</strong> Says the user is the client or only gives one example.</div>
               </div>
             </div>
             <div class="rq-item" onclick="toggleRQ(this)">
-              <div class="rq-head"><div class="rq-num core">2</div><div class="rq-q">Point to the step where the server does its work. What data is it looking up or changing?</div><span class="rq-tag tag-core">Core</span></div>
+              <div class="rq-head"><div class="rq-num">2</div><div class="rq-q">Do you know what port number is? What is the use of a port number in a system?</div><span class="rq-tag tag-core">Easy</span></div>
               <div class="rq-body">
-                <div class="rq-hint">If vague → "If you were the server and someone asked you for this page, what would you need to go find?"</div>
-                <div class="rq-good"><strong>Good:</strong> Names specific data — "it looks up my cart items, the prices, and whether each item is still in stock."</div>
-                <div class="rq-bad"><strong>Weak:</strong> "It processes the data." No specifics.</div>
+                <div class="rq-hint">Look for a simple explanation of ports as endpoints on a machine.</div>
+                <div class="rq-good"><strong>Good:</strong> Says port number identifies a specific service/process on a device so multiple services can run on the same machine.</div>
+                <div class="rq-bad"><strong>Weak:</strong> Confuses port number with IP address or says it is a security feature only.</div>
               </div>
             </div>
             <div class="rq-item" onclick="toggleRQ(this)">
-              <div class="rq-head"><div class="rq-num core">3</div><div class="rq-q">Show me what you saw in the network tab. How many requests fired? Which one was the slowest?</div><span class="rq-tag tag-core">Core</span></div>
+              <div class="rq-head"><div class="rq-num">3</div><div class="rq-q">Can you explain the flow of a trace from beginning to end?</div><span class="rq-tag tag-core">Easy</span></div>
               <div class="rq-body">
-                <div class="rq-hint">If stuck → "Open the network tab now. Perform the action. Point to the longest bar in the waterfall."</div>
-                <div class="rq-good"><strong>Good:</strong> Specific count, specific slow request connected to visible behaviour — "42 requests fired. The slowest was a 1.2s call to /api/feed — that's why the page shell appears first and the feed fills in after."</div>
-                <div class="rq-bad"><strong>Weak:</strong> "There were a lot of requests." No specifics, no connection to what the user sees.</div>
+                <div class="rq-hint">Look for a full request-response journey explanation.</div>
+                <div class="rq-good"><strong>Good:</strong> Describes tap/action, request leaving the device, server work, response returning, and browser/app updating the screen.</div>
+                <div class="rq-bad"><strong>Weak:</strong> Only mentions request or response separately without the full flow.</div>
               </div>
             </div>
             <div class="rq-item" onclick="toggleRQ(this)">
-              <div class="rq-head"><div class="rq-num core">4</div><div class="rq-q">Your silent failure — is the user aware something went wrong?</div><span class="rq-tag tag-core">Core</span></div>
+              <div class="rq-head"><div class="rq-num">4</div><div class="rq-q">Locate and show me - where in Network Tab you found out how much time a request takes.</div><span class="rq-tag tag-core">Easy</span></div>
               <div class="rq-body">
-                <div class="rq-hint">If loud → "That sounds like an error the user would see. Can you make it silent?"</div>
-                <div class="rq-good"><strong>Good:</strong> User experiences consequence without knowing the cause — "delivery estimate says 20 min but actually takes 50. The user doesn't know the server used stale location data."</div>
-                <div class="rq-bad"><strong>Weak:</strong> "The page would crash." Loud failure, engineer's perspective.</div>
+                <div class="rq-hint">Look for the Time column or the waterfall entry in DevTools.</div>
+                <div class="rq-good"><strong>Good:</strong> Points to the Time column or the waterfall bar and explains that it shows how long the request took.</div>
+                <div class="rq-bad"><strong>Weak:</strong> Says network tab without identifying the timing indicator.</div>
               </div>
             </div>
           </div>
         </div>
         <div class="section-card">
           <div class="section-head" onclick="toggleSection(this)">
-            <div class="section-icon" style="background:var(--purple-bg)">🔬</div>
-            <div><div class="section-title">Deep questions</div><div class="section-sub">Strong submissions only</div></div>
+            <div class="section-icon" style="background:var(--purple-bg)">🟣</div>
+            <div><div class="section-title">Hard Questions</div><div class="section-sub">Week 2 reviewer questions</div></div>
             <span class="section-chev">▾</span>
           </div>
           <div class="section-body">
             <div class="rq-item" onclick="toggleRQ(this)">
-              <div class="rq-head"><div class="rq-num deep">5</div><div class="rq-q">You said Step X depends on Step Y. What if Step Y is slow but not broken — takes 3 seconds instead of 0.3? What does the user experience?</div><span class="rq-tag tag-deep">Deep</span></div>
+              <div class="rq-head"><div class="rq-num">1</div><div class="rq-q">Did you get to explore what a cookie is? What do you think are the uses of a Cookie? What do you think is the meaning of Third-party Cookies?</div><span class="rq-tag tag-core">Hard</span></div>
               <div class="rq-body">
-                <div class="rq-hint">Looking for: connection between delay and visible consequence.</div>
-                <div class="rq-good"><strong>Good:</strong> Names visible consequence — spinner, blank area, partial render — and what the user might do (wait, tap again, leave).</div>
-                <div class="rq-bad"><strong>Weak:</strong> "It would be slow." No specific user behaviour described.</div>
+                <div class="rq-hint">Look for an understanding of cookies as stored browser data and of third-party cookies as external tracking/data-sharing cookies.</div>
+                <div class="rq-good"><strong>Good:</strong> Explains cookies store session/user info, helps remember state, and says third-party cookies come from other domains used for analytics/ads.</div>
+                <div class="rq-bad"><strong>Weak:</strong> Calls cookies just a file or says third-party cookies are only bad without explaining why.</div>
               </div>
             </div>
             <div class="rq-item" onclick="toggleRQ(this)">
-              <div class="rq-head"><div class="rq-num deep">6</div><div class="rq-q">Look at your Week 1 map and your Week 2 trace side by side. Where does the trace touch the map? Which piece of data is the server looking up?</div><span class="rq-tag tag-deep">Deep</span></div>
+              <div class="rq-head"><div class="rq-num">2</div><div class="rq-q">Lets say, you hit a request from Chrome browser to a server. Where in the request cycle is the information about from which browser you hit is sent to the server?</div><span class="rq-tag tag-core">Hard</span></div>
               <div class="rq-body">
-                <div class="rq-hint">This tests whether they can connect both assignments as one continuous mental model.</div>
-                <div class="rq-good"><strong>Good:</strong> Connects both — "the cart data I mapped in Week 1 is what the server looks up in Step 4 of my trace."</div>
-                <div class="rq-bad"><strong>Weak:</strong> Treats both assignments as separate, cannot find the connection.</div>
+                <div class="rq-hint">Look for the browser identity in request headers.</div>
+                <div class="rq-good"><strong>Good:</strong> Says browser info is sent in HTTP headers such as User-Agent during the request.</div>
+                <div class="rq-bad"><strong>Weak:</strong> Says the browser identity is part of the URL or not sent at all.</div>
               </div>
             </div>
-          </div>
-        </div>
-        <div class="section-card">
-          <div class="section-head" onclick="toggleSection(this)">
-            <div class="section-icon" style="background:var(--amber-bg)">🚀</div>
-            <div><div class="section-title">Stretch</div><div class="section-sub">Exceptional students only</div></div>
-            <span class="section-chev">▾</span>
-          </div>
-          <div class="section-body">
             <div class="rq-item" onclick="toggleRQ(this)">
-              <div class="rq-head"><div class="rq-num stretch">7</div><div class="rq-q">If a thousand users all performed this action at the same second, which step in your trace would slow down first?</div><span class="rq-tag tag-stretch">Stretch</span></div>
+              <div class="rq-head"><div class="rq-num">3</div><div class="rq-q">Lets say, you have 2 requests to make to the server, where one request's input is dependent on other request's output. Eg: In Zomato, lets say, a customer wants to file a support query about an order they received. For that, the system must know which order was the latest delivered order today and then, it should take up the complaint. How will you make these 2 requests? Parallely or sequentially?</div><span class="rq-tag tag-core">Hard</span></div>
               <div class="rq-body">
-                <div class="rq-hint">Listen for: awareness that the server step is the bottleneck, that many users converge on one machine.</div>
-                <div class="rq-good"><strong>Good:</strong> Identifies server step as bottleneck — "the server is the single point where all requests arrive. The database query for everyone's feed would slow down first."</div>
-                <div class="rq-bad"><strong>Weak:</strong> "The internet would be slow." No system-level reasoning.</div>
+                <div class="rq-hint">Look for the dependency between request outputs and inputs.</div>
+                <div class="rq-good"><strong>Good:</strong> Explains they must be sequential because the second request needs the first request's result before it can run.</div>
+                <div class="rq-bad"><strong>Weak:</strong> Says parallel without accounting for the dependency.</div>
               </div>
             </div>
           </div>
@@ -549,8 +563,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
             <span class="section-chev">▾</span>
           </div>
           <div class="section-body">
-            <div class="callout green"><strong>Accept when —</strong> Trace has labeled steps and directional arrows. Server step describes specific data looked up. Network tab observations have actual numbers and request names. Silent failure is from user's perspective. All files in correct server folders.</div>
-            <div class="callout amber"><strong>Send back when —</strong> "The server processes the request" — no specifics. Part C written without opening the network tab. Trace skips the return journey or is too vague.</div>
+            <div class="callout green"><strong>Accept when —</strong> Answers show understanding of web request flow, client/server roles, and request timing. Hard questions show awareness of cookies, headers, and dependent requests.</div>
+            <div class="callout amber"><strong>Send back when —</strong> Answers confuse client/device, cannot locate timing in DevTools, or says dependent requests should run in parallel when they clearly need output first.</div>
           </div>
         </div>
       </div>
@@ -564,41 +578,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
       </div>
     </div>
 
-  </div>
-</div>
-
-<!-- RIGHT PANEL -->
-<div class="rightpanel" id="rightPanel">
-  <div class="rp-section">
-    <div class="rp-title">Week at a glance</div>
-    <div class="score-grid" id="scoreGrid">
-      <div class="score-card"><div class="sc-num">4</div><div class="sc-label">Parts</div></div>
-      <div class="score-card"><div class="sc-num">3</div><div class="sc-label">PDFs due</div></div>
-      <div class="score-card"><div class="sc-num">7</div><div class="sc-label">Review Qs</div></div>
-      <div class="score-card"><div class="sc-num">~15</div><div class="sc-label">Min review</div></div>
-    </div>
-  </div>
-  <div class="rp-section">
-    <div class="rp-title">Reviewer checklist</div>
-    <ul class="checklist" id="checklist">
-      <li><i class="ti ti-circle" aria-hidden="true"></i>Read all 3 PDFs before session</li>
-      <li><i class="ti ti-circle" aria-hidden="true"></i>Check files in correct server folders</li>
-      <li><i class="ti ti-circle" aria-hidden="true"></i>Check map has arrows not just a list</li>
-      <li><i class="ti ti-circle" aria-hidden="true"></i>Check dependencies have "because Z"</li>
-      <li><i class="ti ti-circle" aria-hidden="true"></i>Check failure is silent not loud</li>
-      <li><i class="ti ti-circle" aria-hidden="true"></i>Ask all 4 core questions minimum</li>
-    </ul>
-  </div>
-  <div class="rp-section">
-    <div class="rp-title">Learning outcomes</div>
-    <div id="outcomes">
-      <div class="outcome-item"><div class="outcome-dot" style="background:var(--accent)"></div>Describes product as a system not a feature list</div>
-      <div class="outcome-item"><div class="outcome-dot" style="background:var(--green)"></div>Understands technical vs behavioural user types</div>
-      <div class="outcome-item"><div class="outcome-dot" style="background:var(--purple)"></div>Can trace data changes from user actions</div>
-      <div class="outcome-item"><div class="outcome-dot" style="background:var(--amber)"></div>Can identify and articulate dependencies</div>
-      <div class="outcome-item"><div class="outcome-dot" style="background:var(--red)"></div>Understands silent vs loud failures</div>
-      <div class="outcome-item"><div class="outcome-dot" style="background:var(--blue)"></div>Has used SSH and SCP on a real server</div>
-    </div>
   </div>
 </div>
 
@@ -639,7 +618,6 @@ function showWeek(n,btn){
   if(el) el.style.display='block';
   else document.getElementById('wkLocked').style.display='block';
   activeWeek=n;
-  updateRightPanel(n);
   // reset tabs
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   const firstTab=document.querySelector('#wk'+n+' .tab');
@@ -647,21 +625,6 @@ function showWeek(n,btn){
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   const firstContent=document.querySelector('#wk'+n+' .tab-content');
   if(firstContent) firstContent.classList.add('active');
-}
-
-function updateRightPanel(n){
-  const d=weekData[n];
-  if(!d)return;
-  document.getElementById('scoreGrid').innerHTML=`
-    <div class="score-card"><div class="sc-num">${d.parts}</div><div class="sc-label">Parts</div></div>
-    <div class="score-card"><div class="sc-num">${d.pdfs}</div><div class="sc-label">PDFs due</div></div>
-    <div class="score-card"><div class="sc-num">${d.qs}</div><div class="sc-label">Review Qs</div></div>
-    <div class="score-card"><div class="sc-num">~${d.min}</div><div class="sc-label">Min review</div></div>`;
-  document.getElementById('checklist').innerHTML=d.checklist.map(c=>`<li><i class="ti ti-circle" aria-hidden="true"></i>${c}</li>`).join('');
-  document.getElementById('outcomes').innerHTML=d.outcomes.map((o,i)=>{
-    const colors=['var(--accent)','var(--green)','var(--purple)','var(--amber)','var(--red)','var(--blue)'];
-    return `<div class="outcome-item"><div class="outcome-dot" style="background:${colors[i%colors.length]}"></div>${o}</div>`;
-  }).join('');
 }
 
 function loadWeek(n){
@@ -675,7 +638,6 @@ function loadWeek(n){
   const el=document.getElementById('wk'+n);
   if(el) el.style.display='block';
   else document.getElementById('wkLocked').style.display='block';
-  updateRightPanel(n);
   // Reset tabs inside the week
   const week=document.getElementById('wk'+n);
   if(week){
