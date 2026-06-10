@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learn · HTML &amp; CSS Basics</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#faf9f7;--surface:#fff;--border:#e8e3db;--text:#1a1814;
+  --muted:#6b6560;--hint:#9c9590;--accent:#2563eb;--accent-bg:#eff6ff;
+  --green:#16a34a;--green-bg:#f0fdf4;--amber:#d97706;--amber-bg:#fffbeb;
+  --purple:#7c3aed;--purple-bg:#f5f3ff;--red:#dc2626;--red-bg:#fef2f2;
+  --teal:#0d9488;--teal-bg:#f0fdfa;
+  --radius:10px;--font:'Inter',system-ui,sans-serif;--mono:'Fira Mono',monospace
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;line-height:1.7}
+.shell{display:flex;min-height:100vh}
+.sidebar{width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:24px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.main{flex:1;padding:48px 40px 80px;display:flex;justify-content:center}
+.main-inner{width:100%;max-width:780px}
+.sb-brand{padding:0 20px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.sb-tag{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);margin-bottom:4px}
+.sb-title{font-size:17px;font-weight:700}
+.sb-meta{font-size:12px;color:var(--muted);margin-top:4px}
+.sb-progress{margin:12px 20px 4px;background:#f0ece6;border-radius:99px;height:5px}
+.sb-bar{height:5px;border-radius:99px;background:var(--accent);transition:width .4s}
+.sb-pct{font-size:11px;color:var(--hint);padding:0 20px;margin-bottom:12px}
+.sb-section{padding:0 12px}
+.sb-section-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--hint);padding:6px 8px 4px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:13px;color:var(--muted);border:none;background:none;width:100%;text-align:left;transition:background .15s}
+.sb-item:hover{background:#f4f1ec}
+.sb-item.active{background:var(--accent-bg);color:var(--accent);font-weight:600}
+.sb-item.done{color:var(--green)}
+.sb-item.done .sb-num{background:var(--green-bg);color:var(--green)}
+.sb-item.active .sb-num{background:var(--accent);color:#fff}
+.sb-num{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;background:#f0ece6;color:var(--hint)}
+.lesson{display:none}
+.lesson.active{display:block}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--hint);margin-bottom:8px}
+.ltitle{font-size:30px;font-weight:800;line-height:1.2;margin-bottom:6px}
+.ltitle em{font-style:normal;color:var(--accent)}
+.lsub{font-size:15px;color:var(--muted);margin-bottom:32px;line-height:1.6}
+h3{font-size:16px;font-weight:700;margin:28px 0 10px}
+p{color:#3d3830;margin-bottom:14px;line-height:1.75}
+.divider{border:none;border-top:1px solid var(--border);margin:32px 0}
+.callout{border-radius:var(--radius);padding:14px 16px;margin:20px 0;font-size:14px;line-height:1.6}
+.callout.blue{background:var(--accent-bg);border-left:3px solid var(--accent);color:#1e40af}
+.callout.green{background:var(--green-bg);border-left:3px solid var(--green);color:#166534}
+.callout.amber{background:var(--amber-bg);border-left:3px solid var(--amber);color:#92400e}
+.callout.purple{background:var(--purple-bg);border-left:3px solid var(--purple);color:#4c1d95}
+.callout.red{background:var(--red-bg);border-left:3px solid var(--red);color:#991b1b}
+.callout.teal{background:var(--teal-bg);border-left:3px solid var(--teal);color:#0f766e}
+.callout strong{font-weight:700}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:20px 0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.card-icon{font-size:22px;margin-bottom:8px}
+.card strong{display:block;font-size:13px;font-weight:700;margin-bottom:4px}
+.card p{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
+.example-table{width:100%;border-collapse:collapse;font-size:13px;margin:16px 0}
+.example-table th{background:#f7f4ef;padding:9px 14px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--hint);border-bottom:1px solid var(--border)}
+.example-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:#3d3830;vertical-align:top}
+.example-table tr:last-child td{border-bottom:none}
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:40px;padding-top:24px;border-top:1px solid var(--border)}
+.btn{padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text);transition:all .15s}
+.btn:hover{background:#f0ece6}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.primary:hover{background:#1d4ed8}
+.btn:disabled{opacity:.3;cursor:not-allowed}
+.play-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--muted);transition:all .15s;margin-bottom:14px}
+.play-btn:hover{background:var(--accent-bg);color:var(--accent);border-color:var(--accent)}
+/* Three-layer viz */
+.layer-stack{display:flex;flex-direction:column;gap:8px;margin:20px 0}
+.layer{border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;gap:14px;opacity:0;transform:translateY(10px);transition:opacity .5s,transform .5s}
+.layer.show{opacity:1;transform:translateY(0)}
+.layer-icon{font-size:20px;flex-shrink:0}
+.layer-body strong{display:block;font-size:13px;font-weight:700;margin-bottom:2px}
+.layer-body span{font-size:12px;line-height:1.5}
+/* Tag cards */
+.tag-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:16px 0}
+.tag-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;cursor:pointer;transition:all .2s}
+.tag-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 12px rgba(37,99,235,.08)}
+.tag-card.revealed{border-color:var(--accent);background:var(--accent-bg)}
+.tag-name{font-size:14px;font-weight:700;font-family:var(--mono);color:var(--accent);margin-bottom:2px;display:flex;align-items:center;justify-content:space-between}
+.tag-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px}
+.tag-hint{font-size:11px;color:var(--hint);margin-bottom:4px}
+.tag-desc{font-size:12px;color:#1e40af;line-height:1.5;display:none}
+.tag-card.revealed .tag-desc{display:block;animation:fsl .3s ease}
+@keyframes fsl{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+/* Before / after */
+.ba-wrap{margin:20px 0}
+.ba-tabs{display:flex;gap:4px;margin-bottom:0}
+.ba-tab{padding:8px 18px;border-radius:8px 8px 0 0;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);border-bottom:none;background:#f7f4ef;color:var(--muted);transition:all .15s}
+.ba-tab.active{background:var(--surface);color:var(--accent);border-top:2px solid var(--accent)}
+.ba-panel{display:none;border:1px solid var(--border);border-radius:0 8px 8px 8px;padding:20px;background:var(--surface)}
+.ba-panel.active{display:block}
+/* Styled mock */
+.mock-page{font-family:var(--font);font-size:14px}
+.mock-nav{background:#1e3a5f;padding:12px 16px;border-radius:6px;display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.mock-nav-title{color:#fff;font-size:13px;font-weight:700}
+.mock-nav-link{color:#93c5fd;font-size:12px;text-decoration:none}
+.mock-hero{background:#f0f7ff;border:1px solid #bfdbfe;border-radius:8px;padding:16px;margin-bottom:12px}
+.mock-h1{font-size:20px;font-weight:800;color:#1e3a5f;margin-bottom:6px}
+.mock-h2{font-size:15px;font-weight:700;color:#374151;margin:12px 0 6px}
+.mock-p{font-size:13px;color:#4b5563;line-height:1.7;margin-bottom:8px}
+.mock-img-box{width:100%;height:60px;background:#dbeafe;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#3b82f6;margin-bottom:10px;font-weight:600}
+.mock-link{color:#2563eb;text-decoration:underline;font-size:13px}
+/* Unstyled mock */
+.unstyled-page{font-family:var(--mono);font-size:13px;color:#1a1814;line-height:1.9;white-space:pre-wrap;word-break:break-word}
+/* CSS quiz */
+.csq-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin:20px 0}
+.csq-preview{background:#f7f4ef;border-radius:8px;padding:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:center;min-height:64px}
+.csq-q{font-size:14px;font-weight:600;margin-bottom:12px;line-height:1.5}
+.csq-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.csq-opt{padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;font-weight:600;font-family:var(--mono);transition:all .15s;text-align:left}
+.csq-opt:hover{border-color:var(--accent);background:var(--accent-bg);color:var(--accent)}
+.csq-opt.ok{border-color:var(--green);background:var(--green-bg);color:var(--green);pointer-events:none}
+.csq-opt.bad{border-color:var(--red);background:var(--red-bg);color:var(--red);pointer-events:none}
+.csq-opt.off{pointer-events:none;opacity:.45}
+.csq-fb{font-size:13px;min-height:20px;font-weight:500;margin:4px 0;line-height:1.5}
+.csq-score{font-size:11px;color:var(--muted)}
+/* DevTools mock */
+.dt-wrap{background:#1e1e1e;border-radius:12px;overflow:hidden;margin:20px 0}
+.dt-topbar{background:#2d2d2d;padding:8px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #3d3d3d}
+.dt-dot{width:10px;height:10px;border-radius:50%}
+.dt-tabrow{display:flex;gap:2px;padding:0 4px}
+.dt-dtab{padding:5px 12px;border-radius:4px 4px 0 0;font-size:11px;color:#888;cursor:pointer;font-family:var(--mono)}
+.dt-dtab.on{background:#1e1e1e;color:#ccc}
+.dt-body{display:grid;grid-template-columns:55% 45%;min-height:220px}
+.dt-left{padding:10px 14px;border-right:1px solid #3d3d3d;font-family:var(--mono);font-size:12px;line-height:2;overflow-x:auto}
+.dt-right{padding:10px 14px;font-family:var(--mono);font-size:12px;line-height:2}
+.dt-row{display:flex;gap:0;cursor:pointer;padding:0 4px;border-radius:3px;transition:background .15s;white-space:nowrap}
+.dt-row:hover{background:rgba(255,255,255,.07)}
+.dt-row.sel{background:rgba(37,99,235,.25)}
+.dt-i1{padding-left:16px}
+.dt-i2{padding-left:32px}
+.dt-i3{padding-left:48px}
+.dt-tag{color:#4ec9b0}
+.dt-attr{color:#9cdcfe}
+.dt-val{color:#ce9178}
+.dt-text{color:#6a9955}
+.dt-close{color:#4ec9b0}
+.dt-sel-label{font-size:10px;color:#6a9955;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+.dt-prop{color:#9cdcfe}
+.dt-propval{color:#ce9178}
+.dt-source{color:#6a9955;font-size:10px}
+.dt-info{font-size:11px;color:#888;padding:6px 14px;border-top:1px solid #3d3d3d}
+/* Structure builder */
+.struct-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin:20px 0}
+.struct-row{display:flex;align-items:flex-start;gap:8px;padding:5px 8px;border-radius:6px;margin:2px 0;cursor:pointer;transition:all .15s;opacity:0;transform:translateX(-8px)}
+.struct-row.vis{opacity:1;transform:translateX(0);transition:opacity .4s,transform .4s}
+.struct-row:hover{background:#f4f1ec}
+.struct-row.hi{background:var(--accent-bg)}
+.si1{padding-left:20px}
+.si2{padding-left:40px}
+.si3{padding-left:60px}
+.struct-tag{font-size:11px;font-weight:700;font-family:var(--mono);color:var(--accent);padding:2px 7px;background:var(--accent-bg);border-radius:4px;flex-shrink:0;white-space:nowrap}
+.struct-lbl{font-size:12px;color:var(--muted)}
+.struct-info{background:#f7f4ef;border-radius:8px;padding:11px 14px;margin-top:8px;font-size:13px;color:#3d3830;line-height:1.6;min-height:48px;border:1px solid var(--border)}
+/* Tutor */
+.tutor-fab{position:fixed;bottom:28px;right:28px;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:22px;box-shadow:0 4px 16px rgba(37,99,235,.35);z-index:100;transition:transform .2s}
+.tutor-fab:hover{transform:scale(1.08)}
+.tutor-panel{position:fixed;bottom:92px;right:28px;width:340px;height:480px;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.12);z-index:100;display:none;flex-direction:column;overflow:hidden}
+.tutor-panel.open{display:flex}
+.t-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.t-av{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.t-info strong{display:block;font-size:13px;font-weight:700}
+.t-info span{font-size:11px;color:var(--hint)}
+.t-close{margin-left:auto;background:none;border:none;cursor:pointer;font-size:18px;color:var(--hint)}
+.t-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:88%;font-size:12.5px;line-height:1.6;padding:10px 12px;border-radius:12px}
+.msg.ai{background:#f4f1ec;color:var(--text);align-self:flex-start;border-bottom-left-radius:3px}
+.msg.user{background:var(--accent);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.msg.typing{background:#f4f1ec;align-self:flex-start;padding:12px 16px}
+.dots{display:flex;gap:4px;align-items:center}
+.dots span{width:6px;height:6px;border-radius:50%;background:var(--hint);animation:bounce .9s infinite}
+.dots span:nth-child(2){animation-delay:.15s}
+.dots span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.t-input-row{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end}
+.t-input{flex:1;resize:none;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:var(--font);outline:none;line-height:1.5;max-height:80px;background:var(--bg)}
+.t-input:focus{border-color:var(--accent)}
+.t-send{width:32px;height:32px;border-radius:8px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.t-send:disabled{background:#c0c8e0;cursor:not-allowed}
+.t-disc{font-size:10px;color:var(--hint);text-align:center;padding:0 12px 8px;line-height:1.4}
+@media(max-width:700px){.sidebar{display:none}.main{padding:24px 20px 60px}}
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-tag">Week 4 · No code</div>
+    <div class="sb-title">HTML &amp; CSS Basics</div>
+    <div class="sb-meta">6 Lessons · ~60 min</div>
+  </div>
+  <div class="sb-progress"><div class="sb-bar" id="progressBar" style="width:0%"></div></div>
+  <div class="sb-pct" id="progressPct">Progress 0%</div>
+  <div class="sb-section">
+    <div class="sb-section-label">Concepts</div>
+    <button class="sb-item active" onclick="go(0)" id="nav0"><span class="sb-num">1</span>Structure, style, behaviour</button>
+    <button class="sb-item" onclick="go(1)" id="nav1"><span class="sb-num">2</span>Reading HTML tags</button>
+    <button class="sb-item" onclick="go(2)" id="nav2"><span class="sb-num">3</span>CSS is appearance</button>
+    <button class="sb-item" onclick="go(3)" id="nav3"><span class="sb-num">4</span>Reading CSS properties</button>
+    <button class="sb-item" onclick="go(4)" id="nav4"><span class="sb-num">5</span>The DevTools inspector</button>
+    <button class="sb-item" onclick="go(5)" id="nav5"><span class="sb-num">6</span>Reading a page's structure</button>
+  </div>
+</nav>
+
+<main class="main"><div class="main-inner">
+
+<!-- L0 -->
+<div class="lesson active" id="lesson0">
+  <div class="eyebrow">Lesson 01 of 06</div>
+  <h1 class="ltitle">Structure, style, <em>behaviour</em></h1>
+  <p class="lsub">Every web page is built from three separate ingredients. This lesson shows you what each one does — and why they are kept separate.</p>
+
+  <h3>One page, three ingredients</h3>
+  <p>In Week 3 you learned that HTML gives a page its skeleton, CSS gives it its appearance, and JavaScript gives it behaviour. Now you are going to learn what that actually means by looking at each ingredient directly.</p>
+  <p>The separation is not cosmetic. It is deliberate design. Think of building a hospital's information display board:</p>
+
+  <div class="cards">
+    <div class="card"><div class="card-icon">🏗️</div><strong>Structure</strong><p>The board has a heading, department list, room numbers, and a map. The structure describes what is there — not what it looks like.</p></div>
+    <div class="card"><div class="card-icon">🎨</div><strong>Appearance</strong><p>The heading is large and red. The department names are bold. The map is on the right. Appearance rules are applied to the structure.</p></div>
+    <div class="card"><div class="card-icon">⚡</div><strong>Behaviour</strong><p>Clicking a department highlights its room. Typing in the search box filters the list. Behaviour is a reaction to user actions.</p></div>
+  </div>
+
+  <div class="callout blue"><strong>The key idea —</strong> HTML describes what exists and its role. CSS describes how each thing should look. If you remove CSS, the page loses all visual formatting — but the content is still there. If you remove HTML, there is nothing left to style.</div>
+
+  <hr class="divider">
+  <h3>Watch the three layers appear — click Reveal</h3>
+  <button class="play-btn" onclick="revealLayers()">▶ Reveal layers</button>
+
+  <div class="layer-stack">
+    <div class="layer" id="lyr0" style="background:#eff6ff;border:1px solid #bfdbfe">
+      <div class="layer-icon">🏗️</div>
+      <div class="layer-body">
+        <strong style="color:#1e40af">HTML — Structure</strong>
+        <span style="color:#1e40af">Describes what every piece of content IS: a heading, a paragraph, a link, an image. It has no opinion about colour, size, or font.</span>
+      </div>
+    </div>
+    <div class="layer" id="lyr1" style="background:#f0fdf4;border:1px solid #bbf7d0">
+      <div class="layer-icon">🎨</div>
+      <div class="layer-body">
+        <strong style="color:#166534">CSS — Appearance</strong>
+        <span style="color:#166534">Attaches visual rules to HTML elements. "All headings should be dark blue and 28px tall." "All paragraphs should have 16px of space below them." CSS needs HTML to have something to attach to.</span>
+      </div>
+    </div>
+    <div class="layer" id="lyr2" style="background:#fffbeb;border:1px solid #fde68a">
+      <div class="layer-icon">⚡</div>
+      <div class="layer-body">
+        <strong style="color:#92400e">JavaScript — Behaviour</strong>
+        <span style="color:#92400e">Responds to user actions and updates the page without reloading. Used for interactivity, not structure or appearance. This week, you are not reading JavaScript — just HTML and CSS.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout amber"><strong>This week —</strong> you are going to read HTML and CSS directly. Not the JavaScript layer — that comes later. HTML and CSS are human-readable: once you know what the pieces mean, reading them is like reading a well-organised document.</div>
+
+  <div class="nav"><button class="btn" disabled>← Previous</button><button class="btn primary" onclick="go(1)">Reading HTML tags →</button></div>
+</div>
+
+<!-- L1 -->
+<div class="lesson" id="lesson1">
+  <div class="eyebrow">Lesson 02 of 06</div>
+  <h1 class="ltitle">Reading <em>HTML tags</em></h1>
+  <p class="lsub">HTML is made of tags. Each tag declares the role of a piece of content. Click each tag below to see what it does.</p>
+
+  <h3>What a tag looks like — without writing code</h3>
+  <p>An HTML tag is a label that wraps around a piece of content. The label says: "this piece of content is a heading," or "this is a paragraph," or "this is an image." You do not need to know how to write tags this week — you need to recognise them when you see them in the DevTools panel.</p>
+  <p>Every tag has an opening label and a closing label. The content lives between them. Some tags (like images) are self-contained — they carry their own information without wrapping around any text.</p>
+
+  <div class="callout teal"><strong>What you will see in DevTools —</strong> the HTML panel shows every element on the page with its tags, like reading the outline of a document. The tag name tells you the role. Attributes (name="value" pairs after the tag name) tell you extra information about that specific element.</div>
+
+  <hr class="divider">
+  <h3>Click each tag to reveal its role</h3>
+
+  <div class="tag-grid">
+    <div class="tag-card" onclick="this.classList.toggle('revealed')">
+      <div class="tag-name"><span>&lt;h1&gt;</span><span class="tag-badge" style="background:#eff6ff;color:#1e40af">Heading</span></div>
+      <div class="tag-hint">The most important heading on the page</div>
+      <div class="tag-desc">The main page heading — there is typically only one. Tells the browser (and search engines) what the page is primarily about. h1 through h6 form a hierarchy of headings, h1 being most important.</div>
+    </div>
+    <div class="tag-card" onclick="this.classList.toggle('revealed')">
+      <div class="tag-name"><span>&lt;h2&gt; &lt;h3&gt;</span><span class="tag-badge" style="background:#eff6ff;color:#1e40af">Heading</span></div>
+      <div class="tag-hint">Section and sub-section headings</div>
+      <div class="tag-desc">Secondary and tertiary headings — used to break the page into sections and sub-sections. Like chapters and sub-chapters in a book. You will see multiple h2s and h3s on a single page.</div>
+    </div>
+    <div class="tag-card" onclick="this.classList.toggle('revealed')">
+      <div class="tag-name"><span>&lt;p&gt;</span><span class="tag-badge" style="background:#f0fdf4;color:#166534">Text</span></div>
+      <div class="tag-hint">A paragraph of text</div>
+      <div class="tag-desc">Contains a block of body text — a paragraph. The browser adds space above and below it by default. If you see a block of reading text on a page, it is almost certainly inside a p tag.</div>
+    </div>
+    <div class="tag-card" onclick="this.classList.toggle('revealed')">
+      <div class="tag-name"><span>&lt;a&gt;</span><span class="tag-badge" style="background:#f0fdfa;color:#0f766e">Link</span></div>
+      <div class="tag-hint">A clickable link to another page or section</div>
+      <div class="tag-desc">Creates a hyperlink. The href attribute (short for "hypertext reference") holds the destination URL. In DevTools you can see exactly where every link points by reading its href value.</div>
+    </div>
+    <div class="tag-card" onclick="this.classList.toggle('revealed')">
+      <div class="tag-name"><span>&lt;img&gt;</span><span class="tag-badge" style="background:#fffbeb;color:#92400e">Media</span></div>
+      <div class="tag-hint">An image embedded in the page</div>
+      <div class="tag-desc">Places an image. The src attribute tells the browser where the image file is. The alt attribute is a text description for screen readers and for when the image cannot load. This tag has no closing tag — it is self-contained.</div>
+    </div>
+    <div class="tag-card" onclick="this.classList.toggle('revealed')">
+      <div class="tag-name"><span>&lt;ul&gt; &lt;li&gt;</span><span class="tag-badge" style="background:#f5f3ff;color:#6d28d9">List</span></div>
+      <div class="tag-hint">An unordered list with items</div>
+      <div class="tag-desc">ul is the list container (unordered = bullet points). Each item in the list is inside an li tag. Navigation menus on most websites are actually a ul with li items inside — even though they look nothing like a bullet list once CSS is applied.</div>
+    </div>
+    <div class="tag-card" onclick="this.classList.toggle('revealed')">
+      <div class="tag-name"><span>&lt;div&gt;</span><span class="tag-badge" style="background:#f7f4ef;color:#6b6560">Container</span></div>
+      <div class="tag-hint">A generic container — the most common tag</div>
+      <div class="tag-desc">A box that groups other elements together, with no inherent meaning of its own. Used extensively for layout. In DevTools you will see hundreds of div tags — they are the structural boxes that CSS then sizes, colours, and positions.</div>
+    </div>
+    <div class="tag-card" onclick="this.classList.toggle('revealed')">
+      <div class="tag-name"><span>&lt;header&gt;</span><span class="tag-badge" style="background:#eff6ff;color:#1e40af">Landmark</span></div>
+      <div class="tag-hint">The page's top section</div>
+      <div class="tag-desc">Contains introductory content — typically the logo, site name, and navigation. Tells browsers and assistive tools "this is the header of the page." Functionally similar to div, but with a meaningful role.</div>
+    </div>
+    <div class="tag-card" onclick="this.classList.toggle('revealed')">
+      <div class="tag-name"><span>&lt;nav&gt;</span><span class="tag-badge" style="background:#eff6ff;color:#1e40af">Landmark</span></div>
+      <div class="tag-hint">Navigation links section</div>
+      <div class="tag-desc">Contains the main navigation links. Marks a section of the page as navigational. Usually contains a ul with li and a elements inside. Despite containing a list, CSS typically makes it look like a horizontal menu bar.</div>
+    </div>
+    <div class="tag-card" onclick="this.classList.toggle('revealed')">
+      <div class="tag-name"><span>&lt;main&gt;</span><span class="tag-badge" style="background:#f0fdf4;color:#166534">Landmark</span></div>
+      <div class="tag-hint">The main content of the page</div>
+      <div class="tag-desc">Wraps the dominant content of the page. There should only be one main per page. Everything in here is the actual content a user came for — not navigation, not footer, not sidebar. Look for this tag to find the important content fast.</div>
+    </div>
+    <div class="tag-card" onclick="this.classList.toggle('revealed')">
+      <div class="tag-name"><span>&lt;footer&gt;</span><span class="tag-badge" style="background:#f7f4ef;color:#6b6560">Landmark</span></div>
+      <div class="tag-hint">The bottom section of the page</div>
+      <div class="tag-desc">Contains closing content: copyright, additional links, contact details. Comes at the end of the page's HTML structure. In DevTools you can scroll to the bottom of the HTML tree to find it.</div>
+    </div>
+    <div class="tag-card" onclick="this.classList.toggle('revealed')">
+      <div class="tag-name"><span>&lt;span&gt;</span><span class="tag-badge" style="background:#f7f4ef;color:#6b6560">Inline</span></div>
+      <div class="tag-hint">An inline container for text styling</div>
+      <div class="tag-desc">Like a div but for wrapping a small piece of text inline — to apply CSS to a single word or phrase within a paragraph. On its own it has no visible effect; its purpose is to give CSS something to target.</div>
+    </div>
+  </div>
+
+  <div class="callout green"><strong>Nesting —</strong> Tags live inside other tags. A nav contains a ul which contains li elements which contain a tags. The DevTools panel shows this as an indented tree. The deeper the indent, the more deeply nested the element. When you map a page's structure, you are describing this nesting.</div>
+
+  <div class="nav"><button class="btn" onclick="go(0)">← Structure, style, behaviour</button><button class="btn primary" onclick="go(2)">CSS is appearance →</button></div>
+</div>
+
+<!-- L2 -->
+<div class="lesson" id="lesson2">
+  <div class="eyebrow">Lesson 03 of 06</div>
+  <h1 class="ltitle">CSS is <em>appearance</em></h1>
+  <p class="lsub">CSS is the layer that makes a page look the way it looks. Without it, all pages look the same — just text and images with browser defaults.</p>
+
+  <h3>How CSS connects to HTML</h3>
+  <p>CSS works by targeting HTML elements and applying visual rules to them. Think of it as a stylesheet that says: "find every heading on this page, and make it 28px, dark blue, and bold." The heading's content is still in the HTML — CSS only changes how it looks.</p>
+  <p>The targeting mechanism (called a selector) can point to a tag type ("all h1 elements"), or to a specific element by its id or class attribute. When you see a class or id attribute in DevTools, that is the hook CSS uses to target that specific element.</p>
+
+  <div class="callout blue"><strong>Key insight —</strong> CSS does not exist without HTML to attach to. And HTML without CSS still shows all its content — just without any visual design. The separation means a developer can completely redesign a page's look without touching the content at all.</div>
+
+  <hr class="divider">
+  <h3>The same page — with and without CSS</h3>
+  <p>Both panels below show the same library catalogue page. Toggle between them to see what CSS adds.</p>
+
+  <div class="ba-wrap">
+    <div class="ba-tabs">
+      <button class="ba-tab active" onclick="switchBA(0)">With CSS</button>
+      <button class="ba-tab" onclick="switchBA(1)">Without CSS</button>
+    </div>
+    <div class="ba-panel active" id="ba0">
+      <div class="mock-page">
+        <div class="mock-nav">
+          <span class="mock-nav-title">City Library</span>
+          <span class="mock-nav-link" style="margin-left:auto">Catalogue</span>
+          <span class="mock-nav-link" style="margin-left:12px">My Account</span>
+          <span class="mock-nav-link" style="margin-left:12px">Help</span>
+        </div>
+        <div class="mock-hero">
+          <div class="mock-h1">Search the Catalogue</div>
+          <div class="mock-p">Find books, journals, and digital resources from our collection of over 400,000 items.</div>
+        </div>
+        <div class="mock-img-box">📚 Featured Collection: Science &amp; Technology</div>
+        <div class="mock-h2">Recently Added</div>
+        <div class="mock-p">The following books were added to the collection this month. Visit the New Arrivals section to browse the full list.</div>
+        <a class="mock-link">View all new arrivals →</a>
+      </div>
+    </div>
+    <div class="ba-panel" id="ba1">
+      <div class="unstyled-page">City Library
+Catalogue   My Account   Help
+
+Search the Catalogue
+
+Find books, journals, and digital resources from our collection of over 400,000 items.
+
+[image: Featured Collection: Science &amp; Technology]
+
+Recently Added
+
+The following books were added to the collection this month. Visit the New Arrivals section to browse the full list.
+
+View all new arrivals →</div>
+    </div>
+  </div>
+
+  <div class="callout amber"><strong>What you are seeing —</strong> both panels contain exactly the same words and images. The HTML structure is identical. Only the CSS rules are different. The "Without CSS" view is what a browser would show if you stripped all styling — the raw content with default browser formatting only.</div>
+
+  <hr class="divider">
+  <h3>CSS in DevTools — where it lives</h3>
+  <p>When you select an element in the HTML panel, the Styles panel shows you every CSS rule applied to that element. You see the property, its value, and which stylesheet it came from. Some properties come from the page's own CSS. Some come from the browser's default stylesheet. You can see them all.</p>
+
+  <table class="example-table">
+    <thead><tr><th>What you see in Styles panel</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr><td><span style="font-family:var(--mono);font-size:12px;color:#2563eb">font-size: 28px</span></td><td>The text in this element is 28 pixels tall</td></tr>
+      <tr><td><span style="font-family:var(--mono);font-size:12px;color:#2563eb">color: #1e3a5f</span></td><td>The text colour is a dark navy blue (hex code)</td></tr>
+      <tr><td><span style="font-family:var(--mono);font-size:12px;color:#2563eb">margin-bottom: 16px</span></td><td>There are 16 pixels of space below this element</td></tr>
+      <tr><td><span style="font-family:var(--mono);font-size:12px;color:#2563eb">background-color: #f0f7ff</span></td><td>The element has a light blue background</td></tr>
+      <tr><td><span style="font-family:var(--mono);font-size:12px;color:#2563eb">border-radius: 8px</span></td><td>The corners of this element are rounded by 8 pixels</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout teal"><strong>You do not need to memorise all CSS properties —</strong> you need to be able to read them. A property name like <strong>font-size</strong>, <strong>background-color</strong>, or <strong>border-radius</strong> describes exactly what it controls. Read the name, read the value, describe the visual effect. That is the skill this week.</div>
+
+  <div class="nav"><button class="btn" onclick="go(1)">← Reading HTML tags</button><button class="btn primary" onclick="go(3)">Reading CSS properties →</button></div>
+</div>
+
+<!-- L3 -->
+<div class="lesson" id="lesson3">
+  <div class="eyebrow">Lesson 04 of 06</div>
+  <h1 class="ltitle">Reading <em>CSS properties</em></h1>
+  <p class="lsub">Practice connecting CSS property names and values to the visual effects they produce. This is the core reading skill for your assignment.</p>
+
+  <h3>The reading pattern</h3>
+  <p>Every CSS rule in the Styles panel follows the same pattern: a property name, a colon, and a value. To read it correctly, ask: what does this property control visually, and what does this specific value produce?</p>
+  <p>For example: <span style="font-family:var(--mono);font-size:13px;background:#f0ece6;padding:2px 8px;border-radius:4px">font-weight: 700</span> — the property is font-weight (how bold the text is), the value is 700 (bold — the scale runs 100 to 900). Plain English: the text is rendered bold.</p>
+
+  <hr class="divider">
+  <h3>CSS property quiz — what does this property produce?</h3>
+  <div class="csq-wrap">
+    <div class="csq-preview" id="csqPreview"></div>
+    <div class="csq-q" id="csqQ">Loading...</div>
+    <div class="csq-opts" id="csqOpts"></div>
+    <div class="csq-fb" id="csqFb"></div>
+    <div class="csq-score" id="csqSc">Question 1 of 7</div>
+  </div>
+
+  <hr class="divider">
+  <h3>Common properties — reference</h3>
+  <table class="example-table">
+    <thead><tr><th>Property</th><th>What it controls</th><th>Example value</th></tr></thead>
+    <tbody>
+      <tr><td><span style="font-family:var(--mono);font-size:12px">font-size</span></td><td>How large the text is</td><td>16px, 1.2rem, 2em</td></tr>
+      <tr><td><span style="font-family:var(--mono);font-size:12px">font-weight</span></td><td>How bold the text is</td><td>400 (normal), 700 (bold)</td></tr>
+      <tr><td><span style="font-family:var(--mono);font-size:12px">color</span></td><td>Text colour</td><td>#1a1a1a, red, rgb(0,0,0)</td></tr>
+      <tr><td><span style="font-family:var(--mono);font-size:12px">background-color</span></td><td>Background colour of the element</td><td>#fff, transparent, #eff6ff</td></tr>
+      <tr><td><span style="font-family:var(--mono);font-size:12px">margin</span></td><td>Space outside the element (pushes other elements away)</td><td>16px, 8px 0, auto</td></tr>
+      <tr><td><span style="font-family:var(--mono);font-size:12px">padding</span></td><td>Space inside the element (between content and edge)</td><td>12px, 8px 16px</td></tr>
+      <tr><td><span style="font-family:var(--mono);font-size:12px">border</span></td><td>A line drawn around the element</td><td>1px solid #ccc</td></tr>
+      <tr><td><span style="font-family:var(--mono);font-size:12px">border-radius</span></td><td>How rounded the corners are</td><td>4px (slightly), 50% (circle)</td></tr>
+      <tr><td><span style="font-family:var(--mono);font-size:12px">width / height</span></td><td>Explicit dimensions of the element</td><td>100%, 200px, auto</td></tr>
+      <tr><td><span style="font-family:var(--mono);font-size:12px">display</span></td><td>How the element participates in layout</td><td>block, flex, none (hidden)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout purple"><strong>Reading shorthand values —</strong> some properties accept multiple values at once. <span style="font-family:var(--mono);font-size:12px">margin: 8px 16px</span> means "8px top and bottom, 16px left and right." <span style="font-family:var(--mono);font-size:12px">border: 1px solid #ccc</span> means "1 pixel thick, solid line, light grey colour." The DevTools panel will show you the individual values when you expand them.</div>
+
+  <div class="nav"><button class="btn" onclick="go(2)">← CSS is appearance</button><button class="btn primary" onclick="go(4)">The DevTools inspector →</button></div>
+</div>
+
+<!-- L4 -->
+<div class="lesson" id="lesson4">
+  <div class="eyebrow">Lesson 05 of 06</div>
+  <h1 class="ltitle">The <em>DevTools</em> inspector</h1>
+  <p class="lsub">Your browser has a built-in tool that lets you see the HTML and CSS of any page. Click the rows below to explore a mock DevTools panel.</p>
+
+  <h3>What DevTools shows you</h3>
+  <p>The developer tools in your browser contain an inspector: a panel split into two sides. The left side shows the live HTML structure of the page — every element, nested exactly as the browser has built it. The right side shows the CSS styles applied to whichever element you have selected on the left.</p>
+  <p>These two panels are connected. Click an element in the HTML panel — the styles panel immediately updates to show that element's CSS.</p>
+
+  <div class="callout blue"><strong>How to open it —</strong> there is a keyboard shortcut and a right-click menu option. Research "how to open browser developer tools" to find both. The panel can be docked to the bottom, side, or a separate window. Find what works for your screen size.</div>
+
+  <hr class="divider">
+  <h3>Click elements in the mock HTML panel to see their styles</h3>
+
+  <div class="dt-wrap">
+    <div class="dt-topbar">
+      <div class="dt-dot" style="background:#ff5f57"></div>
+      <div class="dt-dot" style="background:#ffbd2e"></div>
+      <div class="dt-dot" style="background:#28c840"></div>
+      <div class="dt-tabrow" style="margin-left:8px">
+        <div class="dt-dtab on">Elements</div>
+        <div class="dt-dtab">Console</div>
+        <div class="dt-dtab">Network</div>
+      </div>
+    </div>
+    <div class="dt-body">
+      <div class="dt-left">
+        <div style="color:#888;font-size:10px;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">HTML Structure</div>
+        <div class="dt-row" id="dtr0" onclick="dtSelect(0)"><span class="dt-tag">&lt;body&gt;</span></div>
+        <div class="dt-row dt-i1" id="dtr1" onclick="dtSelect(1)"><span class="dt-tag">&lt;header&gt;</span></div>
+        <div class="dt-row dt-i2" id="dtr2" onclick="dtSelect(2)"><span class="dt-tag">&lt;nav&gt;</span><span class="dt-text" style="margin-left:4px;font-size:10px"> ... links ... </span><span class="dt-close">&lt;/nav&gt;</span></div>
+        <div class="dt-row dt-i1" id="dtr3" onclick="dtSelect(3)"><span class="dt-tag">&lt;main&gt;</span></div>
+        <div class="dt-row dt-i2" id="dtr4" onclick="dtSelect(4)"><span class="dt-tag">&lt;h1&gt;</span><span class="dt-text" style="margin-left:4px">Search the Catalogue</span><span class="dt-close">&lt;/h1&gt;</span></div>
+        <div class="dt-row dt-i2" id="dtr5" onclick="dtSelect(5)"><span class="dt-tag">&lt;p&gt;</span><span class="dt-text" style="margin-left:4px">Find books and resources...</span><span class="dt-close">&lt;/p&gt;</span></div>
+        <div class="dt-row dt-i2" id="dtr6" onclick="dtSelect(6)"><span class="dt-tag">&lt;img</span> <span class="dt-attr">src</span>=<span class="dt-val">"cover.jpg"</span> <span class="dt-attr">alt</span>=<span class="dt-val">"Book cover"</span><span class="dt-tag">&gt;</span></div>
+        <div class="dt-row dt-i2" id="dtr7" onclick="dtSelect(7)"><span class="dt-tag">&lt;a</span> <span class="dt-attr">href</span>=<span class="dt-val">"/catalogue/new"</span><span class="dt-tag">&gt;</span><span class="dt-text" style="margin-left:2px">View new arrivals</span><span class="dt-close">&lt;/a&gt;</span></div>
+        <div class="dt-row dt-i1" id="dtr8" onclick="dtSelect(8)"><span class="dt-tag">&lt;footer&gt;</span><span class="dt-text" style="margin-left:4px;font-size:10px"> ... </span><span class="dt-close">&lt;/footer&gt;</span></div>
+      </div>
+      <div class="dt-right" id="dtRight">
+        <div style="color:#888;font-size:10px;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Styles</div>
+        <div style="color:#555;font-size:12px;margin-top:20px;text-align:center">← Click an element to see its styles</div>
+      </div>
+    </div>
+    <div class="dt-info" id="dtInfo">Tip: click any element in the HTML panel. The Styles panel on the right updates immediately.</div>
+  </div>
+
+  <div class="callout teal"><strong>What the Styles panel shows —</strong> every CSS property currently applied to the selected element, its value, and where the rule comes from. Properties crossed out in the panel have been overridden by a more specific rule — this is how you find conflicts between CSS rules.</div>
+
+  <hr class="divider">
+  <h3>Navigating to a specific element</h3>
+  <p>You do not have to scroll through the entire HTML tree to find an element. There is a way to right-click directly on the thing you see on the page and jump straight to it in the panel. Research the term "inspect element" to find it.</p>
+
+  <div class="callout amber"><strong>What "live" means —</strong> the DevTools panel shows the live DOM — what the browser has built in memory after processing the HTML and running any JavaScript. If the page updates after you load it (a notification appears, a counter changes), the panel updates too. You are seeing the page as it is right now, not as it was when it was written.</div>
+
+  <div class="nav"><button class="btn" onclick="go(3)">← Reading CSS properties</button><button class="btn primary" onclick="go(5)">Reading a page's structure →</button></div>
+</div>
+
+<!-- L5 -->
+<div class="lesson" id="lesson5">
+  <div class="eyebrow">Lesson 06 of 06</div>
+  <h1 class="ltitle">Reading a page's <em>structure</em></h1>
+  <p class="lsub">Now you put it together — HTML tags, CSS properties, and DevTools — to read an unfamiliar page from the top down.</p>
+
+  <h3>How to approach an unfamiliar page</h3>
+  <p>When you open the HTML panel on a page you have never seen before, resist the urge to read every detail immediately. Start with the big picture. The HTML tree always goes from outermost to innermost. Start at the top of the tree and work down: identify the major sections first, then zoom into specific elements.</p>
+
+  <div class="cards">
+    <div class="card"><div class="card-icon">🗺️</div><strong>Step 1: Major sections</strong><p>Find the header, main content area, and footer. These are the top-level containers.</p></div>
+    <div class="card"><div class="card-icon">🔍</div><strong>Step 2: Key elements</strong><p>Inside main content, find headings, paragraphs, images, and links.</p></div>
+    <div class="card"><div class="card-icon">🎨</div><strong>Step 3: Styles</strong><p>Click specific elements to read their CSS. Connect property names to visual effects.</p></div>
+  </div>
+
+  <hr class="divider">
+  <h3>Build the structure map — click to reveal each element</h3>
+  <p>Below is a library catalogue page. Click "Reveal structure" to see its HTML structure build up piece by piece. Click any row to read what it contains.</p>
+
+  <button class="play-btn" onclick="revealStruct()">▶ Reveal structure</button>
+
+  <div class="struct-wrap">
+    <div class="struct-row" id="sr0" onclick="structInfo(0)"><span class="struct-tag">&lt;body&gt;</span><span class="struct-lbl">The entire visible page</span></div>
+    <div class="struct-row si1" id="sr1" onclick="structInfo(1)"><span class="struct-tag">&lt;header&gt;</span><span class="struct-lbl">Top section — logo and navigation</span></div>
+    <div class="struct-row si2" id="sr2" onclick="structInfo(2)"><span class="struct-tag">&lt;a&gt;</span><span class="struct-lbl">Logo link — clicks to home page</span></div>
+    <div class="struct-row si2" id="sr3" onclick="structInfo(3)"><span class="struct-tag">&lt;nav&gt;</span><span class="struct-lbl">Navigation menu</span></div>
+    <div class="struct-row si3" id="sr4" onclick="structInfo(4)"><span class="struct-tag">&lt;ul&gt;</span><span class="struct-lbl">List of nav links</span></div>
+    <div class="struct-row si3" id="sr5" onclick="structInfo(5)" style="padding-left:80px"><span class="struct-tag">&lt;li&gt;&lt;a&gt;</span><span class="struct-lbl">× 4 links: Catalogue, About, Help, Login</span></div>
+    <div class="struct-row si1" id="sr6" onclick="structInfo(6)"><span class="struct-tag">&lt;main&gt;</span><span class="struct-lbl">Primary page content</span></div>
+    <div class="struct-row si2" id="sr7" onclick="structInfo(7)"><span class="struct-tag">&lt;h1&gt;</span><span class="struct-lbl">Search the Catalogue</span></div>
+    <div class="struct-row si2" id="sr8" onclick="structInfo(8)"><span class="struct-tag">&lt;p&gt;</span><span class="struct-lbl">Subtitle paragraph</span></div>
+    <div class="struct-row si2" id="sr9" onclick="structInfo(9)"><span class="struct-tag">&lt;div&gt;</span><span class="struct-lbl">Featured collection section</span></div>
+    <div class="struct-row si3" id="sr10" onclick="structInfo(10)" style="padding-left:60px"><span class="struct-tag">&lt;img&gt;</span><span class="struct-lbl">Collection cover image</span></div>
+    <div class="struct-row si3" id="sr11" onclick="structInfo(11)" style="padding-left:60px"><span class="struct-tag">&lt;h2&gt;</span><span class="struct-lbl">Recently Added</span></div>
+    <div class="struct-row si3" id="sr12" onclick="structInfo(12)" style="padding-left:60px"><span class="struct-tag">&lt;p&gt;</span><span class="struct-lbl">Description text</span></div>
+    <div class="struct-row si3" id="sr13" onclick="structInfo(13)" style="padding-left:60px"><span class="struct-tag">&lt;a&gt;</span><span class="struct-lbl">View all new arrivals →</span></div>
+    <div class="struct-row si1" id="sr14" onclick="structInfo(14)"><span class="struct-tag">&lt;footer&gt;</span><span class="struct-lbl">Bottom section — copyright and links</span></div>
+    <div class="struct-info" id="structInfo">Click any row above to read what that element contains and why it is there.</div>
+  </div>
+
+  <div class="callout green"><strong>You are ready.</strong> You understand the three layers of a web page, how to read HTML tags and their attributes, how to read CSS properties and values, how to use DevTools to inspect any element, and how to map a page's structure from the top down. Now open a real page in your browser and apply this to what you observe.</div>
+
+  <div class="callout purple"><strong>What the DevTools panel will feel like —</strong> overwhelming at first. Every real page has hundreds of elements and thousands of CSS rules. That is normal. Use "inspect element" to jump directly to what you are looking for. Filter the Styles panel. Focus on one element at a time. Document what you understand, then move on.</div>
+
+  <div class="nav"><button class="btn" onclick="go(4)">← The DevTools inspector</button><button class="btn primary" id="doneBtn" onclick="complete()">✓ Mark complete</button></div>
+</div>
+
+</div></main>
+
+<button class="tutor-fab" onclick="toggleTutor()">🎓</button>
+<div class="tutor-panel" id="tutorPanel">
+  <div class="t-head">
+    <div class="t-av">🎓</div>
+    <div class="t-info"><strong>Week 4 Tutor</strong><span>Concept guide · Won't give answers</span></div>
+    <button class="t-close" onclick="toggleTutor()">×</button>
+  </div>
+  <div class="t-msgs" id="tMsgs">
+    <div class="msg ai">Hi! I'm your Week 4 tutor. I can help you understand <strong>HTML tags, CSS properties, and how DevTools works</strong>.<br><br>I won't tell you what to find on your assignment page — but I'll help you understand anything that confuses you about HTML, CSS, or the inspector. What's unclear?</div>
+  </div>
+  <div class="t-input-row">
+    <textarea class="t-input" id="tInput" placeholder="Ask about any concept..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="t-send" id="tSend" onclick="sendMsg()">↑</button>
+  </div>
+  <div class="t-disc">Explains concepts only. Will not describe what to find on your specific assignment page.</div>
+</div>
+</div>
+
+<script>
+var cur=0,total=6;
+var done=new Set();
+
+function go(n){
+  document.getElementById('lesson'+cur).classList.remove('active');
+  document.getElementById('nav'+cur).classList.remove('active');
+  done.add(cur);
+  document.getElementById('nav'+cur).classList.add('done');
+  cur=n;
+  document.getElementById('lesson'+n).classList.add('active');
+  document.getElementById('nav'+n).classList.remove('done');
+  document.getElementById('nav'+n).classList.add('active');
+  var pct=Math.round((done.size/total)*100);
+  document.getElementById('progressBar').style.width=pct+'%';
+  document.getElementById('progressPct').textContent='Progress '+pct+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function complete(){
+  done.add(cur);
+  document.getElementById('nav'+cur).classList.add('done');
+  var pct=Math.round((done.size/total)*100);
+  document.getElementById('progressBar').style.width=pct+'%';
+  document.getElementById('progressPct').textContent='Progress '+pct+'%';
+  var b=document.getElementById('doneBtn');
+  b.textContent='✓ Completed!';
+  b.style.background='var(--green)';
+  b.style.borderColor='var(--green)';
+}
+
+// Lesson 0 — layer animation
+function revealLayers(){
+  ['lyr0','lyr1','lyr2'].forEach(function(id,i){
+    setTimeout(function(){document.getElementById(id).classList.add('show');},i*400);
+  });
+}
+
+// Lesson 2 — before/after
+function switchBA(n){
+  document.querySelectorAll('.ba-tab').forEach(function(t,i){t.classList.toggle('active',i===n);});
+  document.querySelectorAll('.ba-panel').forEach(function(p,i){p.classList.toggle('active',i===n);});
+}
+
+// Lesson 3 — CSS quiz
+var csqQs=[
+  {
+    preview:'<span style="font-size:28px;font-weight:800;color:#1e3a5f">Search the Catalogue</span>',
+    q:'This heading is large and heavy. Which property sets its weight?',
+    opts:['font-size: 28px','font-weight: 800','color: #1e3a5f','margin-bottom: 8px'],
+    a:1,
+    exp:'font-weight: 800 — values 100–900 control boldness. 400 is normal, 700–900 is bold.'
+  },
+  {
+    preview:'<div style="background:#f0f7ff;border-left:3px solid #2563eb;padding:10px 14px;border-radius:6px;font-size:13px;color:#1e3a5f">Overdue: please return within 7 days</div>',
+    q:'This notice has a blue left border. Which property creates that specific border?',
+    opts:['background-color: #f0f7ff','border-left: 3px solid #2563eb','color: #1e3a5f','padding: 10px 14px'],
+    a:1,
+    exp:'border-left: 3px solid #2563eb — targets only the left edge, making it 3px wide, a solid line, and a blue colour.'
+  },
+  {
+    preview:'<div style="display:flex;gap:12px"><span style="padding:6px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;font-size:13px;color:#2563eb">Science</span><span style="padding:6px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;font-size:13px;color:#166534">History</span><span style="padding:6px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:20px;font-size:13px;color:#92400e">Literature</span></div>',
+    q:'These category tags have fully rounded ends (pill shape). Which property causes that?',
+    opts:['padding: 6px 14px','border: 1px solid','border-radius: 20px','display: flex'],
+    a:2,
+    exp:'border-radius: 20px — a large value rounds the corners enough to create a pill shape. 50% would make a circle.'
+  },
+  {
+    preview:'<div style="display:flex;gap:0"><div style="width:50%;padding:12px;background:#1e3a5f;color:#fff;font-size:12px">Left column<br>text here</div><div style="width:50%;padding:12px;background:#f7f4ef;font-size:12px">Right column<br>text here</div></div>',
+    q:'These two columns sit side by side. Which property on their parent enables this layout?',
+    opts:['width: 50%','padding: 12px','display: flex','background-color'],
+    a:2,
+    exp:'display: flex — Flexbox layout places children side by side. Without it, the divs would stack vertically (block display by default).'
+  },
+  {
+    preview:'<p style="line-height:2;font-size:14px;color:#3d3830">The library catalogue contains over 400,000 items including books, journals, digital resources, and archived newspapers dating back to 1890.</p>',
+    q:'The text lines in this paragraph are comfortably spaced. Which property controls the gap between lines?',
+    opts:['font-size: 14px','letter-spacing','line-height: 2','margin-bottom'],
+    a:2,
+    exp:'line-height: 2 — a value of 2 means each line is 2× the font size tall. This creates generous space between lines for readability.'
+  },
+  {
+    preview:'<div style="opacity:0.4;font-size:13px;color:#1a1814">This element is faded out — not fully visible</div>',
+    q:'This element appears semi-transparent. Which property makes it faded?',
+    opts:['color: #888','visibility: hidden','opacity: 0.4','display: none'],
+    a:2,
+    exp:'opacity: 0.4 — values from 0 (invisible) to 1 (fully visible). 0.4 makes the element 40% opaque. Unlike display: none, the element still takes up space.'
+  },
+  {
+    preview:'<div style="background:#1e3a5f;color:#fff;padding:12px 20px;border-radius:6px;font-size:13px">The background of this box is dark navy blue</div>',
+    q:'This box has a dark background. Which property sets the background colour?',
+    opts:['color: #fff','border-radius: 6px','padding: 12px 20px','background-color: #1e3a5f'],
+    a:3,
+    exp:'background-color: #1e3a5f — sets the background. Note that color sets text colour, not background colour. Easy to mix up.'
+  }
+];
+var csqIdx=0,csqScore=0;
+function renderCSQ(){
+  var q=csqQs[csqIdx];
+  document.getElementById('csqPreview').innerHTML=q.preview;
+  document.getElementById('csqQ').textContent=q.q;
+  document.getElementById('csqSc').textContent='Question '+(csqIdx+1)+' of '+csqQs.length+' · Score: '+csqScore;
+  document.getElementById('csqFb').textContent='';
+  document.getElementById('csqFb').style.color='';
+  var el=document.getElementById('csqOpts');
+  el.innerHTML='';
+  q.opts.forEach(function(o,i){
+    var b=document.createElement('button');
+    b.className='csq-opt';
+    b.textContent=o;
+    b.onclick=function(){answerCSQ(i);};
+    el.appendChild(b);
+  });
+}
+function answerCSQ(i){
+  var q=csqQs[csqIdx];
+  var btns=document.querySelectorAll('.csq-opt');
+  btns.forEach(function(b,j){
+    if(j===q.a) b.classList.add('ok');
+    else if(j===i) b.classList.add('bad');
+    else b.classList.add('off');
+  });
+  var fb=document.getElementById('csqFb');
+  if(i===q.a){csqScore++;fb.style.color='var(--green)';fb.textContent='✓ '+q.exp;}
+  else{fb.style.color='var(--red)';fb.textContent='✗ '+q.exp;}
+  document.getElementById('csqSc').textContent='Question '+(csqIdx+1)+' of '+csqQs.length+' · Score: '+csqScore;
+  setTimeout(function(){csqIdx=(csqIdx+1)%csqQs.length;if(csqIdx===0)csqScore=0;renderCSQ();},2600);
+}
+renderCSQ();
+
+// Lesson 4 — DevTools mock
+var dtData=[
+  {label:'body',info:'The root of all visible content. Everything you see on the page lives inside the body element.',styles:[]},
+  {label:'header',info:'The page header. Contains the logo and navigation. CSS gives it its background colour and height.',styles:[{p:'background-color',v:'#1e3a5f',s:'style.css:12'},{p:'padding',v:'12px 24px',s:'style.css:13'},{p:'display',v:'flex',s:'style.css:14'},{p:'align-items',v:'center',s:'style.css:15'}]},
+  {label:'nav',info:'The navigation menu. Contains a list of links. CSS hides the bullet points and makes the list horizontal.',styles:[{p:'display',v:'flex',s:'style.css:28'},{p:'gap',v:'24px',s:'style.css:29'},{p:'list-style',v:'none',s:'style.css:30'}]},
+  {label:'main',info:'The primary content area. Everything a user came to this page to read lives here.',styles:[{p:'max-width',v:'900px',s:'style.css:40'},{p:'margin',v:'0 auto',s:'style.css:41'},{p:'padding',v:'32px 24px',s:'style.css:42'}]},
+  {label:'h1',info:'The main page heading. There is only one h1. CSS makes it large, bold, and dark.',styles:[{p:'font-size',v:'32px',s:'style.css:55'},{p:'font-weight',v:'800',s:'style.css:56'},{p:'color',v:'#1e3a5f',s:'style.css:57'},{p:'margin-bottom',v:'8px',s:'style.css:58'}]},
+  {label:'p',info:'A body text paragraph. CSS sets its font size, line height, and colour for comfortable reading.',styles:[{p:'font-size',v:'15px',s:'style.css:70'},{p:'line-height',v:'1.75',s:'style.css:71'},{p:'color',v:'#4b5563',s:'style.css:72'},{p:'margin-bottom',v:'16px',s:'style.css:73'}]},
+  {label:'img',info:'An image element. The src attribute tells the browser where the image file is. alt provides a text description if the image fails to load.',styles:[{p:'width',v:'100%',s:'style.css:85'},{p:'border-radius',v:'8px',s:'style.css:86'},{p:'display',v:'block',s:'style.css:87'},{p:'margin-bottom',v:'16px',s:'style.css:88'}]},
+  {label:'a',info:'A hyperlink. The href attribute holds the destination. CSS removes the default underline and changes the colour.',styles:[{p:'color',v:'#2563eb',s:'style.css:98'},{p:'text-decoration',v:'none',s:'style.css:99'},{p:'font-weight',v:'600',s:'style.css:100'}]},
+  {label:'footer',info:'The page footer. Contains copyright text and secondary links. Usually has a muted background to distinguish it from main content.',styles:[{p:'background-color',v:'#f7f4ef',s:'style.css:110'},{p:'padding',v:'24px',s:'style.css:111'},{p:'border-top',v:'1px solid #e8e3db',s:'style.css:112'},{p:'font-size',v:'13px',s:'style.css:113'}]}
+];
+function dtSelect(i){
+  document.querySelectorAll('.dt-row').forEach(function(r){r.classList.remove('sel');});
+  document.getElementById('dtr'+i).classList.add('sel');
+  var d=dtData[i];
+  var r=document.getElementById('dtRight');
+  var html='<div style="color:#888;font-size:10px;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Styles — <span style="color:#4ec9b0">&lt;'+d.label+'&gt;</span></div>';
+  if(d.styles.length===0){
+    html+='<div style="color:#555;font-size:12px;margin-top:8px">No styles shown for root element</div>';
+  } else {
+    d.styles.forEach(function(s){
+      html+='<div style="display:flex;gap:4px;line-height:1.8"><span class="dt-prop">'+s.p+'</span><span style="color:#d4d4d4">:</span><span class="dt-propval"> '+s.v+'</span><span class="dt-source" style="margin-left:auto;font-size:10px">'+s.s+'</span></div>';
+    });
+  }
+  r.innerHTML=html;
+  document.getElementById('dtInfo').textContent=d.info;
+}
+
+// Lesson 5 — structure builder
+var structInfos=[
+  'The body element wraps everything visible on the page. In the HTML tree, everything you see lives inside body.',
+  'The header sits at the top of every page. It typically holds the logo and navigation. CSS gives it a background colour and makes its children line up horizontally.',
+  'A link wrapping the logo — clicking it returns the user to the home page. The href attribute holds the destination URL.',
+  'The nav element marks a section of navigation links. Without CSS, it would look like a plain list. CSS removes bullet points and lays items out horizontally.',
+  'The ul (unordered list) holds the individual nav items. It is the container — each li inside it is one link.',
+  'Each nav item is a list item (li) containing a link (a). The href attribute tells the browser where each link goes.',
+  'The main element wraps all the primary content — what the user came to this page to see. There is only one main per page.',
+  'The h1 is the primary heading. There is only one on this page. CSS makes it the largest, heaviest text — it anchors the page visually.',
+  'A paragraph introducing the catalogue. CSS sets font-size, line-height, and colour for comfortable reading.',
+  'A div grouping the featured collection content — an image, a heading, a paragraph, and a link. This div has no inherent meaning; its purpose is to be a container for CSS to style as a unit.',
+  'The collection cover image. The src attribute points to the image file. The alt attribute provides a text description for accessibility.',
+  'A section heading (h2) within the main content. Smaller than h1 but still emphasised by CSS.',
+  'A descriptive paragraph. Shares the same CSS rules as other paragraph elements on the page.',
+  'A hyperlink to the full new arrivals list. CSS styles it to look like a button or call-to-action.',
+  'The footer closes the page. It holds copyright information and secondary links. CSS gives it a lighter background to distinguish it from the main content.'
+];
+var structBuilt=false;
+function revealStruct(){
+  if(structBuilt) return;
+  structBuilt=true;
+  for(var i=0;i<15;i++){
+    (function(idx){setTimeout(function(){document.getElementById('sr'+idx).classList.add('vis');},idx*120);})(i);
+  }
+}
+function structInfo(i){
+  document.querySelectorAll('.struct-row').forEach(function(r){r.classList.remove('hi');});
+  document.getElementById('sr'+i).classList.add('hi');
+  document.getElementById('structInfo').textContent=structInfos[i];
+}
+
+// Tutor
+function toggleTutor(){
+  var p=document.getElementById('tutorPanel');
+  p.classList.toggle('open');
+  if(p.classList.contains('open')) document.getElementById('tInput').focus();
+}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,80)+'px';}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+
+var convHist=[];
+var PROXY='https://zsone-app-50042017815.development.catalystappsail.in/api/tutor';
+var SYS='You are a Week 4 concept tutor for a full stack development course for beginner students who have just completed 12th grade. Your ONLY job is to help students understand these concepts: what HTML tags are and what they do, what CSS properties are and what visual effects they produce, how the browser DevTools inspector works, how to read HTML structure (tags, attributes, nesting), and how to map a page\'s HTML structure. STRICT RULES: 1. NEVER write code for the student. 2. NEVER tell the student specifically which tags or CSS properties to look for on their chosen assignment page. 3. Use neutral examples only — library catalogue, hospital information page, train booking system. NEVER use Instagram, YouTube, Zomato, or Rapido as examples. 4. Keep responses to 3-5 sentences. 5. Always end with a question that pushes the student to think further. 6. If the question is unrelated to HTML, CSS, or DevTools, say: I am your Week 4 tutor, I can only help with HTML tags, CSS properties, and the DevTools inspector.';
+
+async function sendMsg(){
+  var inp=document.getElementById('tInput');
+  var txt=inp.value.trim();
+  if(!txt) return;
+  appendMsg(txt,'user');
+  inp.value='';inp.style.height='auto';
+  document.getElementById('tSend').disabled=true;
+  var tid=appendTyping();
+  convHist.push({role:'user',content:txt});
+  try{
+    var res=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userMessage:txt+'\n\n[System: '+SYS+']'})});
+    var data=await res.json();
+    removeTyping(tid);
+    var reply=data.reply||"I'm having trouble responding right now.";
+    convHist.push({role:'assistant',content:reply});
+    appendMsg(reply,'ai');
+  }catch(e){removeTyping(tid);appendMsg("Something went wrong. Please try again.",'ai');}
+  document.getElementById('tSend').disabled=false;
+  document.getElementById('tInput').focus();
+}
+function appendMsg(txt,role){
+  var box=document.getElementById('tMsgs');
+  var d=document.createElement('div');
+  d.className='msg '+role;
+  d.innerHTML=txt.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  box.appendChild(d);box.scrollTop=box.scrollHeight;
+}
+function appendTyping(){
+  var box=document.getElementById('tMsgs');
+  var id='t'+Date.now();
+  var d=document.createElement('div');
+  d.className='msg typing';d.id=id;
+  d.innerHTML='<div class="dots"><span></span><span></span><span></span></div>';
+  box.appendChild(d);box.scrollTop=box.scrollHeight;
+  return id;
+}
+function removeTyping(id){var e=document.getElementById(id);if(e)e.remove();}
+</script>
+</body>
+</html>
