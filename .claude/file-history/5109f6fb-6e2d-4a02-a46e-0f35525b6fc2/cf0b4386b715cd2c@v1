@@ -1,0 +1,2531 @@
+//$Id$
+package com.zoho.apptics.sdk.conf;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.Signature;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import com.adventnet.ds.query.Column;
+import com.adventnet.ds.query.Criteria;
+import com.adventnet.ds.query.QueryConstants;
+import com.adventnet.ds.query.Range;
+import com.adventnet.ds.query.SelectQuery;
+import com.adventnet.ds.query.SelectQueryImpl;
+import com.adventnet.ds.query.SortColumn;
+import com.adventnet.ds.query.Table;
+import com.adventnet.iam.security.SecurityUtil;
+import com.adventnet.iam.security.UploadedFileItem;
+import com.adventnet.persistence.DataAccessException;
+import com.adventnet.persistence.DataObject;
+import com.adventnet.persistence.Persistence;
+import com.adventnet.persistence.Row;
+import com.zoho.apptics.common.EmailNotificationContent;
+import com.zoho.apptics.conf.AppHandler;
+import com.zoho.apptics.conf.AppReleaseVersionHandler;
+import com.zoho.apptics.conf.AppVersionHandler;
+import com.zoho.apptics.conf.BrandHandler;
+import com.zoho.apptics.conf.DeviceHandler;
+import com.zoho.apptics.conf.EmailNotificationHandler;
+import com.zoho.apptics.conf.FrameworkHandler;
+import com.zoho.apptics.conf.MaskHandler;
+import com.zoho.apptics.conf.OSVersionHandler;
+import com.zoho.apptics.conf.OrientationHandler;
+import com.zoho.apptics.conf.PlatformHandler;
+import com.zoho.apptics.conf.ProjectHandler;
+import com.zoho.apptics.conf.SupportedDevicehandler;
+import com.zoho.apptics.conf.TimezoneHandler;
+import com.zoho.apptics.integration.AsanaHandler;
+import com.zoho.apptics.integration.Integrations;
+import com.zoho.apptics.model.Model;
+import com.zoho.apptics.model.ScreenData;
+import com.zoho.apptics.presto.BDassClient;
+import com.zoho.apptics.sdk.cirrus.ExceptionsHandler;
+import com.zoho.apptics.sdk.constants.SdkConstants;
+import com.zoho.apptics.sdk.data.CrashEntity;
+import com.zoho.apptics.sdk.util.DSymServer;
+import com.zoho.apptics.sdk.util.SDKCache;
+import com.zoho.apptics.sdk.util.ScreenUtil;
+import com.zoho.apptics.sdk.util.SdkUtil;
+import com.zoho.apptics.util.ADBHandler;
+import com.zoho.apptics.util.AdminDBCache;
+import com.zoho.apptics.util.AppticsConstants;
+import com.zoho.apptics.util.AppticsException;
+import com.zoho.apptics.util.CommonUtil;
+import com.zoho.apptics.util.CustomRuntimeConstants;
+import com.zoho.apptics.util.DBHandler;
+import com.zoho.apptics.util.DFSFileHandler;
+import com.zoho.apptics.util.DataspaceAndAppMapper;
+import com.zoho.apptics.util.PropertyHandler;
+import com.zoho.apptics.util.ReTrace;
+import com.zoho.apptics.util.TransmailNotificationUtil;
+import com.zoho.sas.ssh.SshConfig;
+import com.zoho.sas.ssh.SshExecutor;
+
+import jakarta.servlet.http.HttpServletRequest;
+
+public class ExceptionHandler {
+
+	private static final Logger LOGGER = Logger.getLogger(ExceptionHandler.class.getName());
+
+	private static final String CRASHLOCATION = AppticsConstants.MACLOCATION + "crash/";
+	private static final String DESYMLOCATION = AppticsConstants.MACLOCATION + "desym/";
+	private static final String BUILDLOCATION = AppticsConstants.MACLOCATION + "build/";
+	private static final String SCRIPTLOCATION = AppticsConstants.MACLOCATION + "script/";
+
+
+
+
+
+	public static String getExecutionType(final int option) throws Exception {
+		switch (option) {
+		case 1:
+			return CustomRuntimeConstants.PATH_SCRIPT;
+		case 2:
+			return CustomRuntimeConstants.PATH_SYMBOLS;
+		case 3:
+			return CustomRuntimeConstants.PATH_DSYMS;
+		case 4:
+			return CustomRuntimeConstants.PATH_CRASH;
+		default:
+			LOGGER.log(Level.INFO, "Invalid option: {0}", option);
+			throw new AppticsException("Invalid group: " + option);
+		}
+	}
+
+	public static int getCrashGroup(final String option) throws Exception {
+		switch(option) {
+			case "default":
+				return 0;//Crash
+			case "crash":
+				return 0;
+			case "hang":
+				return 1;
+			case "diskwrite":
+				return 2;
+			case "applaunch":
+				return 3;
+			case "cpuexception":
+				return 4;
+			default:
+				LOGGER.info("Invalid option: " + option);
+				throw new AppticsException("Invalid option: " + option);
+		}
+	}
+
+
+
+	public static String addExceptionsReportNew(JSONObject exceptions, CrashEntity crashEntity) throws Exception {
+
+		LOGGER.log(Level.INFO, "Calling Add ExceptionReport :{0}", exceptions);
+		crashEntity.setBundle(crashEntity.getIdentifier());
+		
+		crashEntity.setExceptionInfo(crashEntity.getMessage().getBytes());	
+		String crashtype = crashEntity.getCrashTypeString();
+		crashEntity.setBrand(BrandHandler.getInstance().getBrandNameByBrandID(crashEntity.getBrandID()));
+	
+		if (crashtype.equals(AppticsConstants.NATIVE)) {
+			crashEntity.setCrashType(AppticsConstants.EXCEPTIONTYPE_NATIVE);
+			
+			if (crashEntity.getBrand().equals(AppticsConstants.APPLE) && !crashEntity.getExceptionGroup().equals(AppticsConstants.NONFATAL_GROUP)) {
+				processAppleCrashes(crashEntity);
+				
+			}  else if (crashEntity.getBrand().equals(AppticsConstants.GOOGLE) && !crashEntity.getExceptionGroup().equals(AppticsConstants.NONFATAL_GROUP)) {
+				processNativeObfuscation(crashEntity);
+			}
+			
+		} else if (crashtype.equals(AppticsConstants.REACTNATIVE)) {
+			crashEntity.setCrashType(AppticsConstants.EXCEPTIONTYPE_REACTNATIVE);
+			processReactReport(crashEntity);
+		} else if (crashtype.equals(AppticsConstants.FLUTTER)) {
+			crashEntity.setCrashType(AppticsConstants.EXCEPTIONTYPE_FLUTTER);
+			processFlutterReport(crashEntity);
+		} else {
+			crashEntity.setCrashType(AppticsConstants.EXCEPTIONTYPE_ALL);
+		}
+
+		if (crashEntity.getIsProductionProcess()) {
+			addApplicationReportNew(crashEntity);
+		
+		if (crashtype.equals(AppticsConstants.NATIVE) && crashEntity.getExceptionGroup().equals(AppticsConstants.FATAL) && !crashEntity.getUniqueID().equals(AppticsConstants.BOOKS_ISSUEMSGID) && !crashEntity.getUniqueID().equals(AppticsConstants.INVOICE_ISSUEMSGID)) {
+			sendNotification(crashEntity);
+		}
+		
+		}
+		
+		return crashtype;
+	}
+	public static String addExceptionsReport(JSONObject exceptions, CrashEntity crashEntity) throws Exception {
+
+		LOGGER.log(Level.INFO, "Calling Add ExceptionReport :{0}", exceptions);
+
+		crashEntity.setExceptions(exceptions);
+		crashEntity.setPlatformID(AdminDBCache.getInstance().getPIDBytag(crashEntity.getPlatformTag()));
+		crashEntity.setPlatform(AdminDBCache.getInstance().getOS(crashEntity.getPlatformID()));
+		crashEntity.setAppReleaseVersion(AppReleaseVersionHandler.getAppReleaseVersionByID(crashEntity.getAppReleaseVersionID()));
+		crashEntity.setBundle(AppHandler.getInstance().getApp(crashEntity.getProjectID(), crashEntity.getAaID()).getIdentifier());
+		crashEntity.setAppVersion(AppVersionHandler.getInstance().getVersion(crashEntity.getAppVersionID()));
+		crashEntity.setExceptionInfo(crashEntity.getMessage().getBytes());
+		crashEntity.setDeSymbolicatedMessage(crashEntity.getMessage());
+		crashEntity.setBrandID(PlatformHandler.getInstance().getBIDByPIDTag(crashEntity.getPlatformTag()));
+		crashEntity.setBrand(BrandHandler.getInstance().getBrandNameByBrandID(crashEntity.getBrandID()));
+		Model libVersionDetails = FrameworkHandler.getLibraryVersionDataByTag(crashEntity.getFrameworkVersionTag());
+		crashEntity.setFrameworkVersion(libVersionDetails.getName());
+		crashEntity.setFrameworkID(libVersionDetails.getId());
+
+		String crashtype = crashEntity.getCrashTypeString();
+		if (crashtype.equals(AppticsConstants.NATIVE)) {
+			crashEntity.setCrashType(AppticsConstants.EXCEPTIONTYPE_NATIVE);
+			
+			if (crashEntity.getBrand().equals(AppticsConstants.APPLE) && !crashEntity.getExceptionGroup().equals(AppticsConstants.NONFATAL_GROUP)) {
+				processAppleCrashes(crashEntity);
+
+			} else if (crashEntity.getBrand().equals(AppticsConstants.GOOGLE) && !crashEntity.getExceptionGroup().equals(AppticsConstants.NONFATAL_GROUP)) {
+				processNativeObfuscation(crashEntity);
+			}
+			
+		} else if (crashtype.equals(AppticsConstants.REACTNATIVE)) {
+			crashEntity.setCrashType(AppticsConstants.EXCEPTIONTYPE_REACTNATIVE);
+			processReactReport(crashEntity);
+		} else if (crashtype.equals(AppticsConstants.FLUTTER)) {
+			crashEntity.setCrashType(AppticsConstants.EXCEPTIONTYPE_FLUTTER);
+			processFlutterReport(crashEntity);
+		} else {
+			crashEntity.setCrashType(AppticsConstants.EXCEPTIONTYPE_ALL);
+		}
+
+		if (crashEntity.getIsProductionProcess()) {
+			addApplicationReport(crashEntity);
+		
+		
+		if (crashtype.equals(AppticsConstants.NATIVE) && crashEntity.getExceptionGroup().equals(AppticsConstants.FATAL) && !crashEntity.getUniqueID().equals(AppticsConstants.BOOKS_ISSUEMSGID) && !crashEntity.getUniqueID().equals(AppticsConstants.INVOICE_ISSUEMSGID)) {
+			
+			sendNotification(crashEntity);
+		}
+		}
+		
+		return crashtype;
+	}
+
+
+	/**
+	 * Processes Apple crash reports by extracting UUID from binary images
+	 * and dispatching to the appropriate symbolication backend.
+	 *
+	 * Dispatch logic based on server type (machineType):
+	 * - "both"  : prefer Linux if APID is in linux symbolication list, else Mac. Enables fallback (reProcess).
+	 * - "linux" : Linux only
+	 * - "mac"   : Mac only
+	 */
+	private static void processAppleCrashes(CrashEntity crashEntity) throws Exception {
+
+		// Extract UUID from "Binary Images:" section of the crash log
+		try {
+			String message = crashEntity.getMessage();
+			if (message.contains("Binary Images:")) {
+				String uuid = message.substring(message.indexOf("Binary Images:"));
+				int langle = uuid.indexOf('<');
+				int rangle = uuid.indexOf('>');
+
+				if (langle != -1 && rangle != -1 && langle < rangle) {
+					uuid = uuid.substring(langle + 1, rangle);
+				} else {
+					uuid = "-";
+				}
+
+				crashEntity.setUuid(uuid);
+			}
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Exception while getting uuid --> {0}", e);
+		}
+
+		// Determine symbolication backend
+		String machineType = PropertyHandler.getValue(CustomRuntimeConstants.SERVERTYPE);
+		machineType = machineType == null ? "both" : machineType;
+		crashEntity.setMachineType(machineType);
+
+		if (machineType.equals("both")) {
+			crashEntity.setReProcess(true);
+			final String linuxApps = PropertyHandler.getValue(CustomRuntimeConstants.LINUX_SYMBOLICATION);
+			LOGGER.log(Level.INFO, "Linux symbolication apids {0}", linuxApps);
+
+			if (!CommonUtil.isEmpty(linuxApps) && linuxApps.contains(crashEntity.getApID().toString())) {
+				LOGGER.log(Level.INFO, "Linux Symbolication for this apid {0}", crashEntity.getApID());
+				linuxSymbolication(crashEntity);
+			} else {
+				LOGGER.log(Level.INFO, "Linux not enabled for the apid {0}", crashEntity.getApID());
+				processNativeSymboliction(crashEntity);
+			}
+		} else if (machineType.equals("linux")) {
+			LOGGER.log(Level.INFO, "Linux Only Server");
+			linuxSymbolication(crashEntity);
+		} else if (machineType.equals("mac")) {
+			LOGGER.log(Level.INFO, "Mac Only Server");
+			processNativeSymboliction(crashEntity);
+		} else {
+			LOGGER.log(Level.INFO, "Unsupported machine type: {0}", machineType);
+		}
+
+	}
+
+	/**
+	 * Performs Linux-based crash symbolication on a custom runtime instance.
+	 *
+	 * Flow:
+	 * 1. Check if symbolication is disabled for this APID
+	 * 2. Resolve the custom runtime domain:
+	 *    - crTestApp projects -> fetch domain from DB via getDomainFromCRInstance
+	 *    - All other projects -> use default CustomRuntimeConstants.DOMAIN
+	 * 3. Check if the dSYM file already exists on the runtime
+	 * 4. If dSYM is missing, upload it:
+	 *    - crTestApp projects -> use DSymFilesHandler.copyDsymToCustomRuntime (handles upload + extract internally)
+	 *    - All other projects -> upload via HTTP and clean up the zip
+	 * 5. Write crash log to a temp file and upload to the runtime's crash folder
+	 * 6. Execute the Perl symbolication script on the runtime
+	 * 7. Read the symbolicated output JSON
+	 * 8. Clean up temp crash files on the runtime
+	 * 9. Parse symbolicated result and update crashEntity with issue name and message
+	 * 10. On failure, fall back to Mac symbolication if reProcess is enabled
+	 */
+	private static void linuxSymbolication(CrashEntity crashEntity) throws Exception {
+
+		try {
+
+			// Step 1: Check if symbolication is disabled for this APID
+			final String disabledApID = PropertyHandler.getValue(SdkConstants.DISBALEDSYMBOLICATIONAPID);
+			if (disabledApID != null && disabledApID.contains(crashEntity.getApID() + "")) {
+				LOGGER.log(Level.INFO, "Symbolication disabled for the apid {0}", crashEntity.getApID());
+				return;
+			}
+
+			// Step 2: Resolve domain - crTestApp uses DB lookup, others use default
+			String dsymFile = crashEntity.getAppVersionID() + "_" + crashEntity.getAppReleaseVersionID();
+			crashEntity.setBuildFileName(dsymFile);
+
+			String zsoid = crashEntity.getZsoid();
+			if (CommonUtil.isEmpty(zsoid)) {
+				zsoid = DataspaceAndAppMapper.getInstance().getOrgLoginname(crashEntity.getProjectID());
+			}
+
+			String domain = CustomRuntimeConstants.DOMAIN;
+			String testApps = PropertyHandler.getValue("crTestApps");
+			boolean isCrTestApp = testApps != null && testApps.contains(crashEntity.getProjectID().toString());
+
+			if (isCrTestApp) {
+				domain = CustomRuntimeConstants.getDomainFromCRInstance(String.valueOf(crashEntity.getProjectID()), zsoid);
+			}
+
+			String executeUrl = domain + CustomRuntimeConstants.URL_EXECUTE_SUFFIX;
+
+			// Step 3: Check if dSYM file exists on the runtime
+			String fileCheckCommand = executeUrl + "[+-d+" + CustomRuntimeConstants.PATH_DSYMS + dsymFile + "+]" + CustomRuntimeConstants.FLAG_CHECK;
+			String isFileThere = executeLinuxCommand(fileCheckCommand, crashEntity, true);
+
+			// Step 4: Upload dSYM if not present
+			if (!isFileThere.contains(CustomRuntimeConstants.TRUE)) {
+				LOGGER.log(Level.INFO, "dSYM not found on runtime, fetching from DB");
+				File dsymfile = fetchFile(AppticsConstants.DSYMTABLE, crashEntity);
+
+				if (CommonUtil.isEmpty(dsymfile)) {
+					LOGGER.log(Level.INFO, "Dsym file not there");
+					String displayName = ProjectHandler.getDisplayName(crashEntity.getProjectID());
+					String issueName = "Missing dSYMs for [" + displayName + "]";
+					crashEntity.setIssueName(CommonUtil.maskPII(issueName));
+					crashEntity.setMessage(CommonUtil.maskPII(crashEntity.getMessage()));
+					return;
+				}
+
+				LOGGER.log(Level.INFO, "Uploading dSYM to linux machine for projectID {0}, isCrTestApp={1}", new Object[]{crashEntity.getProjectID(), isCrTestApp});
+				String uploadCommand = domain + CustomRuntimeConstants.URL_UPLOAD + getExecutionType(3);
+				uploadFile(dsymfile.getAbsolutePath(), uploadCommand, crashEntity.getBuildFileName(), getExecutionType(3), true, crashEntity);
+
+				String rmCommand = executeUrl + "rm+" + CustomRuntimeConstants.PATH_DSYMS + dsymfile.getName();
+				executeLinuxCommand(rmCommand, crashEntity, false);
+			}
+
+			// Step 5: Write crash log to temp file and upload to runtime
+			String issueName = AppticsConstants.UNSYMBOLICATED + " - " + crashEntity.getCrashGroupString();
+			String message = crashEntity.getMessage();
+
+			String crashFileName = crashEntity.getAppVersionID() + "_" + crashEntity.getAppReleaseVersion() + "_" + System.currentTimeMillis();
+			crashEntity.setCrashFileName(crashFileName);
+			LOGGER.log(Level.INFO, "Uploading crash file {0}", crashFileName);
+
+			Path filePath = Path.of(crashFileName + ".crash");
+			Files.writeString(filePath, crashEntity.getMessage(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
+			String crashUploadUrl = domain + CustomRuntimeConstants.URL_UPLOAD + getExecutionType(4);
+			uploadFile(filePath.getFileName().toString(), crashUploadUrl, crashEntity.getCrashFileName() + ".crash", null, false, crashEntity);
+
+			// Step 6: Execute symbolication script
+			String scriptCommand = executeUrl
+					+ "perl+apptics/script/symbolicator.pl+apptics/crashfile/" + crashEntity.getCrashFileName() + ".crash"
+					+ "+" + crashEntity.getFrameworkVersion()
+					+ "+" + CustomRuntimeConstants.PATH_DSYMS + crashEntity.getBuildFileName();
+			LOGGER.log(Level.INFO, "Symbolication command: {0}", scriptCommand);
+			executeLinuxCommand(scriptCommand, crashEntity, true);
+
+			// Step 7: Read symbolicated output
+			String readOutputCommand = executeUrl + "cat+" + CustomRuntimeConstants.PATH_CRASH + crashEntity.getCrashFileName() + ".json";
+			String output = executeLinuxCommand(readOutputCommand, crashEntity, false);
+
+			// Step 8: Clean up temp files on runtime
+			String cleanupCommand = executeUrl + "rm+"
+					+ CustomRuntimeConstants.PATH_CRASH + crashEntity.getCrashFileName() + "+"
+					+ CustomRuntimeConstants.PATH_CRASH + crashEntity.getCrashFileName() + ".crash" + "+"
+					+ CustomRuntimeConstants.PATH_CRASH + crashEntity.getCrashFileName() + ".json";
+			executeLinuxCommand(cleanupCommand, crashEntity, false);
+
+			// Step 9: Parse symbolicated result
+			JSONObject crashDetails = new JSONObject(output);
+
+			if (!CommonUtil.isEmpty(crashDetails)) {
+				message = crashDetails.getString("crash");
+				String crashTitle = crashDetails.getString("crash_title");
+				String crashType = crashDetails.getString("crash_type");
+
+				crashTitle = crashTitle.trim().isEmpty() ? AppticsConstants.OTHERS : crashTitle;
+				LOGGER.log(Level.INFO, "CrashTitle is {0}", crashTitle);
+
+				issueName = crashTitle + "\n" + (CommonUtil.isEmpty(crashType) ? "" : crashType);
+
+				String library = crashDetails.getString("crashed_library");
+				String head = crashDetails.getString("crash_description");
+				LOGGER.log(Level.INFO, "Heading for the crash {0} and library {1}", new Object[]{head, library});
+			}
+
+			if (issueName.contains(AppticsConstants.MISSINGSYMBOLS)) {
+				LOGGER.log(Level.INFO, "Resolving missing symbols issueName {0}", issueName);
+				issueName = findIssueName(message, crashEntity.getCrashGroupString());
+			}
+
+			LOGGER.log(Level.INFO, "IssueName is {0}", issueName);
+			SdkUtil.sendLinuxException("SUCCESS -->" + issueName, crashEntity.getProjectID());
+
+			crashEntity.setMessage(CommonUtil.maskPII(message));
+			crashEntity.setIssueName(CommonUtil.maskPII(issueName));
+
+		} catch (Exception e) {
+			LOGGER.log(Level.INFO, "Exception while processing linux symbolications apid : {0} error : {1}", new Object[]{crashEntity.getApID(), e});
+			SdkUtil.sendLinuxException("FAILED -->" + e, crashEntity.getProjectID());
+
+			// Step 10: Fallback to Mac symbolication if reProcess is enabled
+			if (crashEntity.getReProcess()) {
+				crashEntity.setReProcess(false);
+				LOGGER.log(Level.INFO, "Failed on Linux so ReProcess to Mac");
+				processNativeSymboliction(crashEntity);
+			}
+		}
+
+	}
+
+    private static Long getCRID(Long projectID) {
+
+        LOGGER.log(Level.INFO, "getting crid from db");
+        Long crid = 0l;
+
+        try {
+            String table = "JApplications";
+
+            SelectQuery sq = new SelectQueryImpl(Table.getTable(table));
+            sq.addSelectColumn(Column.getColumn(table, "*"));
+
+            sq.setCriteria(new Criteria(new Column(table, AppticsConstants.APPID), projectID, QueryConstants.EQUAL));
+
+            Persistence p = DBHandler.getPersistence();
+            DataObject dobj = p.get(sq);
+
+            Row row = dobj.getFirstRow(table);
+
+            String additional = row.getString("AdditionalDetails");
+
+            JSONObject js = new JSONObject(additional);
+
+            if(js.has("crid")) {
+                return js.getLong("crid");
+            }
+        }
+        catch(Exception e){
+            LOGGER.log(Level.INFO, "Exception while getting crid");
+        }
+        return crid;
+
+    }
+
+
+
+    public static void uploadFile(String filePath, String targetURL,String fileName,String exePath,Boolean isExtract,CrashEntity crashentity) throws Exception {
+        String boundary = "----Boundary" + System.currentTimeMillis(); //  setting boundary for avoiding n number of uploads
+        String LINE_FEED = "\r\n";
+
+        URL url = new URL(targetURL);
+        HttpURLConnection  httpConn = (HttpURLConnection) url.openConnection();
+        DataOutputStream request = null;
+
+        try {
+        	
+        	if(CommonUtil.isEmpty(crashentity.getLinuxAuth())) {
+             crashentity.setLinuxAuth(getAuthKey());
+        	}
+        	// Open connection
+           
+        	
+            httpConn.setUseCaches(false);
+            httpConn.setDoOutput(true);
+            httpConn.setDoInput(true);
+            httpConn.setRequestMethod("POST");
+            httpConn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+            httpConn.setRequestProperty("appticsauthkey", crashentity.getLinuxAuth());
+            
+            httpConn.setConnectTimeout(5000);
+        	httpConn.setReadTimeout(5000);
+
+            request = new DataOutputStream(httpConn.getOutputStream());
+
+            // Add file
+            File file = new File(filePath);
+            
+
+            request.writeBytes("--" + boundary + LINE_FEED);
+            request.writeBytes("Content-Disposition: form-data; name=\"file\"; filename=\"" + file.getName() + "\"" + LINE_FEED);
+            request.writeBytes("Content-Type: " + HttpURLConnection.guessContentTypeFromName(file.getName()) + LINE_FEED);
+            request.writeBytes(LINE_FEED);
+
+            try (FileInputStream inputStream = new FileInputStream(file)) {
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    request.write(buffer, 0, bytesRead);
+                }
+            }
+
+            request.writeBytes(LINE_FEED);
+            request.writeBytes("--" + boundary + "--" + LINE_FEED);
+            request.flush();
+
+            // Get response
+            int responseCode = httpConn.getResponseCode();
+            LOGGER.log(Level.INFO, "File Upload Response Code: ", responseCode);
+
+            try (BufferedReader responseReader = new BufferedReader(new InputStreamReader(httpConn.getInputStream()))) {
+                String responseLine;
+                while ((responseLine = responseReader.readLine()) != null) {
+                	LOGGER.log(Level.INFO, "Response ", responseLine);
+                }
+                
+                if (isExtract) {
+                	// Derive domain from the upload targetURL to ensure unzip runs on the same server
+                	String uploadDomain = targetURL.substring(0, targetURL.indexOf("/", targetURL.indexOf("//") + 2));
+                	String command = uploadDomain + CustomRuntimeConstants.URL_EXECUTE_SUFFIX + "unzip+" + exePath + file.getName() + "+" + "-d+" + exePath + fileName + "+-x+__MACOSX/*";
+                	executeLinuxCommand(command, crashentity, false);
+                }
+                
+            }
+            
+
+        } catch (Exception e) {
+        	LOGGER.log(Level.INFO, "Exception while uploading files ", e);
+        } finally {
+            if (request != null) {
+                try {
+                    request.close();
+                } catch (IOException ignored) {}
+            }
+            if (httpConn != null) {
+                httpConn.disconnect();
+            }
+        }
+    }
+	private static String getIssueName(String result) {
+		String issueName = AppticsConstants.UNSYMBOLICATED;
+
+		LOGGER.log(Level.INFO, "Finding the IssueName");
+		
+
+		// will use jensu's issueName process
+		return issueName;
+	}
+
+	private String getMainExecutableName(String[] lines) {
+
+		Pattern pattern = Pattern.compile("^Process:\\s+([a-zA-Z\\s_-]+)\\s +\\[\\d+\\]");
+		for (String line : lines) {
+			Matcher matcher = pattern.matcher(line);
+			if (matcher.matches()) {
+				return matcher.group(1);
+			}
+		}
+
+		return null;
+	}
+
+	
+	private static String getAuthKey() throws Exception {
+		
+		FileInputStream fis = new FileInputStream(AppticsConstants.CUSTOMRUNTIME_PROPERTIES);
+
+		try {
+			byte[] keyBytes = new byte[fis.available()];
+			fis.read(keyBytes);
+
+			// Generate the private key using the PKCS8 encoding
+			KeyFactory keyFactory = KeyFactory.getInstance("RSA"); // Change to "EC" or another algorithm if needed
+			PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
+			PrivateKey p = keyFactory.generatePrivate(keySpec);
+
+			String data = "appticsCR-" + System.currentTimeMillis();
+
+			// 2. Sign the data
+			Signature signer = Signature.getInstance("SHA256withRSA");
+			signer.initSign(p);
+			signer.update(data.getBytes("UTF-8"));
+			byte[] signature = signer.sign();
+
+			// 3. Combine data and signature (data.signature)
+			String combined = data + "." + Base64.getEncoder().encodeToString(signature);
+
+			// 4. Base64-encode the combined string
+			String s = Base64.getEncoder().encodeToString(combined.getBytes());
+
+			return s;
+
+		} catch (Exception e) {
+			LOGGER.log(Level.INFO, "Exception while getting Auth Key", e);
+			throw new Exception("Exception while generating auth");
+		} finally {
+			if (!CommonUtil.isEmpty(fis)) {
+				fis.close();
+			}
+		}
+	}
+
+	private static void sendNotification(CrashEntity crashEntity) throws DataAccessException {
+		
+		LOGGER.log(Level.INFO,"Calling Send Notification Method");
+		
+		
+		String module = "crash";
+		String issueName = crashEntity.getIssueName();
+		String message = crashEntity.getMessage();
+		Long bundleId = crashEntity.getApID();
+		Long uniqueId = crashEntity.getUniqueID();
+		Integer mode = crashEntity.getMode();
+		Long appID = crashEntity.getProjectID();
+		String displayName = ProjectHandler.getDisplayName(appID);
+		crashEntity.setMailContent(CommonUtil.maskPII(message));
+		
+		
+			try{
+
+				String crashurl = "";
+				if(crashEntity.getIsExceptionInserted()){
+					Long deviceid = (crashEntity.getDeviceConsent() == AppticsConstants.ANON_DEVICEID ) ? crashEntity.getDeviceID() :  MaskHandler.getDeviceMaskIDFromCassandra(crashEntity.getDeviceID(),appID);
+					SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+					String zsoid = DataspaceAndAppMapper.getInstance().getOrgLoginname(crashEntity.getProjectID());
+					
+					crashurl = AppticsConstants.SERVICEURL+"/ac/"+zsoid+"/"+appID+"/exception/"+crashEntity.getExceptionGroup()+"?startDate="+sf.format(new Date())+"&endDate="+sf.format(new Date())+"&exceptionGroup="+crashEntity.getExceptionGroup()+"&mode="+crashEntity.getMode()+"&dateRangeIndex=11&deviceID="+deviceid+"&happenedAt="+crashEntity.getHappenedAt();
+					LOGGER.log(Level.INFO,"url is {0}",crashurl);
+				}
+
+				if(crashEntity.getBrand().equalsIgnoreCase(AppticsConstants.APPLE)) {
+					crashEntity.setMsgContent(issueName);
+				}
+				else {
+					crashEntity.setMsgContent(message);
+				}
+	
+				String mailCont = crashEntity.getMailContent();
+				mailCont = mailCont.replaceAll("\\n", "<br>");
+				mailCont = mailCont.replaceAll("\\t", "&nbsp;&nbsp;&nbsp;&nbsp;");
+				
+				LOGGER.log(Level.INFO, "Mail content -- {0}", mailCont);
+				String cliqsubtype = "all";
+				String appAndBuildversion = crashEntity.getAppVersion() + "("+crashEntity.getAppReleaseVersion()+")";
+
+				String subject = "Crash " + EmailNotificationContent.MODES.get(mode) + " | " + displayName + " " + appAndBuildversion + " | " + crashEntity.getPlatform() + " " + crashEntity.getOsVersion() + " | " + issueName;
+				LOGGER.log(Level.INFO, "Mail subject -- {0}", subject);
+
+				String zsoid = DataspaceAndAppMapper.getInstance().getOrgLoginname(appID);
+
+				LOGGER.log(Level.INFO, "----Before sendtoasana method----");
+				sendToAsana(zsoid, bundleId, crashurl, message + "- Asana - " + System.currentTimeMillis(), subject);
+
+				if(crashEntity.getIsNewUniqueID()){
+					
+					cliqsubtype = "unique";
+
+					sendCrashMail(crashEntity, appAndBuildversion, subject, true, module, crashurl, displayName);
+					String bugDescription = crashurl+"\n\n"+message;
+					if(issueName.contains("unsymbolicated") || issueName.contains("Missing Symbols")) 
+					{
+						LOGGER.log(Level.INFO, "Skiping unsymbolicated and Missing Symbols crash to assign in projects for {0},{1},{2},{3},{4},{5}", new Object[] { bundleId, issueName, bugDescription, uniqueId, appID, crashEntity.getAppVersionID()});
+					}
+					else
+					{
+						String bugTitle = displayName+" "+ appAndBuildversion+" | "+crashEntity.getPlatform()+" "+crashEntity.getOsVersion()+" | "+issueName;
+						Integrations.PROJECT.addCrashAsBug(module, "unique", bundleId, bugTitle, bugDescription, uniqueId, appID, crashEntity.getAppVersionID());
+
+						// String zsoid = DataspaceAndAppMapper.getInstance().getOrgLoginname(appID);
+                        Integrations.JIRA.sendToJira(
+                                zsoid,
+                                appID,
+                                bundleId,
+                                module,
+                                bugTitle,
+                                message,
+                                crashurl
+                        );
+
+						sendToMsTeams(module, "unique", bundleId, displayName, crashurl, crashEntity);
+
+						// For asana Task Creation
+						
+
+					}
+				} else {
+					sendToMsTeams(module, "all", bundleId, displayName, crashurl, crashEntity);
+				}
+
+				try{
+					String content = getChatcontent(displayName, crashurl, 1,crashEntity);
+					
+					String cliqContent = content + "[Crash Details]("+crashurl+")";
+					cliqIntegration(module, cliqsubtype, bundleId, cliqContent);
+					
+					String slackContent = content + "<"+crashurl+"|Crash Details>";
+					Integrations.SLACK.sendMessage(module, cliqsubtype, bundleId, slackContent);
+				}
+				catch(Exception e){
+					LOGGER.log(Level.INFO, "Exception while send message to cliq {0}", new Object[] {e});
+				}
+			}
+			catch(Exception e){
+				
+				LOGGER.log(Level.INFO, "Exception while sending Crash/Non Fatal exception mail {0}", new Object[] {e});
+			}
+		
+		}
+
+		// public void testMethod() {
+		// sendToAsana("49453462", 4000000002005l, "testing.com", "crash issuename", "Crash Happened today");
+		// }
+
+		/*
+		 * private static void sendToAsana(String zsoid, long bundleId, String crashurl, String message, String bugTitle) { try { LOGGER.log(Level.INFO, "Inside the send to asana method"); Long zuID =
+		 * AppticsIAMUtil.getCurrentUserZUID();
+		 * 
+		 * if (zuID != null) { AsanaHandler asanaHandler = new AsanaHandler(); JSONObject asanaConfig = asanaHandler.getConfiguration(bundleId); LOGGER.log(Level.INFO, "ASANA GETCONF  {0}",
+		 * asanaConfig);
+		 * 
+		 * if (asanaConfig != null) { JSONObject configuration = asanaConfig.optJSONObject("Configuration"); // get nested object
+		 * 
+		 * if (configuration != null) { String workspaceGid = configuration.optString("workspaceGid", null); String projectGid = configuration.optString("projectGid", null);
+		 * 
+		 * LOGGER.log(Level.INFO, "ASANA workspaceGid {0}", workspaceGid); LOGGER.log(Level.INFO, "ASANA projectGid {0}", projectGid);
+		 * 
+		 * if (!CommonUtil.isEmpty(workspaceGid, projectGid)) { String taskDescription = crashurl + "\n\n" + message; // no i18N
+		 * 
+		 * JSONObject asanaResult = asanaHandler.addAsanaTask(zuID, workspaceGid, projectGid, bugTitle, taskDescription, null, zsoid, bundleId); LOGGER.log(Level.INFO,
+		 * "Asana task creation result: {0}", asanaResult); } } else { LOGGER.log(Level.WARNING, "Asana configuration object is null for bundleId: {0}", bundleId); } } else { LOGGER.log(Level.WARNING,
+		 * "Asana config not found for bundleId: {0}", bundleId); } } else { LOGGER.log(Level.WARNING, "Asana zuID not found for zsoid: {0}", zsoid); } } catch (Exception e) { LOGGER.log(Level.SEVERE,
+		 * "Exception while creating Asana task for crash", e); } }
+		 */
+
+		private static void sendToAsana(String zsoid, long bundleId, String crashurl, String message, String bugTitle) {
+		      try {
+		          LOGGER.log(Level.INFO, "Inside the send to asana method");
+		          
+		          AsanaHandler asanaHandler = new AsanaHandler();
+		          JSONObject asanaConfig = asanaHandler.getConfiguration(bundleId);
+		          LOGGER.log(Level.INFO, "ASANA GETCONF  {0}", asanaConfig);
+		              
+		          if (asanaConfig != null) {
+		              JSONObject configuration = asanaConfig.optJSONObject("Configuration"); // get nested object
+		                  
+		              if (configuration != null) {
+		                  Long zuID = configuration.optLong("zuid");
+
+		                  String workspaceGid = configuration.optString("workspaceGid", null);
+		                  String projectGid = configuration.optString("projectGid", null);
+		                  
+		                  LOGGER.log(Level.INFO, "ASANA zuID {0}", zuID);
+		                  LOGGER.log(Level.INFO, "ASANA workspaceGid {0}", workspaceGid);
+		                  LOGGER.log(Level.INFO, "ASANA projectGid {0}", projectGid);
+		                  if (zuID != null && zuID != 0 && !CommonUtil.isEmpty(workspaceGid, projectGid)) {                                                                                  
+		                      String taskDescription = crashurl + "\n\n" + message; // no i18N                                                                                               
+		                                                                                                                                                                                     
+		                      JSONObject asanaResult = asanaHandler.addAsanaTask(zuID, workspaceGid, projectGid, bugTitle, taskDescription, null, zsoid, bundleId);                          
+		                      LOGGER.log(Level.INFO, "Asana task creation result: {0}", asanaResult);                                                                                        
+		                  } else {                                                                                                                                                           
+		                      LOGGER.log(Level.WARNING, "Asana zuID/workspaceGid/projectGid missing for zsoid: {0}", zsoid);                                                                 
+		                  }                                                                                                                                                                  
+		              } else {                                                                                                                                                               
+		                  LOGGER.log(Level.WARNING, "Asana configuration object is null for bundleId: {0}", bundleId);                                                                       
+		              }                                                                                                                                                                      
+		          } else {                                                                                                                                                                   
+		              LOGGER.log(Level.WARNING, "Asana config not found for bundleId: {0}", bundleId);                                                                                       
+		          }                                                                                                                                                                          
+		      } catch (Exception e) {                                                                                                                                                        
+		          LOGGER.log(Level.SEVERE, "Exception while creating Asana task for crash", e);                                                                                              
+				}
+			}
+
+    private static void sendToMsTeams(
+            String module,
+            String subType,
+            Long apId,
+            String displayName,
+            String crashUrl,
+            CrashEntity crash
+    ) {
+
+        String header = displayName + " | " + crash.getAppVersion() + " | " + crash.getPlatform() + " | " + crash.getOsVersion() + " | " + crash.getDeviceModel();
+        String classLineInfo = null;
+        String screenName = null;
+
+        String os = crash.getPlatform();
+        if ("Android".equalsIgnoreCase(os)) {
+            List<String> msg = CommonUtil.getClassAndLineNumber(crash.getMessage());
+            String line = "";
+            String className = "";
+            //msg contains class name and linenumber
+            if(msg.size() >= 2){
+                className = msg.get(0);
+                line = msg.get(1);
+            }
+
+            classLineInfo = className +" (line "+line+" )";
+            screenName = crash.getScreenName();
+        } else if ("Windows".equalsIgnoreCase(os)) {
+            String message = crash.getMessage();
+            if (!CommonUtil.isEmpty(message)) {
+                String className = windowsMessageOperation(message,displayName);
+                LOGGER.log(Level.INFO,"Class Name {0}",className);
+                classLineInfo = className;
+            }
+        }
+
+        Integrations.MSTEAMS.sendCrash(
+                apId,
+                module,
+                subType,
+                header,
+                crash.getIssueName(),
+                classLineInfo,
+                screenName,
+                crashUrl
+        );
+    }
+
+
+private static void cliqIntegration(String module, String cliqType, Long apID, String cliqContent) {
+		
+		Integrations.CLIQ.sendCliqMessage(module, cliqType, apID, cliqContent, null);
+	}
+		
+
+private static String getChatcontent(String appName, String crashurl, Integer type,CrashEntity crashentity) {
+	LOGGER.log(Level.INFO,"Set the chat Content");
+		String cliqContent = "";
+		String os = crashentity.getPlatform();
+		if("Android".equalsIgnoreCase(os) ){
+			List<String> msg = CommonUtil.getClassAndLineNumber(crashentity.getMessage());
+
+			String line = "";
+			String className = "";
+			//msg contains class name and linenumber
+			if(msg.size() >= 2){
+				className = msg.get(0);
+				line = msg.get(1);
+			}
+			cliqContent = androidChatContent(appName, crashentity, className, line,type);
+		}
+		else if("Windows".equalsIgnoreCase(os)){
+			cliqContent = windowsChatContent(appName,crashentity,type);
+		}
+		
+		else{
+			cliqContent = iosChatContent(appName,crashentity, crashurl,type);
+		}
+		return cliqContent;
+	}
+
+
+	public static String windowsChatContent(String appName, CrashEntity crashentity, int type) {
+
+		String message = crashentity.getMessage();
+
+		StringBuilder sb = new StringBuilder();
+		if (type == 0) {
+			sb.append("`Unique`\n");
+		}
+		sb.append("*" + appName + " " + crashentity.getAppVersion() + " * | *" + crashentity.getPlatform() + " " + crashentity.getOsVersion() + "* | *" + crashentity.getDeviceModel() + "*\n\n");
+		sb.append("Reason : *" + crashentity.getIssueName() + "* \n\n");
+		if (!CommonUtil.isEmpty(message)) {
+			String className = windowsMessageOperation(message,appName);
+			
+			LOGGER.log(Level.INFO,"Class Name {0}",className);
+			
+			sb.append("Class : *" + className + "\n\n");
+		}
+
+		sb.append("Screen : " + crashentity.getScreenName() + "\n\n");
+
+		return sb.toString();
+	}
+
+
+	private static String windowsMessageOperation(String message, String appName) {
+		
+		String[] arr = message.split("\n");		
+		
+		 Pattern pattern = Pattern.compile(String.join("|", appName.split("\\s+")));
+
+		    for (String line : message.split("\n")) {
+
+		        if (pattern.matcher(line).find()) {
+		            int last = line.lastIndexOf('.');
+		            int prev = line.lastIndexOf('.', last - 1);
+		            return prev > -1 ? line.substring(prev + 1, last) : null;
+		        }
+		    }
+		 
+		 for (String s : arr) {
+			 if(s.contains("at ")) {
+				 
+				 String[] parts = s.split("\\.");
+		        if (parts.length >= 2) {
+		             return parts[parts.length - 2];
+		        }
+			 }
+	        }
+		 
+        return arr[0];
+    }
+	
+
+public static String androidChatContent(String appName, CrashEntity crashentity, String className, String line,int type){
+	StringBuilder sb = new StringBuilder();
+	if(type == 0)
+	{
+		sb.append("`Unique`\n");
+	}
+	sb.append("*"+appName +" "+ crashentity.getAppVersion()+" * | *"+ crashentity.getPlatform() + " " +crashentity.getOsVersion()+ "* | *" +crashentity.getDeviceModel()+"*\n\n");
+	sb.append("Reason : *"+ crashentity.getIssueName()+"* \n\n");
+	sb.append("Class : *"+ className +"* (line *"+line+"* )\n\n");
+	sb.append("Screen : "+ crashentity.getScreenName()+"\n\n");
+
+	return sb.toString();
+}
+ 
+	
+	public static String iosChatContent(String appName, CrashEntity crashentity,String url,int type){
+		StringBuilder sb = new StringBuilder();
+		if(type == 0)
+		{
+			sb.append("`Unique`\n");
+		}
+		sb.append("*"+appName +" "+ crashentity.getAppVersion()+" * | *"+ crashentity.getPlatform() + " " +crashentity.getOsVersion()+ "* | *" +crashentity.getDeviceModel()+"*\n\n");
+		sb.append("Reason : *"+ crashentity.getIssueName()+"* \n\n");
+
+		return sb.toString();
+	}
+
+	private static void sendCrashMail(CrashEntity crashentity, String appAndBuildversion, String subject  , boolean b, String urlval, String crashurl,String appName ) {
+		
+		String from = "no-reply@zohoapptics.com";
+		String to = "";
+		String cc = "";
+		Long appID = crashentity.getProjectID();
+		Integer mode = crashentity.getMode();
+		Long pid = crashentity.getPlatformID();
+		String os = crashentity.getPlatform();
+
+		try{
+
+			String bcc = "";
+			SimpleDateFormat sdt = new SimpleDateFormat("h:mm a dd MMM yy, z");
+
+			Map<String, String> receivers = EmailNotificationHandler.getReceivers(AppticsConstants.UNIQUECRASHES, appID, mode, crashentity.getBundle(), pid);
+			
+			String personal = receivers.get("personal");
+			String group = receivers.get("group");
+			
+			to = !CommonUtil.isEmpty(personal, group) ? personal + "," + group : personal + group;
+			LOGGER.info("Receivers are "+  to);
+
+			if(appID == 2023057641745l){
+				bcc = "samuthirapandian@zohocorp.com"; //Should not bcc
+				if(mode == 1){
+					to += (CommonUtil.isEmpty(to) ? "" : "," )+ CommonUtil.getPropertyFromCommonDB("zohodashboards_live_mailid");
+				}
+				else if(mode == 2){
+					to += (CommonUtil.isEmpty(to) ? "" : "," )+ CommonUtil.getPropertyFromCommonDB("zohodashboards_testing_mailid");
+				}
+			}
+			if(CommonUtil.isEmpty(to)){
+				return;
+			}
+
+			String zsoid = DataspaceAndAppMapper.getInstance().getOrgLoginname(appID);
+			String settingsurl = AppticsConstants.SERVICEURL+"/ac/"+zsoid+"/"+appID+"/"+mode+"/settings#emailnotification";
+
+			String latFramework = FrameworkHandler.fetchLatestVersion(pid);
+
+
+			String newContent = "";
+			String crashsource = crashentity.getMessage().contains("com.zoho.accounts.zohoaccounts") ? "SSOKit" : "";
+			Boolean isCrash = crashentity.getExceptionGroup().equalsIgnoreCase(AppticsConstants.FATAL);
+
+			if("Android".equalsIgnoreCase(crashentity.getPlatform())){
+				
+				if(!"".equals(crashsource)){
+					subject = "SSO "+ subject;
+					cc = "mobilesso-support@zohocorp.com";
+				}
+				List<String> msg = CommonUtil.getClassAndLineNumber(crashentity.getIssueName());
+				
+
+				if(msg.size() >= 2){
+
+					newContent = EmailNotificationContent.getAndroidCrashContent(appName, crashentity.getScreenName(), crashentity.getAppVersion(), sdt.format(new Date(crashentity.getHappenedAt())), os, crashentity.getOsVersion(), crashentity.getDeviceModel(), crashentity.getBundle(), crashentity.getIssueName(), "", crashentity.getMsgContent().trim(), ""+crashentity.getDeviceID(), "", crashentity.getFrameworkVersion(), latFramework, crashurl, mode, msg.get(1), msg.get(0), settingsurl, isCrash, "",crashentity.getCustomProperties());
+				}
+				else{
+					newContent = EmailNotificationContent.getAndroidCrashContent(appName,  crashentity.getScreenName(), crashentity.getAppVersion(), sdt.format(new Date(crashentity.getHappenedAt())), os, crashentity.getOsVersion(), crashentity.getDeviceModel(), crashentity.getBundle(), crashentity.getIssueName(), "", crashentity.getMsgContent().trim(), ""+crashentity.getDeviceID(), "", crashentity.getFrameworkVersion(), latFramework, crashurl, mode, "", "", settingsurl, isCrash, "", crashentity.getCustomProperties());
+				}
+			}
+			else{
+				if("SSOKit".equals(crashsource)){
+					subject = "SSO "+ subject;
+					cc = "kumareshwaran.s@zohocorp.com";
+				}
+				
+				newContent = EmailNotificationContent.getCrashContent(appName,crashentity.getScreenName(), crashentity.getAppVersion(), sdt.format(new Date(crashentity.getHappenedAt())), os, crashentity.getOsVersion(), crashentity.getDeviceModel(), crashentity.getBundle(), crashentity.getIssueName(), "", crashentity.getIssueName(), ""+crashentity.getDeviceID(), "", crashentity.getFrameworkVersion(), latFramework, crashurl, mode, settingsurl, "", crashentity.getCustomProperties(), isCrash);
+					
+			}
+
+			JSONArray attachments = new JSONArray();
+
+			if(crashentity.getBrand().equalsIgnoreCase(AppticsConstants.APPLE)){
+				JSONObject crashfile = new JSONObject();
+				crashfile.put("Name", "crash.txt");
+				crashfile.put("ContentType", "text/*");
+				crashfile.put("Content", CommonUtil.encodeString(crashentity.getMessage()));
+				attachments.put(crashfile);
+			}
+			else if(crashentity.getBrand().equalsIgnoreCase(AppticsConstants.GOOGLE)){
+				JSONObject retracedcrash = new JSONObject();
+				retracedcrash.put("Name", "deobfuscatedtrace.txt");
+				retracedcrash.put("ContentType", "text/*");
+				retracedcrash.put("Content", CommonUtil.encodeString(crashentity.getMessage()));
+				attachments.put(retracedcrash);
+			}
+
+			LOGGER.log(Level.INFO, newContent);
+			TransmailNotificationUtil.sendMailWithAttachment(subject, newContent, from, to, cc, bcc, attachments, new JSONArray());
+		}
+		catch(Exception e){
+			LOGGER.info("Exception while sending mail "+e);
+		}	
+	
+	}
+
+	public static void processNativeSymboliction(CrashEntity crashentity) throws Exception {
+		
+		LOGGER.log(Level.INFO,"Calling ProcessNativeSymbolication Method");
+		
+		String issueName = AppticsConstants.UNSYMBOLICATED + " - " + crashentity.getCrashGroupString();
+		String message = crashentity.getMessage();
+		
+		final String disabledApID =PropertyHandler.getValue(SdkConstants.DISBALEDSYMBOLICATIONAPID);
+		if(disabledApID!=null && disabledApID.contains(crashentity.getApID()+"")) {
+			LOGGER.log(Level.INFO, "Symbolication disabled for the apid {0}",crashentity.getApID());
+			return;
+		}
+	
+		File dsymfile = fetchFile(AppticsConstants.DSYMTABLE, crashentity);
+		
+		if(CommonUtil.isEmpty(dsymfile)) {
+			LOGGER.log(Level.INFO,"Dsym file not there");
+			String displayName = ProjectHandler.getDisplayName(crashentity.getProjectID());
+			issueName = "Missing dSYMs for [" + displayName + "]";
+			crashentity.setIssueName(CommonUtil.maskPII(issueName));
+			crashentity.setMessage(CommonUtil.maskPII(crashentity.getMessage()));
+			return;
+		}
+
+		LOGGER.log(Level.INFO,"Calling symbolication process");
+		
+		String crash = "";
+		JSONObject crashdetails = new JSONObject();
+		 
+		try {
+			DSymServer mac = DSymServer.getInstatnce(crashentity.getProjectID());
+			String host = mac.host;
+			String username = mac.username;
+			String pass = mac.password;
+			
+			LOGGER.log(Level.INFO,"mac server is {0}",host);
+			
+			//Long symid = updateDsymFile(crashentity, mac);
+			
+			String symid = crashentity.getDeviceID() + "_" + crashentity.getHappenedAt();
+
+			String cfile = "C_" + symid + ".crash"; 
+			String symfile = "s_" + symid;
+
+			String dsymName = crashentity.getAppVersionID() + "-" + crashentity.getAppReleaseVersion()+"_dSYM";
+
+			String buildlocation = BUILDLOCATION + dsymName;
+			String crashlocation = CRASHLOCATION + cfile;
+			String desymlocation = DESYMLOCATION + symfile;
+			String scriptlocation = SCRIPTLOCATION + "symbolicateHelper.sh";
+
+			LOGGER.log(Level.INFO, "scriptlocation - {0}, crashlocation - {1}, desymlocation - {2} , buildlocation - {3}", new Object[] { scriptlocation, crashlocation, desymlocation, buildlocation });
+
+			SshConfig config = new SshConfig(host, username, pass, cfile, CRASHLOCATION + cfile); // adding crash file
+			SshExecutor.writeDataToFile(config, crashentity.getMessage());
+
+			try {
+				LOGGER.log(Level.INFO, "Checking ls in dsymlocation");
+				SshExecutor.executeCommand(new SshConfig(host, username, pass, "ls " + buildlocation)); // Checking the file available status
+			} catch (Exception e) {
+				LOGGER.log(Level.INFO, "Exception (nofile): ", e);
+				copyDSymFiletoMac(crashentity, dsymfile, crashentity.getDsymPath(), mac, buildlocation,AppticsConstants.SYMBOLICATION);
+
+				try {
+					LOGGER.log(Level.INFO, "Again_inner_ls_check");
+					SshExecutor.executeCommand(new SshConfig(host, username, pass, "ls " + buildlocation)); // Checking the file available status
+				} catch (Exception e1) {
+					LOGGER.log(Level.INFO, "No file - Inner LS Check : ", e1);
+					throw new Exception("No file at Mac Server for AppversionID "+crashentity.getAppVersionID()+", AppReleaseVersionID "+crashentity.getAppReleaseVersionID());
+				}
+			}
+
+			OutputStream out = new ByteArrayOutputStream();
+
+			SshConfig config1 = new SshConfig(host, username, pass, "sh " + scriptlocation + " " + crashlocation + " " + desymlocation + " " + buildlocation); // Desymbolicating crash command
+			SshExecutor.executeCommand(config1);
+
+			SshExecutor.writeFromFileToStream(new SshConfig(host, username, pass, cfile, desymlocation + ".json", 20), out); // writing file into stream
+			SshExecutor.executeCommand(new SshConfig(host, username, pass, "rm -rvf " + crashlocation)); // removing crash file
+
+			crash = ((ByteArrayOutputStream) out).toString();
+
+			LOGGER.log(Level.INFO, "Crashshes {0}", crash);
+			SshExecutor.executeCommand(new SshConfig(host, username, pass, "rm -rvf " + desymlocation + ".json")); // removing symbolicated file
+
+			crashdetails = new JSONObject(crash);
+
+				if (!CommonUtil.isEmpty(crashdetails)) {
+
+					message = crashdetails.getString("crash");
+					String crash_title = crashdetails.getString("crash_title");
+					String crash_type = crashdetails.getString("crash_type");
+					
+					crash_title = crash_title.trim().isEmpty()?AppticsConstants.OTHERS:crash_title;
+					
+					LOGGER.log(Level.INFO, "CrashTitle is {0}", crash_title);
+					
+					issueName = crash_title + "\n" + (CommonUtil.isEmpty(crash_type) ? "" : crash_type);
+
+					String library = crashdetails.getString("crashed_library");
+					String head = crashdetails.getString("crash_description");
+					LOGGER.log(Level.INFO, "Heading for the crash {0} and library {1}", new Object[] { head, library });
+				}
+				
+				if(issueName.contains(AppticsConstants.MISSINGSYMBOLS)) {
+					LOGGER.log(Level.INFO, "change the issuename {0}", issueName);
+					issueName = findIssueName(message,crashentity.getCrashGroupString());
+				}
+				LOGGER.log(Level.INFO, "IssueName is {0}", issueName);
+				
+				crashentity.setMessage(CommonUtil.maskPII(message));
+				crashentity.setIssueName(CommonUtil.maskPII(issueName));
+				
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Exception while processing Symbolicateion {0}",e);
+			if(crashentity.getReProcess()) {
+			LOGGER.log(Level.INFO,"Failed on Mac so ReProcess to Linux");
+			crashentity.setReProcess(false);
+			linuxSymbolication(crashentity);
+			}
+		}
+		
+		finally {
+			CommonUtil.deleteTmpFileInAppServer(dsymfile);
+		}
+
+
+	//	crashentity.setMailContent(CommonUtil.maskPII(message));
+
+	}
+	
+	public static String findIssueName(String message,String crashGroup) {
+		
+		LOGGER.log(Level.INFO, "Find Issue Name called");
+		String issueName = AppticsConstants.UNSYMBOLICATED + " - " + crashGroup;
+		
+		try {
+			Pattern crashedThreadPattern = Pattern.compile("Crashed Thread:\\s*(\\d+)");
+			Matcher crashedThreadMatcher = crashedThreadPattern.matcher(message);
+
+			if (crashedThreadMatcher.find()) {
+				int crashedThreadNumber = Integer.parseInt(crashedThreadMatcher.group(1));
+
+				int startIndex = message.indexOf("Thread " + crashedThreadNumber++); // store the crashed thread number for thread usage
+				int endIndex = message.contains("Thread " + crashedThreadNumber) ? message.indexOf("Thread " + crashedThreadNumber) : message.indexOf("Thread State:");
+				// end Index the next number of the crashed thread
+				if (startIndex < endIndex) {
+					String[] threadLine = message.substring(startIndex, endIndex).split("\n");
+
+					for (String line : threadLine) {
+
+						Pattern pattern = Pattern.compile(AppticsConstants.TRACEREGEX);
+						if (!pattern.matcher(line).matches() && Character.isDigit(line.charAt(0))) {
+							LOGGER.log(Level.INFO, "unsymbolicated line is {0}",line);
+							
+							line = line.replaceAll("^\\d+", "");
+							return line;
+						}	
+					}
+				}
+			} else {
+				return issueName;
+			}
+		} catch (Exception e) {
+			LOGGER.log(Level.INFO, "Exception while find the issuename for missing symbols ", e);
+		}
+		return issueName;
+	}
+
+	
+
+	public static void processNativeObfuscation(CrashEntity crashentity) throws Exception {
+		
+		String issueName = crashentity.getIssueName();
+		String message = crashentity.getMessage();
+		Integer caseNo = 1;
+		
+		File mappingFile = fetchFile(AppticsConstants.BUILDMAPPINGFILES, crashentity);
+		InputStream crashin = null;
+		
+		try{
+			if(mappingFile != null){
+				crashin = new ByteArrayInputStream(crashentity.getExceptionInfo());
+				
+				ReTrace r = new ReTrace(mappingFile);
+				message = r.execute(crashin);
+			}
+		}
+		catch(Exception e){
+			LOGGER.info("Exception while using retrace "+ e);
+		}
+		finally{
+
+			if(crashin !=null){
+				try {
+					crashin.close();
+				} catch (IOException e) {
+					LOGGER.log(Level.INFO,"Exception while closing inputstream {0}",e);
+				}
+			}
+			CommonUtil.deleteTmpFileInAppServer(mappingFile);
+		}
+		
+		if (crashentity.getExceptionGroup().equalsIgnoreCase(AppticsConstants.ANR)) {
+			caseNo = 4;
+		}
+	
+	
+		crashentity.setMessage(CommonUtil.maskPII(message));	
+		
+		String temp = retrieveAndroidUniqueException(crashentity,caseNo);
+		if(!CommonUtil.isEmpty(temp) && temp.length() != 0){
+			issueName = temp;
+			LOGGER.log(Level.INFO, "Unique Message : {0}",issueName);
+			
+		}
+		crashentity.setIssueName(CommonUtil.maskPII(issueName));
+		
+	}
+		
+	  public static String retrieveAndroidUniqueException(CrashEntity crashentity,int i) {
+		 // Using old method  
+	    	String uniqueMessage = "";
+	    	try {
+		        String[] lines = {};
+		        if (CommonUtil.isEmpty(crashentity.getBundle(), crashentity.getMessage())) {
+		        	return "";
+		        }
+		        lines = crashentity.getMessage().split("\\n");
+		        
+		        String exceptionString = "Exception";
+		        String causedString = "Caused by:";
+		
+		        switch (i) {
+		            case 1:
+		                String identifier = crashentity.getBundle();
+		                if(lines[0].indexOf(exceptionString) == -1) {
+		                	break;
+		                }
+		                String temp = lines[0].substring(0, lines[0].indexOf(exceptionString)+exceptionString.length());
+		                
+		                uniqueMessage = unique(lines, identifier);
+		                if(uniqueMessage.trim().equals("") && identifier.split("\\.").length > 1) {
+		                    identifier = identifier.substring(0, identifier.lastIndexOf("."));
+		                    uniqueMessage = unique(lines, identifier);
+		                }
+		                
+		                uniqueMessage = uniqueMessage != "" ? temp+" "+ uniqueMessage : uniqueMessage;
+		                break;
+		
+		            case 2:
+		                uniqueMessage = Arrays.stream(lines).filter(line -> line.startsWith(causedString)).reduce((l, l1) -> l1).orElse("");
+		                if ("".equals(uniqueMessage)){
+		                    break;
+		                }
+		                String temp1 = uniqueMessage;
+		
+		                StringBuilder result = new StringBuilder();
+		 
+		                if(uniqueMessage.indexOf(exceptionString) == -1) {
+		                	result.append(uniqueMessage.substring(uniqueMessage.indexOf(causedString)+causedString.length(), uniqueMessage.indexOf(exceptionString)+exceptionString.length()));
+		                }
+		
+		                AtomicBoolean flag = new AtomicBoolean(false);
+		                Arrays.stream(lines).forEach(line -> {
+		                    if(flag.get()){
+		                        result.append(line);
+		                        flag.set(false);
+		                    }
+		                    if(line.equals(temp1)){
+		                        flag.set(true);
+		                    }
+		                });
+		                
+		                uniqueMessage = result.toString();
+		                break;
+		
+		            case 3:
+		            	if(lines[0].indexOf(exceptionString) != -1)
+		            	{
+		            		uniqueMessage = lines.length > 1 ? lines[0].substring(0, lines[0].indexOf(exceptionString)+exceptionString.length()) + " "+ lines[1] : uniqueMessage;
+		            	}
+		                break;
+		                
+		            case 4:
+		            	 identifier = crashentity.getBundle();
+		            	 uniqueMessage = unique(lines, identifier);
+		            	 
+		            	 if(!CommonUtil.isEmpty(uniqueMessage)) {
+		            		 String tmpissue =crashentity.getIssueName();
+		            		 
+		            		 tmpissue = (tmpissue.contains("(") && tmpissue.contains(":")?tmpissue.substring(0,tmpissue.indexOf("(")):tmpissue).trim();
+		            		 
+		            		 uniqueMessage = tmpissue+" "+uniqueMessage;
+		            	 }
+		        }
+		        if(uniqueMessage == "" && i <= 3) {
+		            uniqueMessage = retrieveAndroidUniqueException(crashentity,i+1);
+		        }
+	    	}catch (Exception e) {
+	    		LOGGER.log(Level.SEVERE, "Exception while fetching uniqueMessage ", e);
+	    	}
+	        return uniqueMessage;
+	    }
+	  
+		private static String unique(String[] lines, String bundle){
+	        String uniqueMessage = Arrays.stream(lines).filter(line -> line.contains("at " + bundle)).findFirst().orElse("");
+	        return uniqueMessage;
+	    }
+
+	public static void processReactReport(CrashEntity crashEntity) {
+
+		try {
+			String crashdetails[] = null;
+
+			String message = crashEntity.getMessage();
+			
+
+			String issueName = AppticsConstants.UNSYMBOLICATED;
+			// Map File Process
+			LOGGER.log(Level.INFO, "Calling fetch react map file");
+
+			String entityName = AppticsConstants.REACTANDROIDMAP;
+			if (crashEntity.getPlatform().equalsIgnoreCase(AppticsConstants.IOS)) {
+				entityName = AppticsConstants.REACTIOSMAP;
+			}
+
+			File symbolFile = fetchFile(AppticsConstants.REACTNATIVEFILES, crashEntity);
+
+			File unzipFile = !CommonUtil.isEmpty(symbolFile) ? unzipFile(symbolFile, entityName) : null;
+
+			if (!CommonUtil.isEmpty(unzipFile)) {
+
+				String symbolicatemsg = processHybridSymbolication(crashEntity.getMessage(), unzipFile, crashEntity.getCrashType() == AppticsConstants.EXCEPTIONTYPE_FLUTTER);
+
+				if (!CommonUtil.isEmpty(symbolicatemsg)) {
+					String crash = "";
+
+					if (symbolicatemsg.contains("stack:")) {
+						symbolicatemsg = symbolicatemsg.substring(symbolicatemsg.indexOf("stack:") + 6);
+					}
+					crashdetails = symbolicatemsg.trim().split("\n");
+					for (String crashline : crashdetails) {
+						Integer index = crashline.contains("/") ? crashline.lastIndexOf("/") : 0;
+						String classandline = crashline.substring(index + 1);
+						crash += classandline + "\n";
+					}
+					crashdetails = crash.split("\n");
+
+					if (crashdetails[0].contains(":") ? !crashdetails[0].split(":")[0].equals("null") : true) {
+						message = crashEntity.getIssueName() + "\n" + crash;
+						issueName = crashdetails[0];
+					}
+				}
+			}
+			crashEntity.setMessage(CommonUtil.maskPII(message));
+			crashEntity.setIssueName(CommonUtil.maskPII(issueName));
+			
+
+		} catch (Exception e) {
+			LOGGER.log(Level.INFO, "Exception While processing ReactNative Crash");
+		}
+
+	}
+	
+	public static Long updateDsymFile(CrashEntity crashentity, DSymServer mac) {
+
+		try {
+
+			String crashfilepath = crashentity.getAppVersionID() + "_" + System.currentTimeMillis() + ".crash";
+			String blockID = DFSFileHandler.dfsFileUpload(new ByteArrayInputStream(crashentity.getMessage().getBytes()), crashfilepath, crashentity.getProjectID());
+
+			String symbolicateCrash = AppticsConstants.SYMBOLICATECRASHTABLE;
+			Row row = new Row(symbolicateCrash);
+			row.set(AppticsConstants.APPID, crashentity.getProjectID());
+			row.set(AppticsConstants.APPVERSIONID, crashentity.getAppVersionID());
+			row.set(AppticsConstants.BLOCKID, blockID);
+			row.set(AppticsConstants.CRASHDFSFILEPATH, crashfilepath);
+			row.set(AppticsConstants.MACIP, mac.host);
+			row.set(AppticsConstants.CRASHINFO, "");
+			row.set(AppticsConstants.STATUS, AppticsConstants.STATUS_FALSE);
+			row.set(AppticsConstants.ADDEDTIME, System.currentTimeMillis());
+
+			return ADBHandler.insertRow(row, symbolicateCrash, AppticsConstants.CRASHID);
+		} catch (Exception e) {
+			LOGGER.log(Level.INFO, "Exception while updating the row to SymbolicateCrash Table");
+			return 0l;
+		}
+	}
+	public static String getSymbolicateDetails(int offset) {
+
+		JSONArray symbolicateStats = new JSONArray();
+
+		SelectQuery sq = new SelectQueryImpl(Table.getTable(AppticsConstants.CRASHSYMBOLICATION));
+		sq.addSelectColumn(Column.getColumn(AppticsConstants.CRASHSYMBOLICATION, "*"));
+
+		sq.addSortColumn(new SortColumn(Column.getColumn(AppticsConstants.CRASHSYMBOLICATION, AppticsConstants.ADDEDTIME), false));
+		sq.setRange(new Range(offset, 500));
+
+		Persistence p = DBHandler.getPersistence();
+
+		try {
+			DataObject dobj = p.get(sq);
+
+			if (!dobj.containsTable(AppticsConstants.CRASHSYMBOLICATION)) {
+				return symbolicateStats.toString();
+			}
+
+			Iterator<Row> rowsObj = dobj.getRows(AppticsConstants.CRASHSYMBOLICATION);
+
+			while (rowsObj.hasNext()) {
+				Row r = new Row(AppticsConstants.CRASHSYMBOLICATION);
+
+				JSONObject resOjbj = new JSONObject();
+
+				resOjbj.put(AppticsConstants.APPID, r.getLong(AppticsConstants.APPID));
+				resOjbj.put(AppticsConstants.SDKVERSION, r.getString(AppticsConstants.SDKVERSION));
+				resOjbj.put(AppticsConstants.APPLICATION, r.getString(AppticsConstants.APPLICATION));
+				resOjbj.put(AppticsConstants.APPVERSION, r.getString(AppticsConstants.APPVERSION));
+				resOjbj.put(AppticsConstants.APPRELEASEVERSION, r.getString(AppticsConstants.APPRELEASEVERSION));
+				resOjbj.put(AppticsConstants.MACISSUENAME, r.getString(AppticsConstants.MACISSUENAME));
+				resOjbj.put(AppticsConstants.LINUXISSUENAME, r.getString(AppticsConstants.LINUXISSUENAME));
+				resOjbj.put(AppticsConstants.MESSAGE, r.getString(AppticsConstants.MESSAGE));
+				resOjbj.put(AppticsConstants.MACSYMBOLICATION, r.getString(AppticsConstants.MACSYMBOLICATION));
+				resOjbj.put(AppticsConstants.LINUXSYMBOLICATION, r.getString(AppticsConstants.LINUXSYMBOLICATION));
+				resOjbj.put(AppticsConstants.STATUS, r.getInt(AppticsConstants.STATUS));
+				resOjbj.put(AppticsConstants.ADDEDTIME, r.getLong(AppticsConstants.ADDEDTIME));
+
+				symbolicateStats.put(resOjbj);
+			}
+
+		} catch (DataAccessException e) {
+			LOGGER.log(Level.INFO, "Exception in getting symbolication stats {0}", e);
+		}
+
+		return symbolicateStats.toString();
+    }
+	public static void addSymbolicationDetails(CrashEntity crashentity) {
+
+		try {
+			LOGGER.log(Level.INFO, "Add SymbolicationDetails {0}" , crashentity.toString());
+
+			Row row = new Row(AppticsConstants.CRASHSYMBOLICATION);
+			row.set(AppticsConstants.APPID, crashentity.getProjectID());
+			row.set(AppticsConstants.SDKVERSION, crashentity.getFrameworkVersion());
+			row.set(AppticsConstants.APPLICATION, crashentity.getBundle());
+			row.set(AppticsConstants.APPVERSION, crashentity.getAppversion());
+			row.set(AppticsConstants.APPRELEASEVERSION, crashentity.getAppReleaseVersion());
+			row.set(AppticsConstants.MACISSUENAME, crashentity.getIssueName());
+			row.set(AppticsConstants.LINUXISSUENAME, crashentity.getLinuxIssueName());
+			row.set(AppticsConstants.MESSAGE, crashentity.getDeSymbolicatedMessage());
+			row.set(AppticsConstants.MACSYMBOLICATION, crashentity.getMessage());
+			row.set(AppticsConstants.LINUXSYMBOLICATION, crashentity.getLinuxSymbolicatedMessage());
+			row.set(AppticsConstants.STATUS, AppticsConstants.STATUS_TRUE);
+			row.set(AppticsConstants.ADDEDTIME, System.currentTimeMillis());
+
+			ADBHandler.insertRow(row, AppticsConstants.CRASHSYMBOLICATION, AppticsConstants.CSID);
+		} catch (Exception e) {
+			LOGGER.log(Level.INFO, "Exception while inserting the row to CRASHSYMBOLICATION Table {0}" , e);
+		}
+	}
+	
+	public static void processFlutterReport(CrashEntity crashEntity) {
+
+		try {
+			
+			String message = crashEntity.getMessage();
+
+			String crashdetails[] = null;
+			String issueName = AppticsConstants.UNSYMBOLICATED;
+
+			Pattern pattern = Pattern.compile("arch:\\s*([\\w\\d]+)");
+			Matcher matcher = pattern.matcher(crashEntity.getMessage());
+			String architecture = null;
+			if (matcher.find()) {
+				architecture = matcher.group(1).trim();
+			}
+
+			if (CommonUtil.isEmpty(architecture)) {
+				crashEntity.setIssueName(issueName);
+				addApplicationReport(crashEntity);
+			}
+
+			LOGGER.log(Level.INFO, "Calling fetch flutter symbol file");
+
+			String entityName = "app.android-" + architecture + ".symbols";
+			if (crashEntity.getPlatform().equalsIgnoreCase(AppticsConstants.IOS)) {
+				entityName = "app.ios-" + architecture + ".symbols";
+			}
+
+			File symbolFile = fetchFile(AppticsConstants.BUILDFILES, crashEntity);
+
+			File unzipFile = !CommonUtil.isEmpty(symbolFile) ? unzipFile(symbolFile, entityName) : null;
+
+			if (!CommonUtil.isEmpty(unzipFile)) {
+
+				String symbolicatemsg = processHybridSymbolication(crashEntity.getMessage(), unzipFile, crashEntity.getCrashType() == AppticsConstants.EXCEPTIONTYPE_FLUTTER);
+
+				if (!CommonUtil.isEmpty(symbolicatemsg)) {
+					if (crashEntity.getCrashType().equals(AppticsConstants.EXCEPTIONTYPE_FLUTTER)) {
+
+						if (symbolicatemsg.contains("#0")) {
+							symbolicatemsg = symbolicatemsg.substring(symbolicatemsg.indexOf("#0"));
+						}
+						String crash = "";
+						crashdetails = symbolicatemsg.trim().split("\n");
+						Integer line = 0;
+						for (String crashline : crashdetails) {
+							crashline = crashline.replace("#" + line++, "").trim();
+							crashline = crashline.replace(crashline.substring(crashline.indexOf("(") + 1, crashline.lastIndexOf("/") + 1), "");
+
+							crash += crashline + "\n";
+						}
+
+						message = crash;
+						issueName = crash.substring(0, crash.indexOf("\n"));
+					}
+				}
+			}
+
+			crashEntity.setMessage(CommonUtil.maskPII(message));
+			crashEntity.setIssueName(CommonUtil.maskPII(issueName));
+			
+			CommonUtil.deleteTmpFileInAppServer(symbolFile);
+		} catch (Exception e) {
+			LOGGER.log(Level.INFO, "Exception While processing Flutter Crash",e);
+		}
+
+	}
+
+
+	public static String processHybridSymbolication(String message, File file, Boolean isFlutter) {
+
+		LOGGER.log(Level.INFO, "Calling symboication process");
+
+		StringBuilder result = new StringBuilder();
+		String command = null;
+
+		BufferedReader reader = null;
+		FileWriter wr = null;
+		File path = null;
+
+		try {
+			path = new File("stactrace.txt");
+
+			wr = new FileWriter(path);
+			wr.write(message);
+			wr.flush();
+			wr.close();
+
+			LOGGER.log(Level.INFO, "symbol file - > {0}", file);
+			LOGGER.log(Level.INFO, "message is - > {0}", message);
+
+			LOGGER.log(Level.INFO, "symbole file path -> {0}", file.getAbsolutePath());
+			LOGGER.log(Level.INFO, "stacktrace path -> {0}", path.getAbsolutePath());
+
+
+			if (isFlutter) {
+				LOGGER.log(Level.INFO, "Flutter Symbolication");
+				command = "flutter symbolize -i " + path + " -d " + file;
+				
+				try {
+
+						LOGGER.log(Level.INFO, "Disable telemetry");
+						ProcessBuilder processBuilder = new ProcessBuilder("/bin/bash", "-c", "flutter --disable-telemetry");
+
+						processBuilder.redirectErrorStream(true);
+						Process process = processBuilder.start();
+						
+						int exitCode = process.waitFor();
+						LOGGER.log(Level.INFO, "Exit Code - > {0}", exitCode);
+						
+					}
+
+				 catch (Exception e) {
+
+					LOGGER.log(Level.INFO, "Exception while disabling telemetry");
+				}
+			} else {
+				LOGGER.log(Level.INFO, "React Symbolication");
+				command = "metro-symbolicate " + file + " < " + path;
+			}
+
+			LOGGER.log(Level.INFO, "Command is {0}", command);
+
+			ProcessBuilder processBuilder = new ProcessBuilder("/bin/bash", "-c", command);
+
+			processBuilder.redirectErrorStream(true);
+
+			Process process = processBuilder.start();
+			reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+			String line = null;
+
+			while ((line = reader.readLine()) != null) {
+
+				result.append(line).append("\n");
+			}
+
+			LOGGER.log(Level.INFO, "result is -> {0}", result);
+
+			int exitCode = process.waitFor();
+			LOGGER.log(Level.INFO, "Exit Code - > {0}", exitCode);
+
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Exception while symbolicate crash - >{0} ", e);
+		}
+
+		finally {
+			try {	
+				
+				reader.close();
+				CommonUtil.deleteTmpFileInAppServer(file);
+				CommonUtil.deleteTmpFileInAppServer(path);		
+				
+			} catch (IOException e) {
+				LOGGER.log(Level.SEVERE, "Exception while closing BufferedReader and writer - > {0}", e);
+			}
+		}
+		return result.toString();
+	}
+	
+	private static File unzipFile(File symbolFile, String entityName) {
+		File outputFile = null;
+		ZipFile zipFile = null;
+
+		FileOutputStream outputStream = null;
+		InputStream inputStream = null;
+		
+		try {
+
+			zipFile = new ZipFile(symbolFile.getAbsolutePath());
+			ZipEntry entry = zipFile.getEntry(entityName);
+			LOGGER.log(Level.INFO, "Entry{0}", entry);
+
+			LOGGER.log(Level.INFO, "Build File path -> {0}", symbolFile.getAbsolutePath());
+
+			if (entry != null) {
+
+				inputStream = zipFile.getInputStream(entry);
+
+				outputFile = new File("build.txt");
+				LOGGER.log(Level.INFO, "outputFile : {0}", outputFile);
+				outputStream = new FileOutputStream(outputFile);
+
+			}
+
+			LOGGER.log(Level.INFO, "outputStream : {0}", outputStream);
+
+			byte[] buffer = new byte[1024];
+			int bytesRead;
+			while ((bytesRead = inputStream.read(buffer)) != -1) {
+				outputStream.write(buffer, 0, bytesRead);
+			}
+
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Exception while Unzip the file", e);
+		} finally {
+
+			try {
+				outputStream.close();
+				inputStream.close();
+				zipFile.close();
+			} catch (Exception e) {
+				LOGGER.log(Level.SEVERE, "Exception while closing Streams ", e);
+			}
+		}
+		LOGGER.log(Level.INFO, "outputFile : {0}", outputFile);
+
+		return outputFile;
+	}
+
+
+	public static void addBuildFile(Long appID, Long appversionid, Long apid, HttpServletRequest request, Long appreleaseversionid, String crashtype) throws Exception {
+
+		try {
+
+			String blockID = "";
+			Long addedTime = System.currentTimeMillis();
+			
+			Long addedBy = 0L;
+
+			ArrayList<UploadedFileItem> fileItems = (ArrayList<UploadedFileItem>) request.getAttribute(SecurityUtil.MULTIPART_FORM_REQUEST);
+			String fileName = "";
+			if (fileItems == null) {
+				LOGGER.log(Level.INFO, "File not attached");
+				return;
+			} else {
+				for (UploadedFileItem fileItem : fileItems) {
+
+					fileName = appversionid + "_" + addedTime + ".zip";
+
+					LOGGER.log(Level.INFO, "File name of build -> {0}", fileName);
+					blockID = DFSFileHandler.dfsFileUpload(fileItem, fileName, appID);
+				}
+			}
+
+            Long id = 0L;
+
+			SelectQuery sq = new SelectQueryImpl(Table.getTable(AppticsConstants.BUILDFILES));
+			sq.addSelectColumn(Column.getColumn(AppticsConstants.BUILDFILES, AppticsConstants.APPVERSIONID));
+			sq.addSelectColumn(Column.getColumn(AppticsConstants.BUILDFILES, AppticsConstants.BUILDFILEID));
+			sq.addSelectColumn(Column.getColumn(AppticsConstants.BUILDFILES, AppticsConstants.APPRELEASEVERSIONID));
+			sq.addSelectColumn(Column.getColumn(AppticsConstants.BUILDFILES, AppticsConstants.CRASHTYPE));
+
+			Criteria criteria = new Criteria(Column.getColumn(AppticsConstants.BUILDFILES, AppticsConstants.APID), apid, QueryConstants.EQUAL).and(Column.getColumn(AppticsConstants.BUILDFILES, AppticsConstants.APPVERSIONID), appversionid, QueryConstants.EQUAL).and(Column.getColumn(AppticsConstants.BUILDFILES, AppticsConstants.APPRELEASEVERSIONID), appreleaseversionid, QueryConstants.EQUAL);
+			sq.setCriteria(criteria);
+
+			Persistence per = DBHandler.getPersistence();
+			DataObject dobj = per.get(sq);
+
+			if (dobj.containsTable(AppticsConstants.BUILDFILES)) {
+				LOGGER.log(Level.INFO, "File exist");
+
+				Row row = dobj.getFirstRow(AppticsConstants.BUILDFILES);
+
+				row.set(AppticsConstants.DFSFILEPATH, fileName);
+				row.set(AppticsConstants.BLOCKID, blockID);
+				row.set(AppticsConstants.ADDEDBY, addedBy);
+				row.set(AppticsConstants.ADDEDTIME, addedTime);
+
+                id = (Long) row.get(AppticsConstants.BUILDFILEID);
+
+				dobj.updateRow(row);
+				per.update(dobj);
+
+			} else {
+
+				Integer type = getcrashtype(crashtype);
+
+				Row r = new Row(AppticsConstants.BUILDFILES);
+				r.set(AppticsConstants.APID, apid);
+				r.set(AppticsConstants.APPVERSIONID, appversionid);
+				r.set(AppticsConstants.BLOCKID, blockID);
+				r.set(AppticsConstants.DFSFILEPATH, fileName);
+				r.set(AppticsConstants.ADDEDTIME, addedTime);
+				r.set(AppticsConstants.APPRELEASEVERSIONID, appreleaseversionid);
+				r.set(AppticsConstants.ADDEDBY, addedBy);
+				r.set(AppticsConstants.CRASHTYPE, type);
+
+				id = DBHandler.insertRow(r, AppticsConstants.BUILDFILES, AppticsConstants.BUILDFILEID);
+			}
+
+            NativeExceptionHandler.upsertBuildFileDualWrite(id, appID, appversionid, appreleaseversionid, apid, blockID, fileName, addedTime, "", "", "insert", "", AppticsConstants.CRASHTYPE_FLUTTER);
+
+		} catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Exception while adding the build file", e);
+			throw new Exception("Exception while adding file", e);
+		}
+	}
+
+	private static File fetchFile(String tableName, CrashEntity crashentity) {
+
+		LOGGER.log(Level.INFO, "Fetch file from the table {0}", tableName);
+
+		SelectQuery sq = new SelectQueryImpl(Table.getTable(tableName));
+		sq.addSelectColumn(Column.getColumn(tableName, "*"));
+
+		Criteria c;
+
+		if (tableName.equals(AppticsConstants.DSYMTABLE)) {
+			c = new Criteria(Column.getColumn(tableName, AppticsConstants.APPVERSIONID), crashentity.getAppVersionID(), QueryConstants.EQUAL);
+			c = c.and(new Criteria(Column.getColumn(tableName, AppticsConstants.APPRELEASEVERSION), crashentity.getAppReleaseVersion(), QueryConstants.EQUAL));
+		}
+		else if(tableName.equals(AppticsConstants.BUILDMAPPINGFILES)) {
+			
+			c = new Criteria(Column.getColumn(tableName, AppticsConstants.APPVERSION),crashentity.getAppReleaseVersion(), QueryConstants.EQUAL);
+			c = c.and(new Criteria(Column.getColumn(tableName, "AppVersionName"), crashentity.getAppVersion(), QueryConstants.EQUAL)
+					.and(Column.getColumn(tableName,AppticsConstants.PACKAGEID), crashentity.getApID(), QueryConstants.EQUAL));
+			
+		}
+		else { //for react native and flutter
+			c = new Criteria(Column.getColumn(tableName, AppticsConstants.APPVERSIONID), crashentity.getAppVersionID(), QueryConstants.EQUAL);
+			c = c.and(new Criteria(Column.getColumn(tableName, AppticsConstants.APPRELEASEVERSIONID), crashentity.getAppReleaseVersionID(), QueryConstants.EQUAL));
+		}
+		sq.setCriteria(c);
+
+		DataObject dobj = null;
+
+		try {
+			dobj = DBHandler.getPersistence().get(sq);
+			if (!dobj.containsTable(tableName)) {
+				LOGGER.log(Level.INFO, "Table not found");
+				return null;
+			}
+			Row r = dobj.getFirstRow(tableName);
+
+			String dfspath = (String) r.get(AppticsConstants.DFSFILEPATH);
+			String blockID = (String) r.get(AppticsConstants.BLOCKID);
+
+			LOGGER.log(Level.INFO, "dfsPath -> {0}, blockID --> {1}", new Object[] { dfspath, blockID });
+
+			File buildfile = DFSFileHandler.dfsFileReadReturnFile(dfspath, blockID, crashentity.getProjectID());		
+			
+			if (!CommonUtil.isEmpty(buildfile) && tableName.equals(AppticsConstants.DSYMTABLE)) {
+				crashentity.setDsymPath(dfspath);
+			}
+
+			return buildfile;
+
+		} catch (Exception e) {
+			LOGGER.log(Level.INFO, "Exception while fetching build file");
+			return null;
+		}
+	}
+
+
+	private static String copyDSymFiletoMac(CrashEntity crashentity, File f, String fileName, DSymServer mac, String buildLocation,String processFor) {
+		
+		String host = mac.host;
+		String pass = mac.password;
+		String username = mac.username;
+		String result= "";
+		
+		LOGGER.log(Level.INFO,"Copy the dsym file to mac machine {0}",host);
+
+
+		try {
+			SshExecutor.executeCommand(new SshConfig(host, username, pass, "mkdir -p " + AppticsConstants.DSYMFILELOCATION));
+		} catch (Exception e) {
+			LOGGER.info("Exception in permission");
+			host = mac.removeNode(crashentity.getProjectID());
+		}
+
+		try {
+			
+			SshConfig config = new SshConfig(host, username, pass, f.getAbsolutePath(), AppticsConstants.DSYMFILELOCATION + fileName); // config - Connection detail and file names
+
+			SshExecutor.copyLocalFileToRemoteHost(config);
+			
+			LOGGER.log(Level.INFO,"using ditto to unzip the dsym");
+
+			SshExecutor.executeCommand(new SshConfig(host, username, pass, "rm -rvf " + buildLocation + "; ditto -x -k " + AppticsConstants.DSYMFILELOCATION + fileName + " " + buildLocation));
+
+			SshExecutor.executeCommand(new SshConfig(host, username, pass, "rm -rvf " + AppticsConstants.DSYMFILELOCATION + fileName));
+			
+			
+			if(processFor.equals(AppticsConstants.FILEUPLOAD)) {
+			String command;			
+			
+			String reFile = SshExecutor.executeCommand(new SshConfig(host, username, pass, "find " + buildLocation + " -maxdepth 1  -name \"*.dSYM\""));
+
+			command = "dwarfdump -u " + buildLocation + "/*.app.dSYM";
+
+			if (CommonUtil.isEmpty(reFile)) {
+				command = "dwarfdump -u " + buildLocation + "/**/*.app.dSYM";
+			}
+
+			else if (reFile.trim().split("\\.dSYM").length == 1) {
+				LOGGER.log(Level.INFO, "Change the wrong name");
+				String reName = reFile.substring(reFile.lastIndexOf("/")).trim();
+				reName = reName.replace(".", "_");
+				SshExecutor.executeCommand(new SshConfig(host, username, pass, "mv " + buildLocation + "/*.dSYM " + buildLocation + reName));
+				command = "dwarfdump -u " + buildLocation + reName + "/*.app.dSYM";
+			}		
+			
+				
+				try {		
+					   LOGGER.info("Get uuid of dsym file");
+					
+						SshConfig config1 = new SshConfig(host, username, pass, command);
+
+					    result = SshExecutor.executeCommand(config1);
+						result = result.replace(" ", "");
+						result = result.substring(result.indexOf(":") + 1, result.indexOf("("));
+						result = result.replaceAll("-", "").toLowerCase();
+
+						LOGGER.log(Level.INFO, "uuid is {0}", result);
+										
+					} catch (Exception e) {
+						LOGGER.log(Level.INFO, "Exception while getting uuid :", e);
+						
+					}
+				try {
+					LOGGER.log(Level.INFO, "Remove the folder from mac");
+					SshExecutor.executeCommand(new SshConfig(host, username, pass, "rm -rvf " + buildLocation));
+				} catch (Exception e) {
+					LOGGER.log(Level.INFO, "Not Contain the folder");
+				}
+			}
+			
+		}catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Dsym File: ", e);
+		}
+		
+		finally {
+
+			CommonUtil.deleteTmpFileInAppServer(f);
+		}
+		return result;
+	}
+
+
+	public static void addApplicationReportNew(CrashEntity crashEntity) throws Exception {
+
+		LOGGER.log(Level.INFO, "Calling addExceptionReport");
+
+		crashEntity.setBundleTag(AppHandler.getInstance().getTagByAPID(crashEntity.getApID()));
+
+		ScreenData screenData = ScreenUtil.getInstance().getScreenData(crashEntity.getProjectID(), crashEntity.getScreenName(), crashEntity.getPlatformID());
+		crashEntity.setScreenTag(screenData.getScreenTag());
+		crashEntity.setScreenID(screenData.getScreenID());
+
+		Integer timezoneTag =crashEntity.getTimezoneTag();
+		crashEntity.setTimezone(TimezoneHandler.getZoneByTag(timezoneTag));
+		crashEntity.setTimeZoneID(TimezoneHandler.getTimeZoneIDByTag(timezoneTag));
+
+		//crashEntity.setCountryTag(CountryHandler.getInstance().getCountryTagByCountryID(crashEntity.getCountryID()));
+		crashEntity.setOrientation(OrientationHandler.getOrientationByTag(crashEntity.getOrientationTag()));
+
+		setUniqueID(crashEntity);
+
+		ExceptionsHandler.addReports(crashEntity);
+	}
+
+	public static void addApplicationReport(CrashEntity crashEntity) throws Exception {
+
+		LOGGER.log(Level.INFO, "Calling addExceptionReport");
+		
+		Boolean isTimeCheck = true;
+		
+			Long happendat = crashEntity.getHappenedAt();
+			Long eligibleTime = CommonUtil.isTimeEligible(happendat, isTimeCheck);
+			if (eligibleTime == 0l) {
+				LOGGER.log(Level.INFO, "Returning, because incoming date is not eligible, triggeredTime -> {0}", happendat);
+				throw new Exception("Incoming Date is not eligible");
+			}
+		crashEntity.setBundleTag( AppHandler.getInstance().getTagByAPID(crashEntity.getApID()));
+		crashEntity.setProjectTag(ProjectHandler.getTagByID(crashEntity.getProjectID()));
+		crashEntity.setAppVersionTag(AppVersionHandler.getInstance().getVersionTag(crashEntity.getAppVersionID()));
+		crashEntity.setAppReleaseVerTag(AppReleaseVersionHandler.getAppReleaseVersionTagByID(crashEntity.getAppReleaseVersionID()));
+		crashEntity.setMode( AppHandler.getInstance().getTypeByAAID(crashEntity.getAaID()));
+		
+		ScreenData screenData = ScreenUtil.getInstance().getScreenData(crashEntity.getProjectID(), crashEntity.getScreenName(), crashEntity.getPlatformID());
+		crashEntity.setScreenTag(screenData.getScreenTag());
+		crashEntity.setScreenID(screenData.getScreenID());
+
+		List<Object> osVersionDetails = OSVersionHandler.getInstance().getOSVersionAndIDByTag(crashEntity.getOsVersionTag());
+		crashEntity.setOsVersion((String) osVersionDetails.get(1));
+		crashEntity.setOsVersionID((Long) osVersionDetails.get(0));
+		
+		Integer modelTag =crashEntity.getModelTag();
+		crashEntity.setDeviceModel(DeviceHandler.getModelByTag(modelTag));
+		crashEntity.setModelID(DeviceHandler.getModelIDByTag(modelTag));
+		
+		Integer timezoneTag =crashEntity.getTimezoneTag();
+		crashEntity.setTimezone(TimezoneHandler.getZoneByTag(timezoneTag));
+		crashEntity.setTimeZoneID(TimezoneHandler.getTimeZoneIDByTag(timezoneTag));
+		
+		crashEntity.setBrandID(PlatformHandler.getInstance().getPlatformBrandIDByPlatformId(crashEntity.getPlatformID()));
+		crashEntity.setSdID(SupportedDevicehandler.getInstance().getSDIDByTag(crashEntity.getSdIDTag()));
+
+		
+		//crashEntity.setCountryTag(CountryHandler.getInstance().getCountryTagByCountryID(crashEntity.getCountryID()));
+		crashEntity.setOrientation(OrientationHandler.getOrientationByTag(crashEntity.getOrientationTag()));
+		
+		setUniqueID(crashEntity);
+		
+		ExceptionsHandler.addReports(crashEntity);
+	}
+
+	private static Long setUniqueID(CrashEntity crashEntity) throws Exception{
+        Map<Long, Boolean> isUniqueMap = new LinkedHashMap<Long, Boolean>(); 
+        Long uniqueId;
+		
+		if (crashEntity.getExceptionGroup().equalsIgnoreCase(AppticsConstants.FATAL)) {
+			 isUniqueMap = SDKCache.getInstance().getFatalExpUniqueID(crashEntity);
+			 uniqueId=  isUniqueMap.keySet().iterator().next();
+		} else if (crashEntity.getExceptionGroup().equalsIgnoreCase(AppticsConstants.NONFATAL)) {
+			 //isUniqueMap = SDKCache.getInstance().getNonFatalExpUniqueID(crashEntity);
+			 //uniqueId=  isUniqueMap.keySet().iterator().next();
+			 uniqueId = 0l;
+		} else if (crashEntity.getExceptionGroup().equalsIgnoreCase(AppticsConstants.ANR)) {
+			 isUniqueMap = SDKCache.getInstance().getAnrExpUniqueID(crashEntity);
+			 uniqueId=  isUniqueMap.keySet().iterator().next();
+		}
+		else { //Getting webError
+			isUniqueMap = SDKCache.getInstance().getErrorExpUniqueID(crashEntity);
+			 uniqueId=  isUniqueMap.keySet().iterator().next();
+		}
+			
+		
+		crashEntity.setUniqueID(uniqueId); 
+		crashEntity.setIsNewUniqueID(isUniqueMap.get(uniqueId));
+		
+		return uniqueId;
+
+	}
+
+
+	public static Map<String, Long> getFatalUniqueMessages(Long fromDate, Long projectId) {
+
+		return getUniqueMessages(fromDate, projectId, "d" + projectId + ".CrashReport");
+	}
+
+	public static Map<String, Long> getNonFatalUniqueMessages(Long fromDate, Long projectId) {
+
+		return getUniqueMessages(fromDate, projectId, "d" + projectId + ".NonFatal");
+	}
+
+	public static Map<String, Long> getUniqueMessages(Long fromDate, Long projectId, String tablename) {
+		LOGGER.log(Level.INFO, "getUniqueMessages {0}, fromDate {1}, tablename {2}", new Object[] { projectId, fromDate, tablename });
+
+		Map<String, Long> uniqueMessages = new LinkedHashMap<String, Long>();
+		String query = "select distinct uniquemessageID, Issuename from " + tablename + " where inserttime>=" + fromDate; // NO I18N
+
+		List<List<String>> values;
+		try {
+			values = BDassClient.executeQuery(projectId, null, query);
+
+			Iterator<List<String>> iterator = values.iterator();
+			while (iterator.hasNext()) {
+				List<String> row = iterator.next();
+				
+				Long uniqueid = 0l;
+				if(!CommonUtil.isEmpty(row.get(0)))
+				{
+					uniqueid = Long.parseLong(row.get(0));
+				}
+				uniqueMessages.put(row.get(1), uniqueid);
+			}
+		} catch (Exception e) {
+			LOGGER.log(Level.INFO, "Exception while getUniqueMessages", e);
+		}
+
+		LOGGER.log(Level.INFO, "uniqueMessages size {0}", uniqueMessages.size());
+		return uniqueMessages;
+
+	}
+
+	// checkAndInsert(appID, nonfatal.deviceID, uniqueMessage, nonfatal.screenname, "", nonfatal.mode, nonfatal.appReleaseVersion, nonfatal.pid, crashdetailtable, "EID", nonfatal.happendat,
+	// nonfatal.insertTime
+
+	public static Map<Long, Boolean> getFatalUniqueID(Long projectID, String uniqueMessage, String screenname, int mode, Long pid) {
+		String tablename = AppticsConstants.CRASHDETAILS_TEMP + projectID;
+		return getUniqueID(projectID, uniqueMessage, screenname, mode, pid, tablename, AppticsConstants.CID);
+	}
+
+	public static Map<Long, Boolean> getNonFatalUniqueID(Long projectID, String uniqueMessage, String screenname, int mode, Long pid) {
+		String tablename = AppticsConstants.NONFATALEXCEPTIONS_TEMP + projectID;
+		return getUniqueID(projectID, uniqueMessage, screenname, mode, pid, tablename, AppticsConstants.EID);
+	}
+
+	public static Map<Long, Boolean> getUniqueID(Long projectID, String uniqueMessage, String screenname, int mode, Long pid, String tableName, String pkCol) {
+		Map<Long, Boolean> uniqueIDres = new LinkedHashMap<Long, Boolean>();
+
+		SelectQuery sq = new SelectQueryImpl(Table.getTable(tableName));
+		sq.addSelectColumn(Column.getColumn(tableName, pkCol));
+
+		Criteria c = new Criteria(Column.getColumn(tableName, "Mode"), mode, QueryConstants.EQUAL);
+		c = c.and(new Criteria(Column.getColumn(tableName, "Message"), uniqueMessage, QueryConstants.EQUAL));
+		sq.setCriteria(c);
+
+		Persistence p = DBHandler.getPersistence();
+		DataObject dobj = null;
+
+		try {
+			dobj = p.get(sq);
+
+			if (!dobj.containsTable(tableName)) {
+				Row r = new Row(tableName);
+
+				r.set(AppticsConstants.PID, pid);
+				r.set(AppticsConstants.MESSAGE, uniqueMessage);
+				r.set(AppticsConstants.SCREEN, screenname);
+				r.set(AppticsConstants.MODE, mode);
+				Long currentTime = System.currentTimeMillis();
+				r.set(AppticsConstants.MAILSENDAT, currentTime); // NO I18N MailSentAt
+				r.set(AppticsConstants.COUNT, 1); // NO I18N
+				r.set(AppticsConstants.COUNTUPDATEDAT, currentTime); // NO I18N CountUpdatedAt
+
+				Long uniqueID = DBHandler.insertRow(r, tableName, pkCol);
+				LOGGER.log(Level.INFO, "added-uniqueID{0} : {1}", new Object[] { pkCol, uniqueID });
+
+				uniqueIDres.put(uniqueID, true);
+
+			} else {
+				Row r = dobj.getFirstRow(tableName);
+				uniqueIDres.put((Long) r.get(pkCol), false);
+
+			}
+
+			return uniqueIDres;
+		} catch (Exception e) {
+			LOGGER.info("Exception while fetching unique message id " + e);
+			return uniqueIDres;
+		}
+	}
+	
+	public static Map<Long, Boolean> getUniqueIDNew(CrashEntity crashentity,String tableName,String pkCol) {
+		Map<Long, Boolean> uniqueIDres = new LinkedHashMap<Long, Boolean>();
+		
+		SelectQuery sq = new SelectQueryImpl(Table.getTable(tableName));
+		sq.addSelectColumn(Column.getColumn(tableName, pkCol));
+
+		Criteria c = new Criteria(Column.getColumn(tableName, "Mode"), crashentity.getMode(), QueryConstants.EQUAL);
+		c = c.and(new Criteria(Column.getColumn(tableName, "Message"), crashentity.getIssueName(), QueryConstants.EQUAL));
+		sq.setCriteria(c);
+
+		Persistence p = DBHandler.getPersistence();
+		DataObject dobj = null;
+
+		try {
+			dobj = p.get(sq);
+
+			if (!dobj.containsTable(tableName)) {
+				Row r = new Row(tableName);
+
+				r.set(AppticsConstants.PID, crashentity.getPlatformID());
+				r.set(AppticsConstants.MESSAGE, crashentity.getIssueName());
+				r.set(AppticsConstants.SCREEN, crashentity.getScreenName());
+				r.set(AppticsConstants.MODE, crashentity.getMode());
+				Long currentTime = System.currentTimeMillis();
+
+				String excepionGroup = crashentity.getExceptionGroup();
+				if (excepionGroup.equalsIgnoreCase(AppticsConstants.FATAL) || excepionGroup.equalsIgnoreCase(AppticsConstants.NONFATAL)) {
+
+					r.set(AppticsConstants.MAILSENDAT, currentTime); // NO I18N MailSentAt
+					r.set(AppticsConstants.COUNT, 1); // NO I18N
+					r.set(AppticsConstants.COUNTUPDATEDAT, currentTime); // NO I18N CountUpdatedAt
+				}
+
+				Long uniqueID = DBHandler.insertRow(r, tableName, pkCol);
+				LOGGER.log(Level.INFO, "added-uniqueID{0} : {1}", new Object[] { pkCol, uniqueID });
+
+				uniqueIDres.put(uniqueID, true);
+
+			} else {
+				Row r = dobj.getFirstRow(tableName);
+				uniqueIDres.put((Long) r.get(pkCol), false);
+
+			}
+
+			return uniqueIDres;
+		} catch (Exception e) {
+			LOGGER.info("Exception while fetching unique message id " + e);
+			return uniqueIDres;
+		}
+
+	}
+
+	private static Integer getcrashtype(String crashtype) {
+		Map<String, Integer> wordIndexMap = new HashMap<>();
+		wordIndexMap.put(AppticsConstants.NATIVE, 0);
+		wordIndexMap.put(AppticsConstants.REACTNATIVE, 1);
+		wordIndexMap.put(AppticsConstants.FLUTTER, 2);
+
+		return wordIndexMap.get(crashtype);
+	}
+	
+	/*private static void addcrashReportMySQL(CrashEntity crashentity) throws Exception {
+		
+		crashentity.setInsertTime(System.currentTimeMillis());
+
+		String tableName = AppticsConstants.CRASHREPORTSTATS_TEMP + crashentity.getProjectID();
+
+		Row row = new Row(tableName);
+
+		row.set(AppticsConstants.USERID, (crashentity.getUserID() == null) ? 0 : crashentity.getUserID());
+		row.set(AppticsConstants.DEVICEID, crashentity.getDeviceID());
+		row.set(AppticsConstants.TIMEZONE, crashentity.getTimezone());
+		row.set(AppticsConstants.S_MODE, crashentity.getMode());
+		row.set(AppticsConstants.OSVERSION, crashentity.getOsVersion());
+		row.set(AppticsConstants.APPVERSION, crashentity.getAppVersion());
+		row.set(AppticsConstants.JANALYTICVERSION, crashentity.getLibVersion());
+		row.set(AppticsConstants.HAPPENEDAT, crashentity.getHappenedAt());
+
+		row.set(AppticsConstants.SCREENNAME, crashentity.getScreenName());
+		row.set(AppticsConstants.EDGE, crashentity.getEdge());
+		row.set(AppticsConstants.ORIENTATION, crashentity.getOrientation());
+		row.set(AppticsConstants.BATTERYSTATUS, crashentity.getBatteryStatus());
+		row.set(AppticsConstants.WIFISTATUS, crashentity.getNetworkStatus());
+		row.set(AppticsConstants.MESSAGE, crashentity.getMessage());
+		row.set(AppticsConstants.CRASHINFO, crashentity.getExceptionInfo());
+		row.set(AppticsConstants.LOCATIONID, crashentity.getLocationID());
+		row.set(AppticsConstants.COUNTRYID, crashentity.getCountryID());
+		row.set(AppticsConstants.DATE, crashentity.getInsertTime());
+		row.set(AppticsConstants.CUSTOMPROPERTIES, crashentity.getCustomProperties());
+		row.set(AppticsConstants.SESSIONSTARTTIME, crashentity.getSessionStartTime());
+
+		row.set(AppticsConstants.C_RAM, crashentity.getRam());
+		row.set(AppticsConstants.C_ROM, crashentity.getRom());
+		row.set(AppticsConstants.ISSUENAME, crashentity.getIssueName());
+
+		row.set(AppticsConstants.BUNDLEID, crashentity.getApID());
+		row.set(AppticsConstants.APPRELEASEVERSION, crashentity.getAppReleaseVersion());
+		row.set(AppticsConstants.UNIQUEMESSAGEID, crashentity.getUniqueID());
+
+		Long crashid = 0l;
+		try {
+
+			crashid = DBHandler.insertRow(row, tableName, AppticsConstants.CRASHSTATSID);
+			LOGGER.log(Level.INFO, "Crashv2 id -> {0} ", crashid);
+			
+		} catch (Exception e) {
+			LOGGER.log(Level.INFO, "Exception while inserting application crash -> {0} ", e);
+			throw new Exception("Exception while inserting CrashReport table {0}", e);
+		}
+
+		String infoTable = AppticsConstants.CRASHINFO_TEMP + crashentity.getProjectID();
+
+		Row r = new Row(infoTable);
+
+		r.set(AppticsConstants.CRASHSTATSID, crashid);
+		r.set(AppticsConstants.UNIQUEMESSAGEID_C, crashentity.getUniqueID());
+		r.set(AppticsConstants.DEVICEID, crashentity.getDeviceID());
+		r.set(AppticsConstants.USERID, crashentity.getUserID());
+		r.set(AppticsConstants.PID, crashentity.getPlatformID());
+		if (infoTable.indexOf(AppticsConstants.CRASHINFO) != -1) {
+			r.set(AppticsConstants.CID, crashentity.getCountryID());
+		}
+		r.set(AppticsConstants.APPVERSIONID, crashentity.getAppVersionID());
+		r.set(AppticsConstants.STATUS, 0);
+		r.set(AppticsConstants.MODE, crashentity.getMode());
+		r.set(AppticsConstants.HAPPENEDAT, crashentity.getHappenedAt());
+
+		Long addedTime = crashentity.getInsertTime();
+		r.set(AppticsConstants.ADDEDTIME, addedTime);
+		Long dateVal = CalendarUtil.getStartTimeByLongDate(addedTime);
+		r.set(AppticsConstants.DATE, dateVal);
+		r.set(AppticsConstants.UUID, crashentity.getUuid());// NO I18N
+
+		try {
+			Long crashstatsid = DBHandler.insertRow(r, infoTable, AppticsConstants.CRASHSTATSID);
+			LOGGER.log(Level.INFO, "Crash ID  -> {0}", crashstatsid);
+		} catch (Exception e) {
+			LOGGER.log(Level.INFO, "Exception while inserting row into info table -> {0}  ", e);
+			throw new Exception("Exception while inserting CrashInfo table {0}", e);
+		}
+		if(!CommonUtil.isEmpty(crashid)) {
+			crashentity.setCrashID(crashid);			
+		}
+	}
+	*/
+
+	public static JSONObject decodeException(JSONObject exception,String exceptiongroup,Long appID,String exceptiontype) throws Exception {
+		
+		JSONObject result = new JSONObject();
+		try {
+			
+		CrashEntity crashentity = new CrashEntity();
+		crashentity.setExceptionGroup(exceptiongroup);
+		crashentity.setProjectID(appID);
+		
+		setException(crashentity,exception);
+		
+		crashentity.setExceptionGroup(exceptiongroup);
+		crashentity.setCrashGroup(SdkConstants.CUSTOM_TYPE);
+		crashentity.setCrashGroupString(SdkConstants.S_DEFAULT);
+
+
+		if (exceptiontype.equals(AppticsConstants.NATIVE)) {
+			crashentity.setCrashType(AppticsConstants.EXCEPTIONTYPE_NATIVE);
+			
+			if (crashentity.getBrand().equals(AppticsConstants.APPLE) && !crashentity.getExceptionGroup().equals(AppticsConstants.NONFATAL_GROUP)) {
+				processAppleCrashes(crashentity);
+
+			}  else if (crashentity.getBrand().equals(AppticsConstants.GOOGLE)) {
+				processNativeObfuscation(crashentity);
+			}
+			
+			String message = crashentity.getMessage();
+			
+			if(!exception.getString(AppticsConstants.MESSAGE).equals(message))
+			{
+			   setReports(exception,crashentity);
+			   result.put("message", crashentity.getMessage());
+			   result.put("isSymbolicated", true);
+
+
+			}
+			else {
+				result.put("isSymbolicated", false);
+			}
+		}
+
+		else {
+			result.put("isSymbolicated", false);
+		}
+		
+		}
+		catch(Exception e)
+		{
+			LOGGER.log(Level.INFO, "Exception while setting crashentity -> {0}  ", e);
+			throw new Exception("Exception while setting crashentity {0}", e);
+		}
+		
+		return result;
+	}
+
+	private static void setReports(JSONObject exception,CrashEntity crashentity) throws Exception {
+
+		String uniqueColumn = AppticsConstants.UNIQUEMESSAGEID_C;
+		setUniqueID(crashentity);
+		LOGGER.log(Level.INFO, "Unique MessageID {0}",crashentity.getUniqueID());
+
+		exception.put(AppticsConstants.MESSAGE, crashentity.getMessage());
+		exception.put(AppticsConstants.ISSUENAME,crashentity.getIssueName());
+		exception.put(AppticsConstants.INSERTTIME, System.currentTimeMillis());
+
+
+		if(crashentity.getExceptionGroup().equals(AppticsConstants.NONFATAL_GROUP)) {
+			uniqueColumn = AppticsConstants.UNIQUEMESSAGEID;
+		}
+		else {
+			exception.put(AppticsConstants.CRASHGROUP, crashentity.getCrashGroup());
+		}
+
+		exception.put(uniqueColumn, crashentity.getUniqueID());
+
+		ExceptionsHandler.addReports(crashentity,true, exception);
+	}
+
+	private static void setException(CrashEntity crashentity,JSONObject exception) throws Exception{
+		
+		Long appVersionID = 0l;
+		Long apID = 0l;
+		String appRelVersion;
+		String screenname = null;
+		Long platformID = exception.has(AppticsConstants.PLATFORM_ID)?exception.getLong(AppticsConstants.PLATFORM_ID):0l;
+		String messageInfo = null;
+
+
+		if(exception.has(AppticsConstants.MODE)) {
+			crashentity.setMode(exception.getInt(AppticsConstants.MODE));
+		}
+		else {
+			LOGGER.log(Level.INFO ,"Empty mode");
+			throw new Exception("Mode is Empty");
+		}
+
+
+		LOGGER.log(Level.INFO, "Exception details {0}", exception);
+		
+		if(crashentity.getExceptionGroup().equals(AppticsConstants.NONFATAL_GROUP)) {
+			messageInfo = exception.has(AppticsConstants.NONFATALINFO)? exception.getString(AppticsConstants.NONFATALINFO): null;
+
+			Integer appVersionTag = exception.has(AppticsConstants.APPVERSIONID)?exception.getInt(AppticsConstants.APPVERSIONID):0;
+			appVersionID = AppVersionHandler.getInstance().getVersionIDByTag(appVersionTag);
+			
+			Integer identifierTag = exception.has(AppticsConstants.IDENTIFIERID)?exception.getInt(AppticsConstants.IDENTIFIERID):0;
+			apID = AppHandler.getInstance().getAPIDByTag(identifierTag);
+			
+			Integer projectTag = exception.has(AppticsConstants.APPID)?exception.getInt(AppticsConstants.APPID):0;
+			
+			Integer appRelVersionTag = exception.has(AppticsConstants.APPRELEASEVERSIONID)?exception.getInt(AppticsConstants.APPRELEASEVERSIONID):0;
+			appRelVersion = AppReleaseVersionHandler.getappReleaseVersionbyTag(appRelVersionTag);
+			Integer screenTag = exception.has(AppticsConstants.SCREENID)?exception.getInt(AppticsConstants.SCREENID):0;
+			ScreenData sc = new ScreenData();
+			sc.setScreenTag(screenTag);
+			sc.setProjectID(crashentity.getProjectID());
+			sc.setPlatformID(platformID);
+			sc = ScreenUtil.getInstance().getScreenDatabyTag(sc);
+
+			screenname = sc.getScreenName();
+
+			crashentity.setAppVersionTag(appVersionTag);
+			crashentity.setIdentifierTag(identifierTag);
+			crashentity.setProjectTag(projectTag);
+		}
+		
+		else {
+			 messageInfo = exception.has(AppticsConstants.CRASHINFO)? exception.getString(AppticsConstants.CRASHINFO): null;
+			 appVersionID = exception.has(AppticsConstants.APPVERSIONID)?exception.getLong(AppticsConstants.APPVERSIONID):0l;
+			 apID = exception.has(AppticsConstants.IDENTIFIERID)? exception.getLong(AppticsConstants.IDENTIFIERID):0l;
+			 appRelVersion = exception.has(AppticsConstants.APPRELEASEVERSION)?exception.getString(AppticsConstants.APPRELEASEVERSION):null;
+			 screenname = exception.has(AppticsConstants.SCREEN)?exception.getString(AppticsConstants.SCREEN):null;
+
+			 crashentity.setFrameworkVersion(exception.getString(AppticsConstants.JANALYTICVERSION));
+
+		}
+
+		String message = messageInfo;
+		if(message == null || message.trim().equals("-")) {
+			message = exception.has(AppticsConstants.MESSAGE)?exception.getString(AppticsConstants.MESSAGE):null;
+			messageInfo = message;
+		}
+
+		
+		Long brandID = PlatformHandler.getInstance().getBIDByPIDTag(PlatformHandler.getInstance().getPlatformTagByPlatformID(platformID));
+		String brand = BrandHandler.getInstance().getBrandNameByBrandID(brandID);
+
+		crashentity.setDeSymbolicatedMessage(message);
+		crashentity.setMessage(message);
+		crashentity.setAppVersionID(appVersionID);
+		crashentity.setAppReleaseVersion(appRelVersion);
+		crashentity.setAppVersion(AppVersionHandler.getInstance().getVersion(appVersionID));
+		Long appReleaseVersionID = AppReleaseVersionHandler.getAppReleaseVersionID(appRelVersion, apID);
+		crashentity.setAppReleaseVersionID(appReleaseVersionID);
+		crashentity.setApID(apID);
+		crashentity.setPlatform(PlatformHandler.getInstance().getOSByPlatformID(platformID));
+	    crashentity.setExceptionInfo(messageInfo.getBytes());
+		crashentity.setBundle(AppHandler.getInstance().getIdentifierByAPID(apID));
+		crashentity.setMailContent(message);
+		crashentity.setHappenedAt(exception.getLong(AppticsConstants.HAPPENEDAT));
+		crashentity.setDeviceID(exception.getLong(AppticsConstants.DEVICEID));
+		crashentity.setBrand(brand);
+		crashentity.setScreenName(screenname);
+		crashentity.setPlatformID(platformID);
+
+
+
+		Integer crashgroup = exception.has(AppticsConstants.CRASHGROUP)?exception.getInt(AppticsConstants.CRASHGROUP):0; //for linux operations
+		crashentity.setCrashGroup(crashgroup);
+		crashentity.setCrashGroupString(CrashEntity.getCrashGroupString(crashgroup));
+	}
+
+	public static String executeLinuxCommand(String targetURL,CrashEntity crashentity,Boolean isRunScript) throws Exception {
+
+
+		if(CommonUtil.isEmpty(crashentity.getLinuxAuth())) {
+			crashentity.setLinuxAuth(getAuthKey());
+			}
+
+		Integer readTime = 5000;
+		if(isRunScript) {
+			readTime = 120000;
+		}
+		URL url = new URL(targetURL);
+		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+		try {
+
+			connection.setRequestMethod("POST");
+			connection.setDoOutput(true);
+			connection.setRequestProperty("User-Agent", "Mozilla/5.0");
+			connection.setRequestProperty("appticsauthkey", crashentity.getLinuxAuth());
+
+			connection.setConnectTimeout(readTime);
+			connection.setReadTimeout(readTime);
+
+			int responseCode = connection.getResponseCode();
+			if (responseCode == HttpURLConnection.HTTP_OK) {
+				BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+				String inputLine;
+				StringBuilder response = new StringBuilder();
+
+				while ((inputLine = in.readLine()) != null) {
+					response.append(inputLine);
+				}
+				in.close();
+
+				String s = new String(response);
+				JSONObject js = new JSONObject(s);
+
+				if (!CommonUtil.isEmpty(js) && js.has("output")) {
+					return js.getString("output");
+				}
+				throw new Exception("Exception while run comment");
+			} else {
+				LOGGER.log(Level.INFO, "Exception while running command files ");
+				throw new Exception("Exception while run comment");
+			}
+
+		} catch (Exception e) {
+			LOGGER.log(Level.INFO, "Exception while execute the comment {0} , {1}", new Object[] { targetURL, e });
+			throw new Exception("Exception while run comment");
+		} finally {
+			if (connection != null) {
+				connection.disconnect();
+			}
+		}
+	}
+}

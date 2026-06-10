@@ -1,0 +1,572 @@
+//$Id$
+package com.zoho.apptics.integration;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import com.adventnet.ds.query.Column;
+import com.adventnet.ds.query.Criteria;
+import com.adventnet.ds.query.QueryConstants;
+import com.adventnet.persistence.DataAccessException;
+import com.adventnet.persistence.DataObject;
+import com.adventnet.persistence.Row;
+import com.zoho.apptics.util.AppticsConstants;
+import com.zoho.apptics.util.AppticsException;
+import com.zoho.apptics.util.CalendarUtil;
+import com.zoho.apptics.util.CommonUtil;
+import com.zoho.apptics.util.DBHandler;
+import com.zoho.apptics.util.HttpURLConnectionInvoker;
+import com.zoho.apptics.util.MickeyUtil;
+import com.zoho.apptics.util.PropertyHandler;
+
+import jakarta.servlet.http.HttpServletRequest;
+
+public class AsanaHandler {
+
+    private static final Logger LOGGER = Logger.getLogger(AsanaHandler.class.getName());
+
+    private static final String ASANABASEURL = "https://app.asana.com/"; //NO I18N
+	private static final String ASANASCOPE = "projects:read tasks:read tasks:write tasks:delete"; // NO I18N
+    protected HttpServletRequest request;
+
+    public JSONObject getConfiguration(long apID) {
+        try {
+            return IntegrationHandler.getConfiguration(apID, AppticsConstants.ASANA);
+       }
+        catch(DataAccessException e) {
+			LOGGER.log(Level.SEVERE, "Exception while getting asana configuration", e);
+        }
+        return null;
+    }
+    public JSONObject updateConfiguration(long apID, JSONObject configuration){
+		LOGGER.log(Level.INFO, "INSIDE THE UPDATE CONFIGURATION METHOD------");
+        try {
+            new IntegrationHandler().checkAndAddConfiguration(AppticsConstants.ASANA, apID, configuration);
+			LOGGER.log(Level.INFO, "AFTER CHECK AND ADD CONFIGURATION----");
+          return IntegrationHandler.getConfigurationByService(apID, AppticsConstants.ASANA);
+        }
+        catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Exception while update asana configuration", e);
+
+        }
+        return null;
+    }
+
+	public static Long getZuIDByZsoid(String zsoid) throws DataAccessException {
+		// Get the stored OAuth token for this org
+		Criteria c = new Criteria(Column.getColumn(AppticsConstants.REFRESHTOKEN, AppticsConstants.SERVICENAME), AppticsConstants.ASANA, QueryConstants.EQUAL, false);
+		List<Map<String, Object>> result = DBHandler.getColumnsValues(AppticsConstants.REFRESHTOKEN, c, zsoid);
+		if (result != null && !result.isEmpty()) {
+			return (Long) result.get(0).get(AppticsConstants.ZUID);
+		}
+		return null;
+	}
+    // authentication - asana
+	public boolean authenticate(long zuID, String code, String zsoId, String redirectUri, long projectId) {
+		String url = ASANABASEURL + "-/oauth_token"; // no i18N
+
+		String clientID = PropertyHandler.getValue(AppticsConstants.ASANACLIENTID);
+		String clientSecret = PropertyHandler.getValue(AppticsConstants.ASANACLIENTSECRET);
+
+		if (CommonUtil.isEmpty(clientID, clientSecret)) {
+			LOGGER.log(Level.INFO, "Asana Client ID or Secret is empty");
+			return false;
+		}
+
+		try {
+			Map<String, String> params = new HashMap<String, String>();
+
+			params.put("grant_type", "authorization_code");
+			params.put("code", code);
+			params.put("client_id", clientID);
+			params.put("client_secret", clientSecret);
+			params.put("redirect_uri", redirectUri);
+			params.put("scope", ASANASCOPE);
+
+			LOGGER.log(Level.INFO, "Params Map{0} ", params);
+
+			// String res = new HttpURLConnectionInvoker(true).invokePostHttpURLConn(url, null, params);
+			String res = new HttpURLConnectionInvoker(true).invokePostHttpURLConn(url, null, params);
+
+			JSONObject response = new JSONObject(res);
+
+			LOGGER.log(Level.INFO, "response JSON{0} ", response);
+			LOGGER.log(Level.INFO, "-------- ACCESSTOKEN IS THERE IN RESPONSE--------");
+
+			LOGGER.log(Level.INFO, response.toString());
+
+			if (!response.has("access_token")) {
+				LOGGER.log(Level.WARNING, "No access_token in response: {0}", res);
+				return false;
+			}
+			String accessToken = response.getString("access_token");
+			String refreshToken = response.optString("refresh_token", null); 
+			addAsanaOAuth(zuID, accessToken, refreshToken, zsoId);
+
+			LOGGER.log(Level.INFO, "Inserted ASANA Oauth into the table");
+			return true;
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Exception while authenticating Asana", e);
+		}
+		return false;
+	}
+
+	private DataObject addAsanaOAuth(long zuID, String accessToken, String refreshToken, String loginName) throws Exception {
+		LOGGER.log(Level.INFO, "------INSIDE THE ADD METHOD FOR ASANA INTEGRATIONS DETAILS");
+
+		Map<String, Object> ukcolumns = new HashMap<String, Object>();
+        ukcolumns.put(AppticsConstants.ZUID, zuID);
+		// ukcolumns.put(AppticsConstants.REFRESHTOKEN, accessToken);
+        ukcolumns.put(AppticsConstants.SERVICENAME, AppticsConstants.ASANA);
+		// ukcolumns.put(AppticsConstants.ACCESSTOKEN, subDomain); // using accesstoken column to store subdomain name // want to this about asana
+
+		 if (MickeyUtil.isRowExist(AppticsConstants.REFRESHTOKEN, AppticsConstants.REFRESHTOKENID, ukcolumns, loginName))
+		 {
+				LOGGER.log(Level.INFO, "Asana OAuth Details Already Exist. please Try different name.");
+		 throw new AppticsException(AppticsConstants.DUPLICATEENTRY, AppticsConstants.DUPLICATEENTRY);
+		 }
+
+        Row row = new Row(AppticsConstants.REFRESHTOKEN);
+		row.set(AppticsConstants.REFRESHTOKEN, refreshToken);
+		row.set(AppticsConstants.ACCESSTOKEN, accessToken);
+        row.set(AppticsConstants.ZUID, zuID);
+        row.set(AppticsConstants.SERVICENAME, AppticsConstants.ASANA);
+        row.set(AppticsConstants.ADDEDTIME, CalendarUtil.currentTimeMillis());
+		// row.set(AppticsConstants.ACCESSTOKEN, subDomain);
+		List<Row> rows = new ArrayList<>();
+		rows.add(row);
+		return DBHandler.insertRows(rows, loginName);
+
+    }
+    public String getAsanaOAuthToken(long zuID, long tokenID) throws DataAccessException {
+        Criteria c = new Criteria(Column.getColumn(AppticsConstants.REFRESHTOKEN, AppticsConstants.REFRESHTOKENID), tokenID, QueryConstants.EQUAL);
+        c = c.and(new Criteria(Column.getColumn(AppticsConstants.REFRESHTOKEN, AppticsConstants.ZUID), zuID, QueryConstants.EQUAL));
+        c = c.and(new Criteria(Column.getColumn(AppticsConstants.REFRESHTOKEN, AppticsConstants.SERVICENAME), AppticsConstants.ASANA, QueryConstants.EQUAL, false));
+
+		List<Map<String, Object>> result = DBHandler.getColumnsValues(AppticsConstants.REFRESHTOKEN, c);
+		if (result != null && !result.isEmpty()) {
+			Map<String, Object> row = result.get(0);
+			return (String) row.get(AppticsConstants.REFRESHTOKEN);
+		}
+		return null;
+    }
+
+	public JSONArray getOAuthTokens(long zuid) {
+		JSONArray tokens = new JSONArray();
+		LOGGER.log(Level.INFO, "Inside the getoauthtoken");
+
+		try {
+			Criteria c = new Criteria(Column.getColumn(AppticsConstants.REFRESHTOKEN, AppticsConstants.ZUID), zuid, QueryConstants.EQUAL);
+			c = c.and(new Criteria(Column.getColumn(AppticsConstants.REFRESHTOKEN, AppticsConstants.SERVICENAME), AppticsConstants.ASANA, QueryConstants.EQUAL, false));
+
+			LOGGER.log(Level.INFO, "after setting criteria ,,,,");
+			List<Map<String, Object>> result = DBHandler.getColumnsValues(AppticsConstants.REFRESHTOKEN, c);
+
+			LOGGER.log(Level.INFO, "getOAuthTokens result size: {0}", new Object[] { result.size() });
+
+			if (result == null || result.isEmpty()) {
+				LOGGER.log(Level.INFO, "No Rows found match with zuid = {0}", new Object[] { zuid });
+				return tokens;
+			}
+
+			for (Map<String, Object> row : result) {
+				JSONObject token = new JSONObject();
+				token.put("asanaid", row.get(AppticsConstants.REFRESHTOKENID));
+				token.put("addedtime", row.get(AppticsConstants.ADDEDTIME));
+				token.put("refreshtoken", row.get(AppticsConstants.REFRESHTOKEN));
+				token.put("accesstoken", row.get(AppticsConstants.ACCESSTOKEN));
+				token.put("apid", row.get(AppticsConstants.APID)); // add this line
+
+				tokens.put(token);
+			}
+		} catch (DataAccessException e) {
+			LOGGER.log(Level.SEVERE, "Exception while fetching current user asana OAuth Token", e);
+		}
+		return tokens;
+	}
+
+	// getting accesstoken - if it is expired refreshed again
+	public String getAccessToken(long zuID, String loginName, long apid) {
+		LOGGER.log(Level.INFO, "inside the getaccesstoken method----");
+		JSONArray tokens = getOAuthTokens(zuID);
+		String accessToken = null;
+
+		for (int i = 0; i < tokens.length(); i++) {
+			JSONObject obj = tokens.getJSONObject(i);
+			// Just get the first Asana token for this user
+			if (obj.has("accesstoken")) {
+				accessToken = obj.getString("accesstoken");
+
+				try {
+					String[] parts = accessToken.split("\\.");
+					if (parts.length == 3) {
+						String payload = new String(java.util.Base64.getDecoder().decode(parts[1]));
+						JSONObject claims = new JSONObject(payload);
+						long exp = claims.getLong("exp");
+						long now = System.currentTimeMillis() / 1000;
+
+						if (now >= exp) {
+							LOGGER.log(Level.WARNING, "Access token expired! Refreshing...");
+							String refreshToken = obj.getString("refreshtoken");
+							accessToken = refreshAccessToken(zuID, refreshToken, loginName);
+						}
+					}
+				} catch (Exception e) {
+					LOGGER.log(Level.SEVERE, "Error checking token expiry", e);
+				}
+				break;
+			}
+		}
+		return accessToken;
+	}
+
+	// method for refresh the access token
+	private String refreshAccessToken(long zuID, String refreshToken, String loginName) {
+		LOGGER.log(Level.INFO, "Refreshing Asana access token");
+		try {
+			String clientID = PropertyHandler.getValue(AppticsConstants.ASANACLIENTID);
+			String clientSecret = PropertyHandler.getValue(AppticsConstants.ASANACLIENTSECRET);
+
+			Map<String, String> params = new HashMap<>();
+			params.put("grant_type", "refresh_token");
+			params.put("client_id", clientID);
+			params.put("client_secret", clientSecret);
+			params.put("refresh_token", refreshToken);
+
+			String res = new HttpURLConnectionInvoker(true).invokePostHttpURLConn(ASANABASEURL + "-/oauth_token", null, params); // no i18N
+
+			JSONObject response = new JSONObject(res);
+			if (response.has("access_token")) {
+				String newAccessToken = response.getString("access_token");
+				LOGGER.log(Level.INFO, " Token refreshed successfully");
+
+				// pass loginName
+				updateAccessToken(zuID, newAccessToken, loginName);
+				return newAccessToken;
+			}
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Exception while refreshing access token", e);
+		}
+		return null;
+	}
+
+	private void updateAccessToken(long zuID, String newAccessToken, String loginName) {
+		try {
+			Criteria c = new Criteria(Column.getColumn(AppticsConstants.REFRESHTOKEN, AppticsConstants.ZUID), zuID, QueryConstants.EQUAL);
+			c = c.and(new Criteria(Column.getColumn(AppticsConstants.REFRESHTOKEN, AppticsConstants.SERVICENAME), AppticsConstants.ASANA, QueryConstants.EQUAL, false));
+
+			int updated = DBHandler.update(AppticsConstants.REFRESHTOKEN, c, AppticsConstants.ACCESSTOKEN, newAccessToken, loginName);
+			LOGGER.log(Level.INFO, " Access token updated in DB, rows affected: {0}", updated);
+
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Exception while updating access token in DB", e);
+		}
+	}
+
+	// getting all the workspace id and names
+	public List<JSONObject> getAllWorkspaces(long zuID, String loginName, long apid) {
+        LOGGER.log(Level.INFO,"Getting all the workspace Id");
+        ArrayList<JSONObject> workspaceList = new ArrayList<>();
+        String url = ASANABASEURL+"api/1.0/workspaces";  //no i18N
+
+		String accessToken = getAccessToken(zuID, loginName, apid);
+
+        if (accessToken == null) {
+            LOGGER.log(Level.SEVERE, "Access token not found");
+            return workspaceList;
+        }
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Authorization", "Bearer "+accessToken);
+        headers.put("Content-Type", "application/json");
+
+        Map<String,String> params = new HashMap<String,String>();
+        try {
+			String res = new HttpURLConnectionInvoker(true).invokeGetHttpURLConn(url, headers, null);
+
+            JSONObject response = new JSONObject(res);
+            JSONArray result = response.getJSONArray("data"); //no i18N
+            for(int i =0;i< result.length();i++) {
+                JSONObject workspaceIDObj = result.getJSONObject(i);
+                workspaceList.add(workspaceIDObj);
+            }
+        }catch (Exception e) {
+            LOGGER.info("Exception while adding bug in projects "+ e);
+        }
+        return workspaceList;
+    }
+
+	// get particular workspace ID by workspace name
+	public String getWorkSpaceIDByName(long zuID, String workspaceName, String loginName, long apid) {
+		List<JSONObject> workspaces = getAllWorkspaces(zuID, loginName, apid);
+        for (JSONObject workspace : workspaces) {
+            String name = workspace.getString("name");
+
+            if (name.equalsIgnoreCase(workspaceName)) {
+//                return Long.parseLong(workspace.getString("gid"));
+                return workspace.getString("gid");
+            }
+        }
+        return null;
+    }
+
+    //get all the projects present inside the particular workspace
+	public List<JSONObject> getAllProjects(long zuID, String workspaceGid, String loginName, long apid) {
+		LOGGER.log(Level.INFO, "Getting projects for workspace:  {0}", workspaceGid);
+
+        List<JSONObject> projects = new ArrayList<>();
+        String url = ASANABASEURL + "api/1.0/projects?workspace=" + workspaceGid;    //no i18N
+
+		String accessToken = getAccessToken(zuID, loginName, apid);
+        Map<String, String> headers = new HashMap<String, String>();
+        if (accessToken == null) {
+            LOGGER.log(Level.SEVERE, "Access token not found");
+            return null;
+        }
+		headers.put("Authorization", "Bearer " + accessToken);
+		headers.put("Content-Type", "application/json");
+
+        Map<String,String> params = new HashMap<>();
+        params.put("workspaceId", workspaceGid);
+        try {
+			String res = new HttpURLConnectionInvoker(true).invokeGetHttpURLConn(url, headers, null);
+
+            JSONObject response = new JSONObject(res);
+            JSONArray result = response.getJSONArray("data");   //no i18N
+            for(int i =0;i< result.length();i++) {
+                JSONObject workspaceIDObj = result.getJSONObject(i);
+                projects.add(workspaceIDObj);
+            }
+        }catch (Exception e) {
+            LOGGER.info("Exception while adding bug in projects "+ e);
+        }
+        return projects;
+    }
+
+	public Long getProjectGidByName(long zuID, String workspaceGid, String projectName, String loginName, long apid) {
+
+		LOGGER.log(Level.INFO, "Getting project GID for project name: {0}", projectName);
+		List<JSONObject> projects = getAllProjects(zuID, workspaceGid, loginName, apid);
+
+        for (JSONObject project : projects) {
+            if (!project.has("name") || !project.has("gid")) {
+                continue;
+            }
+
+            String name = project.getString("name");
+
+            if (name.equalsIgnoreCase(projectName)) {
+                try {
+                    return Long.parseLong(project.getString("gid"));
+                } catch (NumberFormatException e) {
+					LOGGER.log(Level.SEVERE, "Could not parse GID to Long: {0}", project.getString("gid"));
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+
+	public JSONObject addAsanaTask(long zuID, String workspaceGid, String projectGid, String taskName, String taskdescription, String assigneeGid, String loginName, long apid) {
+		LOGGER.log(Level.INFO, "Adding task in Asana");
+
+		String accessToken = getAccessToken(zuID, loginName, apid);
+		if (accessToken == null) {
+			LOGGER.log(Level.SEVERE, "Access token not found");
+			return null;
+		}
+
+		String url = ASANABASEURL + "api/1.0/tasks"; // no i18N
+
+		Map<String, String> headers = new HashMap<>();
+		headers.put("Authorization", "Bearer " + accessToken);
+        headers.put("Content-Type", "application/json");
+
+		try {
+			// Asana requires JSON body with "data" wrapper
+			JSONObject data = new JSONObject();
+			data.put("name", taskName);
+			data.put("workspace", workspaceGid);
+
+			if (!CommonUtil.isEmpty(projectGid)) {
+				JSONArray projects = new JSONArray();
+				projects.put(projectGid);
+				data.put("projects", projects);
+			}
+			if (!CommonUtil.isEmpty(taskdescription)) {
+				data.put("notes", taskdescription);
+			}
+			if (!CommonUtil.isEmpty(assigneeGid)) {
+				data.put("assignee", assigneeGid);
+            }
+
+			JSONObject body = new JSONObject();
+			body.put("data", data);
+
+			LOGGER.log(Level.INFO, "Asana create task request body: {0}", body.toString());
+
+			// Send as JSON body not form params
+			JSONObject result = new HttpURLConnectionInvoker(true).invokeHttpURLConn(1, url, headers, body, null, false); // 1 = POST
+
+			LOGGER.log(Level.INFO, "Asana create task response: {0}", result);
+			return result;
+
+		} catch (Exception e) {
+			LOGGER.info("Exception while adding task in Asana: " + e);
+        }
+		return null;
+    }
+
+	// helper method
+	private JSONObject invokeAsanaAPI(String method, String url, String accessToken, JSONObject body) {
+		try {
+			java.net.URL urlObj = new java.net.URL(url);
+			javax.net.ssl.HttpsURLConnection conn = (javax.net.ssl.HttpsURLConnection) urlObj.openConnection();
+
+			conn.setRequestMethod(method);
+			conn.setRequestProperty("Authorization", "Bearer " + accessToken);
+			conn.setRequestProperty("Content-Type", "application/json");
+			conn.setRequestProperty("Accept", "application/json");
+			conn.setConnectTimeout(10000);
+			conn.setReadTimeout(10000);
+
+			if (body != null) {
+				conn.setDoOutput(true);
+				byte[] bodyBytes = body.toString().getBytes("UTF-8");
+				conn.setFixedLengthStreamingMode(bodyBytes.length);
+				try (java.io.OutputStream os = conn.getOutputStream()) {
+					os.write(bodyBytes);
+					os.flush();
+				}
+			}
+
+			int responseCode = conn.getResponseCode();
+			LOGGER.log(Level.INFO, "Response code: {0}", responseCode);
+
+			java.io.InputStream is = (responseCode >= 200 && responseCode < 300) ? conn.getInputStream() : conn.getErrorStream();
+
+			java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(is, "UTF-8"));
+			StringBuilder responseStr = new StringBuilder();
+			String line;
+			while ((line = reader.readLine()) != null) {
+				responseStr.append(line);
+			}
+			reader.close();
+			conn.disconnect();
+
+			LOGGER.log(Level.INFO, "Asana API response: {0}", responseStr.toString());
+
+			if (responseCode == 200 && responseStr.toString().isEmpty()) {
+				return new JSONObject("{\"result\":\"success\"}"); // no i18N
+			}
+			return new JSONObject(responseStr.toString());
+
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Exception in invokeAsanaAPI", e);
+		}
+		return null;
+	}
+    
+	public JSONObject updateAsanaTask(long zuID, String taskGid, String taskname, String taskdescription, String assigneeGid, String approvalStatus, String loginName, long apid) {
+
+        LOGGER.log(Level.INFO, "Updating task in Asana");
+
+        JSONObject response = null;
+
+        try {
+			String accessToken = getAccessToken(zuID, loginName, apid);
+
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Authorization", "Bearer " + accessToken);
+            headers.put("Content-Type", "application/json");
+
+			String url = ASANABASEURL + "api/1.0/tasks/" + taskGid; // no i18n
+
+            JSONObject data = new JSONObject();
+
+            if (!CommonUtil.isEmpty(taskname)) {
+                data.put("name", taskname);
+            }
+
+            if (!CommonUtil.isEmpty(taskdescription)) {
+                data.put("notes", taskdescription); // no i18N Asana uses "notes" 
+            }
+
+            if (!CommonUtil.isEmpty(assigneeGid)) {
+                data.put("assignee", assigneeGid);
+            }
+
+            if (!CommonUtil.isEmpty(approvalStatus)) {
+                data.put("approval_status", approvalStatus);
+            }
+
+            JSONObject body = new JSONObject();
+            body.put("data", data);
+			response = new HttpURLConnectionInvoker(true).invokeHttpURLConn(3, url, headers, body, null, false);
+			// response = invokeAsanaAPI("PUT", url, accessToken, body);
+
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Exception while updating task in Asana", e);
+        }
+
+        return response;
+    }
+
+	public JSONObject getTask(long zuID, String taskGid, String loginName, long apid) {
+		LOGGER.log(Level.INFO, "Getting task from Asana: {0}", taskGid);
+
+		try {
+			String accessToken = getAccessToken(zuID, loginName, apid);
+			if (accessToken == null) {
+				LOGGER.log(Level.SEVERE, "Access token not found");
+				return null;
+			}
+
+			String url = ASANABASEURL + "api/1.0/tasks/" + taskGid; // no i18N
+
+			Map<String, String> headers = new HashMap<>();
+			headers.put("Authorization", "Bearer " + accessToken);
+			headers.put("Content-Type", "application/json");
+
+			String res = new HttpURLConnectionInvoker(true).invokeGetHttpURLConn(url, headers, null);
+
+			JSONObject response = new JSONObject(res);
+			if (response.has("data")) {
+				return response.getJSONObject("data");
+			}
+
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Exception while getting task from Asana", e);
+		}
+		return null;
+	}
+    // to delete a particular task
+	public JSONObject deleteAsanaTask(long zuID, String taskGid, String loginName, long apid) {
+
+        LOGGER.log(Level.INFO, "Deleting task in Asana");
+        try {
+			String accessToken = getAccessToken(zuID, loginName, apid);
+            if (accessToken == null) {
+                LOGGER.log(Level.SEVERE, "Access token not found");
+                return null;
+            }
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Authorization", "Bearer " + accessToken);
+            headers.put("Content-Type", "application/json");
+
+            String url = ASANABASEURL + "api/1.0/tasks/" + taskGid; // no i18N
+			return new HttpURLConnectionInvoker(true).invokeDeleteHttpURLConn(url, headers, null, null, false);
+			// return invokeAsanaAPI("DELETE", url, accessToken, null);
+
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Exception while deleting task in Asana", e);
+        }
+        return null;
+    }
+}

@@ -1,0 +1,464 @@
+// $Id$
+package com.zoho.apptics.actions;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import com.adventnet.iam.User;
+import com.zoho.apptics.business.ServiceOrgHandler;
+import com.zoho.apptics.common.EmailNotificationContent;
+import com.zoho.apptics.conf.AppHandler;
+import com.zoho.apptics.conf.ProjectHandler;
+import com.zoho.apptics.conf.ProjectSettingsHandler;
+import com.zoho.apptics.conf.RoleHandler;
+import com.zoho.apptics.integration.AsanaHandler;
+import com.zoho.apptics.util.ApplicationLog;
+import com.zoho.apptics.util.AppticsConstants;
+import com.zoho.apptics.util.AppticsException;
+import com.zoho.apptics.util.AppticsIAMUtil;
+import com.zoho.apptics.util.ClientWriter;
+import com.zoho.apptics.util.CommonUtil;
+import com.zoho.apptics.util.PropertyHandler;
+import com.zoho.apptics.util.TransmailNotificationUtil;
+
+
+public class AsanaAction extends CommonAction {
+
+    private static final long serialVersionUID = 1L;
+
+	private static final Logger LOGGER = Logger.getLogger(AsanaAction.class.getName());
+
+    private String code;
+    private String state;
+    private String error;
+
+    private Long projectID;
+    private Long apid;
+
+    private boolean status = true;
+
+    //For creating task in asana requires
+
+    private String taskId;
+    private String taskName;
+    private String taskDescription;
+    private String assigneeGid;
+    private String approvalStatus;
+    private String workspaceGid;
+    private String workspaceName;
+    private Long projectGid;
+    private String projectName;
+
+
+    //for getting projects from asana workspace
+    private boolean validateUser() {
+        Long zuID = AppticsIAMUtil.getCurrentUserZUID();
+        if (zuID == null) {
+            ClientWriter.sendErrorResponse(
+                    response,
+                    AppticsConstants.UNAUTHORIZED,
+                    AppticsConstants.UNAUTHORIZED_MSG
+            );
+            return false;
+        }
+        return true;
+    }
+
+
+    //Returns true when current user role is DEV, DEV_LEAD or PM
+    private boolean validateRolesAndPermissions() throws Exception {
+        setCurrentUserRoles(projectID, zsoid);
+        if (projectRole < 1) {
+            ClientWriter.sendErrorResponse(
+                    response,
+                    AppticsConstants.PERMISSION_DENIED,
+                    AppticsConstants.PERMISSION_DENIED_MSG
+            );
+            return false;
+        }
+        return true;
+    }
+
+    public void getConfiguration() {
+        LOGGER.log(Level.INFO, "get configuration.");
+
+        Long zuID = AppticsIAMUtil.getCurrentUserZUID();
+        if (zuID == null) {
+            ClientWriter.sendErrorResponse(response, AppticsConstants.UNAUTHORIZED, AppticsConstants.UNAUTHORIZED_MSG);
+            return;
+        }
+        try {
+            JSONObject configuration = new AsanaHandler().getConfiguration(apid);
+
+            ClientWriter.sendResponse(response, CommonUtil.isEmpty(configuration) ? new JSONObject() : configuration);
+        }
+        catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Exception while getting asana configuration ", e);
+            ClientWriter.sendErrorResponse(response, AppticsConstants.EXCEPTION, "Exception while configuration, please try again later.");
+        }
+    }
+
+    public void updateConfiguration() {
+        try
+        {
+
+            LOGGER.log(Level.INFO, "Update asana configuration.");
+
+            checkCurrentUserZUID();
+            setCurrentUserRoles(projectID, zsoid);
+            if (projectRole < 1)
+            {
+                ClientWriter.sendErrorResponse(response, AppticsConstants.PERMISSION_DENIED, AppticsConstants.PERMISSION_DENIED_MSG);
+                return;
+            }
+
+            isParamContainsEmpty(apid);
+            isValiedAppPlatform(projectID, apid);
+
+            JSONObject configuration = new JSONObject(request.getParameter(AppticsConstants.S_CONFIGURATION));
+			// configuration.put("zuid", AppticsIAMUtil.getCurrentUserZUID()); // for create task in Asana
+
+            configuration = new AsanaHandler().updateConfiguration(apid, configuration);
+
+            ClientWriter.sendResponse(response, CommonUtil.isEmpty(configuration) ? new JSONObject() : configuration);
+
+            Map<String,Object> param = ApplicationLog.getParameter(mode, "asana");
+            ApplicationLog.addLog(ApplicationLog.INTEGRATIONS, null, projectID, request, param, 91, apid, "asana");
+            User user = checkCurrentUser();
+            String projectName = ProjectHandler.getDisplayName(projectID);
+            String identifier =  AppHandler.getInstance().getIdentifierByAPID(apid);
+            String portalName = ServiceOrgHandler.getInstance().getServiceOrgName(zsoid);
+
+            List<Long> roleIDs = RoleHandler.getRoleIDs(RoleHandler.getRoleNameList(RoleHandler.MANAGERLEADANDDEVS), null);
+            String email = ProjectSettingsHandler.getMemberEmailsAsCSV(projectID, roleIDs, false);
+			String content = EmailNotificationContent.getIntegrationConfiguredMailContent("Asana", projectName, user.getDisplayName(), identifier, portalName);
+            TransmailNotificationUtil.sendMail("Integration configurations updated", content, "no-reply@zohoapptics.com", email);
+
+        }
+        catch (AppticsException e)
+        {
+            LOGGER.log(Level.SEVERE, AppticsConstants.EXCEPTION, e);
+            e.writeToClient(response);
+        }
+        catch (Exception e)
+        {
+            LOGGER.log(Level.SEVERE, AppticsConstants.EXCEPTION, e);
+            ClientWriter.sendErrorResponse(response, AppticsConstants.UNPROCESSABLE_ENTITY, AppticsConstants.UNPROCESSABLE_ENTITY_MSG, AppticsConstants.SC_EXPECTATION_FAILED);
+        }
+
+    }
+
+    public void authenticate() {
+		LOGGER.log(Level.INFO, "authenticating asana user.");
+
+        Long zuID = AppticsIAMUtil.getCurrentUserZUID();
+
+		if (zuID == null) {
+            ClientWriter.sendErrorResponse(response, AppticsConstants.UNAUTHORIZED, AppticsConstants.UNAUTHORIZED_MSG);
+            return;
+        }
+		if (CommonUtil.isEmpty(state)) {
+			LOGGER.log(Level.SEVERE, "State param is null or empty");
+			ClientWriter.sendErrorResponse(response, AppticsConstants.BAD_REQUEST, "Invalid state param");
+			return;
+		}
+
+        String[] split = state.split(",");
+
+		if (split.length < 4) {
+			LOGGER.log(Level.SEVERE, "State param format invalid: {0}", state);
+			ClientWriter.sendErrorResponse(response, AppticsConstants.BAD_REQUEST, "Invalid state format");
+			return;
+		}
+		String zsoId = split[0]; // 49453462
+		long projectID = Long.parseLong(split[1]); // 4000000002002
+		// split[2] = zuId (15065957) — already from session
+		LOGGER.log(Level.INFO, "ZSOID FROM AUTHENTICATE METHOD------ {0}", zsoId);
+		LOGGER.log(Level.INFO, "Project ID {0}", projectID);
+		if (!CommonUtil.isEmpty(error)) {
+			try {
+				response.sendRedirect("/ac/" + zsoId + "/" + projectID + "/" + zuID + "/settings#integrations/asana"); // no i18N
+				return;
+			} catch (IOException e) {
+				LOGGER.log(Level.SEVERE, "User denied authentication", e);
+                return;
+            }
+        }
+
+		try {
+			boolean status = new AsanaHandler().authenticate(zuID, code, zsoId, request.getRequestURL().toString(), projectID);
+			LOGGER.log(Level.INFO, "Integration status : {0}", status);
+			response.sendRedirect("/ac/" + zsoId + "/" + projectID + "/" + zuID + "/settings#integrations/asana"); // no i18N
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Exception while authenticating asana user", e);
+        }
+    }
+
+    public void getOAuthTokens() {
+        LOGGER.log(Level.INFO, "getting oauth Tokens for asana.");
+
+        Long zuID = AppticsIAMUtil.getCurrentUserZUID();
+        if(zuID == null )
+        {
+            ClientWriter.sendErrorResponse(response, AppticsConstants.UNAUTHORIZED, AppticsConstants.UNAUTHORIZED_MSG);
+            return;
+        }
+        try
+        {
+			// Long zuID = AppticsIAMUtil.getCurrentUserZUID();
+            JSONArray tokens = new AsanaHandler().getOAuthTokens(zuID);
+            JSONObject result = new JSONObject();
+            result.put("tokens", tokens);
+            result.put("clientid", PropertyHandler.getValue(AppticsConstants.ASANACLIENTID));
+
+            ClientWriter.sendResponse(response, result);
+        }
+        catch (Exception e)
+        {
+            LOGGER.log(Level.SEVERE, "Exception while getting oauth tokens ", e);
+            ClientWriter.sendErrorResponse(response, AppticsConstants.EXCEPTION, "Exception while getting oauth tokens, please try again later."); //no i18N
+        }
+    }
+
+
+    public void createTask() {
+
+		// ExceptionHandler ex = new ExceptionHandler();
+		// ex.testMethod();
+
+		AsanaHandler handler = new AsanaHandler();
+		try {
+			LOGGER.log(Level.INFO, "Create asana task.");
+
+			Long zuID = AppticsIAMUtil.getCurrentUserZUID();
+			long apid = Long.parseLong(request.getParameter("apid")); // get apid from request
+
+			if (zuID == null) {
+				ClientWriter.sendErrorResponse(response, AppticsConstants.UNAUTHORIZED, AppticsConstants.UNAUTHORIZED_MSG);
+				return;
+			}
+			if (CommonUtil.isEmpty(workspaceName, projectName, taskName)) {
+				ClientWriter.sendErrorResponse(response, AppticsConstants.BAD_REQUEST, "workspaceName, projectName and taskName are required");
+				return;
+			}
+
+			// Get workspaceGid from workspaceName
+			String workspaceGid = handler.getWorkSpaceIDByName(zuID, workspaceName, zsoid.toString(), apid);
+			if (CommonUtil.isEmpty(workspaceGid)) {
+				LOGGER.log(Level.WARNING, "Workspace not found for name: {0}", workspaceName);
+				ClientWriter.sendErrorResponse(response, AppticsConstants.NOT_FOUND, "Workspace Name not found in Asana");
+				return;
+			}
+
+			// Get projectGid from projectName
+			Long projectGidLong = handler.getProjectGidByName(zuID, workspaceGid, projectName, zsoid.toString(), apid);
+			if (CommonUtil.isEmpty(projectGidLong)) {
+				LOGGER.log(Level.WARNING, "Project not found for name: {0} in workspace: {1}", new Object[] { projectName, workspaceName });
+				ClientWriter.sendErrorResponse(response, AppticsConstants.NOT_FOUND, "Project Name not found in the selected Workspace");
+				return;
+			}
+
+			// Create the task
+			JSONObject res = handler.addAsanaTask(zuID, workspaceGid, projectGidLong.toString(), taskName, taskDescription, assigneeGid, zsoid.toString(), apid);
+			ClientWriter.sendResponse(response, res);
+
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Exception while creating asana task", e);
+			ClientWriter.sendErrorResponse(response, AppticsConstants.EXCEPTION, "Exception while creating asana task, please try again later.");
+		}
+    }
+    public void updateTask() {
+        try {
+            LOGGER.log(Level.INFO, "update asana task.");
+
+            Long zuID = AppticsIAMUtil.getCurrentUserZUID();
+			long apid = Long.parseLong(request.getParameter("apid")); //
+
+            if(zuID == null )
+            {
+                ClientWriter.sendErrorResponse(response, AppticsConstants.UNAUTHORIZED, AppticsConstants.UNAUTHORIZED_MSG);
+                return;
+            }
+//          if (CommonUtil.isEmpty(this.workspaceGid)) {
+//               this.workspaceGid = new AsanaHandler().getWorkSpaceIDByName(zuID, this.workspaceName);
+//          }
+JSONObject res = new AsanaHandler().updateAsanaTask(zuID, taskId, taskName, taskDescription, assigneeGid, approvalStatus, zsoid.toString(), apid);
+            ClientWriter.sendResponse(response, res);
+        }
+        catch (Exception e)
+        {
+            LOGGER.log(Level.SEVERE, "Exception while updating asana task ", e);
+            ClientWriter.sendErrorResponse(response, AppticsConstants.EXCEPTION, "Exception while updating asana task, please try again later."); //no i18N
+        }
+    }
+    public void deleteTask() {
+        try {
+            LOGGER.log(Level.INFO, "delete asana task.");
+            Long zuID = AppticsIAMUtil.getCurrentUserZUID();
+			long apid = Long.parseLong(request.getParameter("apid")); // get apid from request
+
+            if(zuID == null )
+            {
+                ClientWriter.sendErrorResponse(response, AppticsConstants.UNAUTHORIZED, AppticsConstants.UNAUTHORIZED_MSG);
+                return;
+            }
+			JSONObject res = new AsanaHandler().deleteAsanaTask(zuID, taskId, zsoid.toString(), apid);
+            ClientWriter.sendResponse(response, res);
+        }
+        catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Exception while updating asana task ", e);
+            ClientWriter.sendErrorResponse(response, AppticsConstants.EXCEPTION, "Exception while updating asana task, please try again later."); //no i18N
+        }
+    }
+
+    public void getAllWorkspaces(){
+		LOGGER.log(Level.INFO, "Inside the GET ALL WORKSPACE IN ACTION CLASS");
+        Long zuID = AppticsIAMUtil.getCurrentUserZUID();
+        try {
+            if (!validateUser() || !validateRolesAndPermissions()) {
+                ClientWriter.sendErrorResponse(response, AppticsConstants.UNAUTHORIZED, AppticsConstants.UNAUTHORIZED_MSG);
+                return;
+            }
+			long apid = Long.parseLong(request.getParameter("apid")); // get apid from request
+			List<JSONObject> workspaces = new AsanaHandler().getAllWorkspaces(zuID, zsoid.toString(), apid);
+			LOGGER.log(Level.INFO, "ALL THE WORKSPACE LIST {0}", workspaces);
+            if (workspaces == null || workspaces.isEmpty()) {
+                ClientWriter.sendErrorResponse(response, AppticsConstants.SDK_OTHER_EXP_STRING, "NO_WORKSPACES"); // no i18N
+                return;
+            }
+
+            JSONArray jsonArr = new JSONArray();
+
+			LOGGER.log(Level.INFO, "getting all the workspaces {0}", jsonArr);
+            for (JSONObject json : workspaces) {
+                jsonArr.put(json);
+            }
+			LOGGER.log(Level.INFO, "after the iteration of all the get workspcse");
+            ClientWriter.sendResponse(response, jsonArr);
+
+        } catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Exception while fetching asana worksapce", e);
+            ClientWriter.sendErrorResponse(response, AppticsConstants.EXCEPTION, "Exception while fetching Jira Projects");
+        }
+    }
+    //Returns a list of asana project name and id for the configured Apptics project i:e particular workspace.
+    //Requires at least dev or dev lead role
+    public void getAllProjects() {
+		LOGGER.log(Level.SEVERE, "Inside the get all projects method in actions");
+        Long zuID = AppticsIAMUtil.getCurrentUserZUID();
+		LOGGER.log(Level.SEVERE, "Inside the get all projects method in actions{0}", zuID);
+		long apid = Long.parseLong(request.getParameter("apid")); // get apid from request
+
+        try {
+            if (!validateUser() || !validateRolesAndPermissions()) {
+                ClientWriter.sendErrorResponse(response, AppticsConstants.UNAUTHORIZED, AppticsConstants.UNAUTHORIZED_MSG);
+                return;
+            }
+
+			List<JSONObject> projects = new AsanaHandler().getAllProjects(zuID, workspaceGid, zsoid.toString(), apid);
+            if (projects == null || projects.isEmpty()) {
+                ClientWriter.sendErrorResponse(response, AppticsConstants.SDK_OTHER_EXP_STRING, "NO_PROJECTS"); // no i18N
+                return;
+            }
+
+            JSONArray jsonArr = new JSONArray();
+			LOGGER.log(Level.SEVERE, "GET ALL PROJECTS JSON {0}", jsonArr);
+            for (JSONObject json : projects) {
+                jsonArr.put(json);
+            }
+
+            ClientWriter.sendResponse(response, jsonArr);
+
+        } catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Exception while fetching Asana projects", e);
+            ClientWriter.sendErrorResponse(response, AppticsConstants.EXCEPTION, "Exception while fetching Jira Projects");
+        }
+    }
+
+	public void getTask() {
+		try {
+			LOGGER.log(Level.INFO, "Get asana task.");
+
+			Long zuID = AppticsIAMUtil.getCurrentUserZUID();
+			long apid = Long.parseLong(request.getParameter("apid")); // get apid from request
+
+			if (zuID == null) {
+				ClientWriter.sendErrorResponse(response, AppticsConstants.UNAUTHORIZED, AppticsConstants.UNAUTHORIZED_MSG);
+				return;
+			}
+
+			if (CommonUtil.isEmpty(taskId)) {
+				ClientWriter.sendErrorResponse(response, AppticsConstants.BAD_REQUEST, "taskId is required");
+				return;
+			}
+//			String loginName = "49453462";
+		
+			JSONObject res = new AsanaHandler().getTask(zuID, taskId, zsoid.toString(),apid);
+			if (res == null) {
+				ClientWriter.sendErrorResponse(response, AppticsConstants.NOT_FOUND, "Task not found");
+				return;
+			}
+
+			ClientWriter.sendResponse(response, res);
+
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Exception while getting asana task", e);
+			ClientWriter.sendErrorResponse(response, AppticsConstants.EXCEPTION, "Exception while getting asana task, please try again later.");
+		}
+	}
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public void setProjectID(Long projectID) {
+        this.projectID = projectID;
+    }
+
+    public void setApid(Long apid) {
+        this.apid = apid;
+    }
+
+    public void setStatus(boolean status) {
+        this.status = status;
+    }
+
+    public void setError(String error) {
+        this.error = error;
+    }
+
+    public void setWorkspaceGid(String workspaceGid){
+        this.workspaceGid = workspaceGid;
+    }
+    public void setWorkspaceName(String workspaceName){
+        this.workspaceName = workspaceName;
+    }
+    public void setProjectGid(Long projectGid){
+        this.projectGid = projectGid;
+    }
+    public void setProjectName(String projectName){
+        this.projectName = projectName;
+    }
+    public void setTaskId(String taskId){
+        this.taskId = taskId;
+    }
+    public void setTaskName(String taskName){
+        this.taskName = taskName;
+    }
+    public void setTaskDescription(String taskDescription){
+        this.taskDescription = taskDescription;
+    }
+    public void setAssigneeGid(String assigneeGid){
+        this.assigneeGid = assigneeGid;
+    }
+
+}

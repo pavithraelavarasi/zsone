@@ -1,0 +1,12 @@
+{
+  "availableModels": [
+    "haiku",
+    "sonnet",
+    "opus"
+  ],
+  "model": "claude-sonnet-4-6",
+  "permissions": {
+    "disableBypassPermissionsMode": "disable",
+    "disableRoutines": "disable"
+  }
+}
