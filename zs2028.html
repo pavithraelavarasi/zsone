@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZS2028 — Shell Command Treasure Hunt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #F7F6F3;
+    --surface:   #FFFFFF;
+    --border:    #E8E6E1;
+    --border-md: #D4D0C8;
+    --text-1:    #1A1816;
+    --text-2:    #4A4640;
+    --text-3:    #9A948A;
+    --forest:    #2D5A27;
+    --forest-lt: #EDF5EB;
+    --forest-md: #4A8C42;
+    --amber:     #B45309;
+    --amber-lt:  #FEF3C7;
+    --amber-md:  #D97706;
+    --blue:      #1E40AF;
+    --blue-lt:   #EFF6FF;
+    --blue-md:   #3B82F6;
+    --coral:     #9B2C2C;
+    --coral-lt:  #FEF2F2;
+    --purple:    #5B21B6;
+    --purple-lt: #F5F3FF;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Space Grotesk', system-ui, sans-serif;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+    --shadow-md: 0 4px 16px rgba(0,0,0,.08);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text-1);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(247,246,243,.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  .nav-logo-mark {
+    width: 32px; height: 32px;
+    background: var(--forest);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .nav-logo-text {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-1);
+    letter-spacing: .5px;
+  }
+
+  .nav-xp {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .xp-label {
+    font-size: 12px;
+    color: var(--text-3);
+    font-family: var(--mono);
+  }
+
+  .xp-track {
+    width: 120px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .xp-fill {
+    height: 100%;
+    background: var(--forest-md);
+    border-radius: 3px;
+    transition: width .5s ease;
+    width: 8%;
+  }
+
+  .xp-num {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--forest);
+    min-width: 52px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 64px 32px 48px;
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--forest);
+    background: var(--forest-lt);
+    border: 1px solid #C6DEC4;
+    border-radius: 20px;
+    padding: 4px 12px;
+    margin-bottom: 20px;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+
+  .hero h1 {
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -.5px;
+    color: var(--text-1);
+    margin-bottom: 14px;
+  }
+
+  .hero h1 span { color: var(--forest); }
+
+  .hero p {
+    font-size: 16px;
+    color: var(--text-2);
+    line-height: 1.7;
+    margin-bottom: 28px;
+  }
+
+  .cmd-pills-hero {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 32px;
+  }
+
+  .cmd-pill {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border-md);
+    background: var(--surface);
+    color: var(--text-3);
+    transition: all .2s;
+  }
+
+  .cmd-pill.learned {
+    background: var(--forest-lt);
+    border-color: #C6DEC4;
+    color: var(--forest);
+  }
+
+  /* ── ZONE MAP ── */
+  .section {
+    max-width: 900px;
+    margin: 0 auto 48px;
+    padding: 0 32px;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+  }
+
+  .zone-map {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+
+  .zone-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .15s;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .zone-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--border);
+    transition: background .2s;
+  }
+
+  .zone-card.active::before  { background: var(--forest-md); }
+  .zone-card.done::before    { background: var(--forest); }
+  .zone-card.locked::before  { background: var(--border); }
+
+  .zone-card:not(.locked):hover {
+    border-color: var(--forest-md);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .zone-card.active {
+    border-color: var(--forest-md);
+    background: var(--forest-lt);
+  }
+
+  .zone-card.done {
+    border-color: #C6DEC4;
+    background: var(--forest-lt);
+  }
+
+  .zone-card.locked {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+
+  .zone-emoji {
+    font-size: 28px;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .zone-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-2);
+    line-height: 1.3;
+  }
+
+  .zone-card.active .zone-name { color: var(--forest); }
+  .zone-card.done .zone-name   { color: var(--forest); }
+
+  .zone-tick {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 18px; height: 18px;
+    background: var(--forest);
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .zone-tick svg { width: 10px; height: 10px; stroke: white; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .zone-card.done .zone-tick { display: flex; }
+
+  /* ── MAIN CONTENT ── */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 32px 64px;
+    align-items: start;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .card-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-head-icon {
+    width: 34px; height: 34px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    flex-shrink: 0;
+  }
+
+  .icon-forest { background: var(--forest-lt); }
+  .icon-amber  { background: var(--amber-lt); }
+  .icon-blue   { background: var(--blue-lt); }
+  .icon-coral  { background: var(--coral-lt); }
+  .icon-purple { background: var(--purple-lt); }
+
+  .card-head-info { flex: 1; }
+  .card-head-info h3 { font-size: 14px; font-weight: 600; margin-bottom: 1px; }
+  .card-head-info p  { font-size: 12px; color: var(--text-3); }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  .badge-forest { background: var(--forest-lt); color: var(--forest); }
+  .badge-amber  { background: var(--amber-lt);  color: var(--amber); }
+  .badge-blue   { background: var(--blue-lt);   color: var(--blue); }
+  .badge-gray   { background: var(--border);    color: var(--text-3); }
+
+  .card-body { padding: 20px; }
+
+  /* story */
+  .story-strip {
+    border-left: 3px solid var(--amber-md);
+    background: var(--amber-lt);
+    padding: 12px 16px;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    margin-bottom: 16px;
+  }
+
+  .story-strip p { font-size: 13px; color: var(--amber); line-height: 1.7; }
+
+  /* command learn */
+  .cmd-block {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
+  .cmd-block-head {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cmd-token {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--blue);
+    background: var(--blue-lt);
+    padding: 2px 10px;
+    border-radius: 6px;
+  }
+
+  .cmd-tag-text { font-size: 12px; color: var(--text-3); }
+
+  .cmd-block-body { padding: 12px 14px; }
+  .cmd-desc { font-size: 13px; color: var(--text-2); line-height: 1.6; margin-bottom: 10px; }
+
+  .code-box {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: #1A1816;
+    color: #C8C5BF;
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    line-height: 1.8;
+  }
+
+  .code-prompt { color: #4A8C42; }
+  .code-out    { color: #6B6760; }
+
+  /* file grid */
+  .files-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .file-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    cursor: pointer;
+    transition: all .15s;
+    text-align: left;
+    width: 100%;
+  }
+
+  .file-btn:hover {
+    border-color: var(--forest-md);
+    background: var(--forest-lt);
+  }
+
+  .file-btn.opened {
+    border-color: #C6DEC4;
+    background: var(--forest-lt);
+  }
+
+  .file-btn .fi { font-size: 14px; }
+
+  .file-btn .fn {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-2);
+    word-break: break-all;
+    line-height: 1.3;
+  }
+
+  .file-btn.opened .fn { color: var(--forest); }
+
+  /* file result */
+  .file-result {
+    margin-top: 12px;
+    border: 1px solid var(--border-md);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    display: none;
+  }
+
+  .file-result.show { display: block; }
+
+  .file-result-head {
+    padding: 8px 12px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .file-result-head span { color: var(--forest); }
+
+  .file-result-body {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: #1A1816;
+    color: #C8C5BF;
+    padding: 14px 16px;
+    white-space: pre-wrap;
+    line-height: 1.7;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+
+  /* challenge */
+  .challenge-box {
+    border: 1px solid var(--border-md);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .challenge-top {
+    padding: 14px 16px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .challenge-eyebrow {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--purple);
+    margin-bottom: 6px;
+  }
+
+  .challenge-text {
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.65;
+  }
+
+  .challenge-actions {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: var(--radius-sm);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .15s;
+    border: 1px solid transparent;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: var(--forest);
+    color: #fff;
+    border-color: var(--forest);
+  }
+
+  .btn-primary:hover { background: var(--forest-md); }
+
+  .btn-outline {
+    background: var(--surface);
+    color: var(--text-2);
+    border-color: var(--border-md);
+  }
+
+  .btn-outline:hover { background: var(--bg); border-color: var(--text-3); }
+
+  .btn-amber {
+    background: var(--amber-lt);
+    color: var(--amber);
+    border-color: #FCD34D;
+    font-size: 12px;
+  }
+
+  .btn-amber:hover { background: #FEF9C3; }
+
+  .hint-panel {
+    padding: 10px 16px;
+    background: var(--amber-lt);
+    border-top: 1px solid #FCD34D;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--amber);
+    line-height: 1.6;
+    display: none;
+  }
+
+  .hint-panel.show { display: block; }
+
+  .result-toast {
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    line-height: 1.6;
+    display: none;
+    margin-top: 8px;
+  }
+
+  .result-toast.show { display: block; }
+  .result-toast.ok   { background: var(--forest-lt); color: var(--forest); border: 1px solid #C6DEC4; }
+  .result-toast.err  { background: var(--coral-lt);  color: var(--coral);  border: 1px solid #FCA5A5; }
+
+  .unlock-btn {
+    width: 100%;
+    margin-top: 10px;
+    display: none;
+    background: var(--forest);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 11px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+  }
+
+  .unlock-btn.show { display: block; }
+  .unlock-btn:hover { background: var(--forest-md); }
+
+  /* right sidebar */
+  .sidebar-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .sidebar-head {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sidebar-head h4 { font-size: 13px; font-weight: 600; }
+  .sidebar-head p  { font-size: 11px; color: var(--text-3); }
+
+  .sidebar-body { padding: 14px 16px; }
+
+  .progress-steps { display: flex; flex-direction: column; gap: 10px; }
+
+  .progress-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    transition: background .15s;
+  }
+
+  .progress-step:hover { background: var(--bg); }
+
+  .step-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    background: var(--surface);
+    transition: all .2s;
+  }
+
+  .step-dot.active { border-color: var(--forest-md); background: var(--forest-lt); }
+  .step-dot.done   { border-color: var(--forest); background: var(--forest); color: white; }
+
+  .step-info h5 { font-size: 13px; font-weight: 500; color: var(--text-2); }
+  .step-info p  { font-size: 11px; color: var(--text-3); }
+  .progress-step.active-step .step-info h5 { color: var(--forest); }
+
+  /* words collect */
+  .word-collect { display: flex; flex-direction: column; gap: 6px; }
+
+  .word-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .word-num { font-family: var(--mono); font-size: 11px; color: var(--text-3); min-width: 16px; }
+
+  .word-val {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-3);
+    letter-spacing: 2px;
+  }
+
+  .word-row.filled {
+    border-color: #C6DEC4;
+    background: var(--forest-lt);
+  }
+
+  .word-row.filled .word-val { color: var(--forest); }
+
+  /* commands grid */
+  .cmds-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+  .cmd-status {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    transition: all .2s;
+  }
+
+  .cmd-status.learned {
+    border-color: #C6DEC4;
+    background: var(--forest-lt);
+  }
+
+  .cmd-status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--border-md);
+    flex-shrink: 0;
+    transition: background .2s;
+  }
+
+  .cmd-status.learned .cmd-status-dot { background: var(--forest-md); }
+
+  .cmd-status-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-3);
+    font-weight: 500;
+  }
+
+  .cmd-status.learned .cmd-status-name { color: var(--forest); }
+
+  /* final */
+  .final-section {
+    max-width: 900px;
+    margin: 0 auto 64px;
+    padding: 0 32px;
+    display: none;
+  }
+
+  .final-section.show { display: block; }
+
+  .final-card {
+    background: var(--forest-lt);
+    border: 1.5px solid #C6DEC4;
+    border-radius: var(--radius);
+    padding: 40px;
+    text-align: center;
+    box-shadow: var(--shadow-md);
+  }
+
+  .final-trophy { font-size: 56px; margin-bottom: 16px; }
+
+  .final-card h2 {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--forest);
+    margin-bottom: 8px;
+  }
+
+  .secret-phrase {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--forest);
+    background: white;
+    border: 1.5px solid #C6DEC4;
+    border-radius: var(--radius-sm);
+    padding: 12px 24px;
+    display: inline-block;
+    margin: 16px 0;
+    letter-spacing: 1px;
+  }
+
+  .final-card p {
+    font-size: 14px;
+    color: var(--text-2);
+    line-height: 1.7;
+    max-width: 480px;
+    margin: 0 auto 24px;
+  }
+
+  .final-words-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .final-word-chip {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: white;
+    border: 1px solid #C6DEC4;
+    color: var(--forest);
+  }
+
+  /* nav dots */
+  .zone-nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+  }
+
+  .zone-dots { display: flex; gap: 5px; }
+
+  .zone-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--border-md);
+    transition: background .2s;
+  }
+
+  .zone-dot.d-active { background: var(--forest-md); }
+  .zone-dot.d-done   { background: var(--forest); }
+
+  /* practice notice */
+  .practice-notice {
+    background: var(--purple-lt);
+    border: 1px solid #DDD6FE;
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: var(--purple);
+    line-height: 1.6;
+  }
+
+  @media (max-width: 720px) {
+    .zone-map { grid-template-columns: repeat(3, 1fr); }
+    .content-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 30px; }
+    nav { padding: 0 16px; }
+    .section, .content-grid, .final-section { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-mark">🗺️</div>
+    <span class="nav-logo-text">ZS2028</span>
+  </a>
+  <div class="nav-xp">
+    <span class="xp-label">XP</span>
+    <div class="xp-track"><div class="xp-fill" id="xp-fill"></div></div>
+    <span class="xp-num" id="xp-num">40 / 500</span>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-eyebrow">🌿 Shell Learning Adventure</div>
+  <h1>Find the <span>ZS2028</span><br>treasure</h1>
+  <p>Learn shell commands by exploring 5 zones. Each zone teaches a new command. Find the secret phrase to complete the hunt.</p>
+  <div class="cmd-pills-hero">
+    <span class="cmd-pill learned" id="pill-ls">ls</span>
+    <span class="cmd-pill learned" id="pill-cat">cat</span>
+    <span class="cmd-pill" id="pill-cd">cd</span>
+    <span class="cmd-pill" id="pill-ssh">ssh</span>
+    <span class="cmd-pill" id="pill-mkdir">mkdir</span>
+    <span class="cmd-pill" id="pill-mv">mv</span>
+  </div>
+</section>
+
+<div class="section">
+  <div class="section-label">World map — click a zone to explore</div>
+  <div class="zone-map">
+    <div class="zone-card active" id="zn0" onclick="goZone(0)">
+      <div class="zone-tick"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+      <span class="zone-emoji">🌲</span>
+      <div class="zone-name">Dark Forest</div>
+    </div>
+    <div class="zone-card locked" id="zn1" onclick="goZone(1)">
+      <div class="zone-tick"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+      <span class="zone-emoji">🏛️</span>
+      <div class="zone-name">Ancient Ruins</div>
+    </div>
+    <div class="zone-card locked" id="zn2" onclick="goZone(2)">
+      <div class="zone-tick"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+      <span class="zone-emoji">🦇</span>
+      <div class="zone-name">Haunted Cave</div>
+    </div>
+    <div class="zone-card locked" id="zn3" onclick="goZone(3)">
+      <div class="zone-tick"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+      <span class="zone-emoji">⚓</span>
+      <div class="zone-name">Pirate Ship</div>
+    </div>
+    <div class="zone-card locked" id="zn4" onclick="goZone(4)">
+      <div class="zone-tick"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+      <span class="zone-emoji">🏝️</span>
+      <div class="zone-name">Treasure Island</div>
+    </div>
+  </div>
+</div>
+
+<div class="content-grid">
+  <div id="main-col"></div>
+
+  <aside>
+    <div class="sidebar-card">
+      <div class="sidebar-head">
+        <div>
+          <h4>Your journey</h4>
+          <p>5 zones to explore</p>
+        </div>
+      </div>
+      <div class="sidebar-body">
+        <div class="progress-steps" id="progress-steps"></div>
+      </div>
+    </div>
+
+    <div class="sidebar-card">
+      <div class="sidebar-head">
+        <div>
+          <h4>Zone words</h4>
+          <p>Collect one per zone</p>
+        </div>
+      </div>
+      <div class="sidebar-body">
+        <div class="word-collect" id="word-collect"></div>
+      </div>
+    </div>
+
+    <div class="sidebar-card">
+      <div class="sidebar-head">
+        <div>
+          <h4>Commands</h4>
+          <p>Unlock as you progress</p>
+        </div>
+      </div>
+      <div class="sidebar-body">
+        <div class="cmds-grid" id="cmds-grid"></div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="final-section" id="final-section">
+  <div class="final-card">
+    <div class="final-trophy">🏆</div>
+    <h2>Treasure found!</h2>
+    <div class="secret-phrase">Welcome to ZS2028</div>
+    <p>You mastered every shell command on this journey. Now go to the output folder, create a folder with your name, and submit your assignment PDF.</p>
+    <div class="final-words-row">
+      <span class="final-word-chip">WELCOME</span>
+      <span class="final-word-chip">+</span>
+      <span class="final-word-chip">TO</span>
+      <span class="final-word-chip">+</span>
+      <span class="final-word-chip">ZS</span>
+      <span class="final-word-chip">+</span>
+      <span class="final-word-chip">2028</span>
+      <span class="final-word-chip">=</span>
+      <span class="final-word-chip" style="background:var(--forest);color:white;border-color:var(--forest)">Welcome to ZS2028</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const G = { xp: 40, zone: 0, done: [], words: [], opened: {}, hintShown: {} };
+
+const ZONES = [
+  {
+    id: 0, emoji: '🌲', name: 'Dark Forest', sub: 'Learn ls and cat',
+    badge: 'Zone 1', badgeCls: 'badge-forest', iconCls: 'icon-forest',
+    word: 'WELCOME', learnPills: ['ls','cat'], learnCmds: ['ls','cat'],
+    story: 'You enter the Dark Forest. It is silent except for rustling leaves. A scroll on a tree reads: "Two commands are your torch here — one to see what surrounds you, one to read what you find."',
+    cmds: [
+      { cmd: 'ls', tag: 'list files', desc: 'Shows every file in your current location. Like opening your eyes in a dark room and seeing what surrounds you.', ex: 'ls', out: 'welcome.txt  clue_one.txt  riddle.txt  fake_treasure.txt' },
+      { cmd: 'cat', tag: 'read a file', desc: 'Opens and prints a file\'s contents to your screen. This is how you read every clue in the game.', ex: 'cat welcome.txt', out: '🌲 Welcome to the DARK FOREST...' }
+    ],
+    files: ['welcome.txt','clue_one.txt','riddle.txt','fake_treasure.txt','forest_map.txt'],
+    fileContent: {
+      'welcome.txt': '🌲 Welcome to the DARK FOREST!\n\nA scroll is nailed to a tree. It reads:\n\n  "Find the file whose name starts with clue_\n   and read it to get your first zone word."',
+      'clue_one.txt': '🗺️  CLUE ONE — The Forest Whisper\n\nThe forest speaks:\n\n  "Travel EAST to zone2_ancient_ruins.\n\n  ★  ZONE 1 WORD: WELCOME  ★\n\n  Write this down!"',
+      'riddle.txt': '🔐  THE FOREST RIDDLE\n\n  "I have cities but no houses.\n   I have mountains but no trees.\n   What am I?"\n\n  Answer: A MAP  🗺️',
+      'fake_treasure.txt': '😂  Ha! Nice try.\n\nThe real treasure is hidden much deeper.\nKeep going, explorer!',
+      'forest_map.txt': '🗺️  FOREST MAP\n\n  zone1_dark_forest      ← YOU ARE HERE\n  zone2_ancient_ruins\n  zone3_haunted_cave\n  zone4_pirate_ship\n  zone5_treasure_island  ← TREASURE\n  output/                ← SUBMIT HERE'
+    },
+    challenge: 'Use ls to see the files around you. Then use cat to open clue_one.txt. The Zone 1 word is inside.',
+    hint: 'First: ls\nThen: cat clue_one.txt',
+    successFile: 'clue_one.txt'
+  },
+  {
+    id: 1, emoji: '🏛️', name: 'Ancient Ruins', sub: 'Learn cd',
+    badge: 'Zone 2', badgeCls: 'badge-blue', iconCls: 'icon-blue',
+    word: 'TO', learnPills: ['cd'], learnCmds: ['cd'],
+    story: 'Ancient Ruins stretch before you — crumbling pillars reaching into the sky. Three pillars are carved with messages. Only one leads forward. The others are traps.',
+    cmds: [
+      { cmd: 'cd', tag: 'change directory', desc: 'Moves you from one folder to another. Like walking through a door into a new room. Use cd .. to go back one level.', ex: 'cd zone2_ancient_ruins', out: '(you are now inside the ruins)' }
+    ],
+    files: ['stone_tablet.txt','north_pillar.txt','south_pillar.txt','east_pillar.txt','ruins_warning.txt'],
+    fileContent: {
+      'stone_tablet.txt': '🏛️  THE ANCIENT RUINS\n\n  "Three pillars are carved with messages.\n   Only ONE leads forward — the others are traps.\n   The files are named after compass directions.\n   Read them all. Choose wisely."',
+      'north_pillar.txt': '🏛️  NORTH PILLAR\n\n  "You are getting warmer...\n   but this is NOT the path.\n\n   Try another direction."',
+      'south_pillar.txt': '🏛️  SOUTH PILLAR\n\n  "The south wind blows cold.\n   Nothing here but dust."\n\n  Try another direction.',
+      'east_pillar.txt': '🏛️  EAST PILLAR  ✅\n\n  "WISE TRAVELLER! You chose correctly.\n\n   Ancient password: RUINS_42\n\n  ★  ZONE 2 WORD: TO  ★\n\n   Write this down!\n\n   Next zone: zone3_haunted_cave"',
+      'ruins_warning.txt': '⚠️  WARNING\n\n  Read stone_tablet.txt first\n  before exploring the ruins.'
+    },
+    challenge: 'Navigate into the ruins. Read all three pillar files — north, south, and east. Only one gives you the Zone 2 word.',
+    hint: 'cd zone2_ancient_ruins\nls\ncat east_pillar.txt',
+    successFile: 'east_pillar.txt'
+  },
+  {
+    id: 2, emoji: '🦇', name: 'Haunted Cave', sub: 'Practice all commands',
+    badge: 'Zone 3', badgeCls: 'badge-amber', iconCls: 'icon-amber',
+    word: 'ZS', learnPills: [], learnCmds: [],
+    story: 'The Haunted Cave is pitch black. Dripping water echoes off stone walls. A golden compass glows somewhere inside. Four chests wait — three are traps. Only one is real.',
+    cmds: [],
+    files: ['cave_entrance.txt','fake_chest_1.txt','fake_chest_2.txt','fake_chest_3.txt','chest.txt','cave_painting.txt'],
+    fileContent: {
+      'cave_entrance.txt': '🦇  THE HAUNTED CAVE\n\n  "Four chests are hidden here.\n   Only ONE is real.\n\n   List the files, then open each chest.\n   The real chest gives you the zone word."',
+      'fake_chest_1.txt': '💀  FAKE CHEST\n\n  A spider jumps out! Just kidding.\n  Not this one. Keep looking.',
+      'fake_chest_2.txt': '💀  FAKE CHEST\n\n  Empty. Completely empty.\n  Try another.',
+      'fake_chest_3.txt': '💀  FAKE CHEST\n\n  Not this one either!\n  Keep going.',
+      'chest.txt': '🎉  THE REAL CHEST — Zone 3 complete!\n\n  Inside: a golden compass pointing to the sea.\n\n  ★  ZONE 3 WORD: ZS  ★\n\n  Write this down!\n\n  Next: zone4_pirate_ship\n  Find: captains_log.txt',
+      'cave_painting.txt': '🖼️  CAVE PAINTING\n\n  "Each zone hides one word.\n   Collect all 4 words to reveal\n   the final secret."'
+    },
+    challenge: 'Find the real chest. There are four chest files — only chest.txt is the real one. Read them all to find it.',
+    hint: 'cd zone3_haunted_cave\nls\ncat chest.txt',
+    successFile: 'chest.txt'
+  },
+  {
+    id: 3, emoji: '⚓', name: 'Pirate Ship', sub: 'Practice: read in order',
+    badge: 'Zone 4', badgeCls: 'badge-amber', iconCls: 'icon-amber',
+    word: '2028', learnPills: [], learnCmds: [],
+    story: 'The Pirate Ship creaks in the wind. The captain left five decks of clues — each one leads to the next. You must read them in order. Skip one and you lose the trail.',
+    cmds: [],
+    files: ['captains_log.txt','deck_1.txt','deck_2.txt','deck_3.txt','deck_4.txt','deck_5.txt'],
+    fileContent: {
+      'captains_log.txt': '⚓  CAPTAIN\'S LOG\n\n  "Five decks. Read in order.\n   Start with deck_1.txt"',
+      'deck_1.txt': '🚢  DECK 1 — THE BOW\n\n  "The treasure has a year in its name.\n   That year is in the future."\n\n  → Continue to deck_2.txt',
+      'deck_2.txt': '🚢  DECK 2 — THE HULL\n\n  "First two digits of the year:  20"\n\n  → Continue to deck_3.txt',
+      'deck_3.txt': '🚢  DECK 3 — THE MAST\n\n  "Last two digits of the year:  28"\n\n  → Continue to deck_4.txt',
+      'deck_4.txt': '🚢  DECK 4 — THE CABIN\n\n  "Combine: 20 + 28 = ?"\n\n  → Continue to deck_5.txt',
+      'deck_5.txt': '🚢  DECK 5 — THE TREASURE MAP\n\n  ★  ZONE 4 WORD: 2028  ★\n\n  Write this down!\n\n  Sail to zone5_treasure_island\n  Find: treasure_chest.txt'
+    },
+    challenge: 'Board the ship. Read all five decks in order from deck_1.txt to deck_5.txt. Each one leads to the next.',
+    hint: 'cd zone4_pirate_ship\ncat captains_log.txt\ncat deck_1.txt ... cat deck_5.txt',
+    successFile: 'deck_5.txt'
+  },
+  {
+    id: 4, emoji: '🏝️', name: 'Treasure Island', sub: 'Learn mkdir and mv',
+    badge: 'Zone 5', badgeCls: 'badge-forest', iconCls: 'icon-forest',
+    word: null, learnPills: ['ssh','mkdir','mv'], learnCmds: ['mkdir','mv'],
+    story: 'You made it to Treasure Island! Palm trees sway in the breeze. The final challenge — find the secret phrase by combining all zone words, then learn two new commands to submit your assignment.',
+    cmds: [
+      { cmd: 'mkdir', tag: 'make folder', desc: 'Creates a new folder. You will use this to create your personal home folder inside the output directory.', ex: 'mkdir aarthi', out: '(folder aarthi/ created)' },
+      { cmd: 'mv', tag: 'move file', desc: 'Moves a file from one place to another. Use this to submit your assignment PDF into your named folder.', ex: 'mv assignment.pdf aarthi/', out: '(file moved into aarthi/)' }
+    ],
+    files: ['island_welcome.txt','x_marks_the_spot.txt','parrot_says.txt','final_hint.txt','treasure_chest.txt'],
+    fileContent: {
+      'island_welcome.txt': '🏝️  TREASURE ISLAND\n\n  "You have collected 4 zone words.\n   Combine them all — that IS the secret.\n   Confirm it by reading treasure_chest.txt"',
+      'x_marks_the_spot.txt': '❌  X MARKS THE SPOT\n\n  "The treasure is not buried.\n   It is in plain sight.\n   cat treasure_chest.txt"',
+      'parrot_says.txt': '🦜  THE PARROT SAYS\n\n  "BWAK! treasure_chest.txt! BWAK!"',
+      'final_hint.txt': '💡  FINAL HINT\n\n  Zone 1: WELCOME\n  Zone 2: TO\n  Zone 3: ZS\n  Zone 4: 2028\n\n  Put them together in order...',
+      'treasure_chest.txt': '╔══════════════════════════════╗\n║    🏆  TREASURE FOUND!  🏆   ║\n║                              ║\n║    ★  Welcome to ZS2028  ★  ║\n║                              ║\n║  Commands mastered:          ║\n║    ✅  ssh                   ║\n║    ✅  ls                    ║\n║    ✅  cat                   ║\n║    ✅  cd                    ║\n║    ✅  mkdir  ← next!        ║\n║    ✅  mv     ← next!        ║\n╚══════════════════════════════╝'
+    },
+    challenge: 'Open treasure_chest.txt to reveal the final secret. Then go to output/, create a folder with your name using mkdir, and move your assignment PDF inside it using mv.',
+    hint: 'cat treasure_chest.txt\ncd ../../output\nmkdir yourname\nmv assignment.pdf yourname/',
+    successFile: 'treasure_chest.txt'
+  }
+];
+
+const ALL_CMDS = ['ls','cat','cd','ssh','mkdir','mv'];
+const STARTED_LEARNED = ['ls','cat'];
+
+function gainXP(n) {
+  G.xp = Math.min(500, G.xp + n);
+  document.getElementById('xp-fill').style.width = Math.round(G.xp / 500 * 100) + '%';
+  document.getElementById('xp-num').textContent = G.xp + ' / 500';
+}
+
+function learnPills(pills) {
+  pills.forEach(p => {
+    const el = document.getElementById('pill-' + p);
+    if (el) el.classList.add('learned');
+  });
+  renderCmdsGrid();
+}
+
+function renderCmdsGrid() {
+  const learned = new Set([...STARTED_LEARNED, ...G.done.flatMap(i => ZONES[i].learnCmds)]);
+  document.getElementById('cmds-grid').innerHTML = ALL_CMDS.map(c => `
+    <div class="cmd-status ${learned.has(c) ? 'learned' : ''}">
+      <div class="cmd-status-dot"></div>
+      <span class="cmd-status-name">${c}</span>
+    </div>`).join('');
+}
+
+function renderWordCollect() {
+  const words = ['WELCOME','TO','ZS','2028'];
+  document.getElementById('word-collect').innerHTML = words.map((w, i) => {
+    const filled = G.words.includes(w);
+    return `<div class="word-row ${filled ? 'filled' : ''}">
+      <span class="word-num">${i+1}</span>
+      <span class="word-val">${filled ? w : '?????'}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderProgressSteps() {
+  document.getElementById('progress-steps').innerHTML = ZONES.map(z => {
+    const isDone = G.done.includes(z.id);
+    const isActive = G.zone === z.id;
+    return `<div class="progress-step ${isActive ? 'active-step' : ''}" onclick="goZone(${z.id})">
+      <div class="step-dot ${isDone ? 'done' : isActive ? 'active' : ''}">
+        ${isDone ? '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,6 5,9 10,3"/></svg>' : z.emoji}
+      </div>
+      <div class="step-info">
+        <h5>${z.name}</h5>
+        <p>${isDone ? 'Complete' : isActive ? 'In progress' : 'Locked'}</p>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderZone(zid) {
+  G.zone = zid;
+  const z = ZONES[zid];
+  const isDone = G.done.includes(zid);
+
+  document.querySelectorAll('.zone-card').forEach((el, i) => {
+    el.classList.remove('active');
+    if (i === zid && !G.done.includes(i)) el.classList.add('active');
+  });
+
+  document.querySelectorAll('.zone-dot').forEach((el, i) => {
+    el.className = 'zone-dot' + (G.done.includes(i) ? ' d-done' : i === zid ? ' d-active' : '');
+  });
+
+  let cmdsHtml = '';
+  if (z.cmds.length > 0) {
+    cmdsHtml = z.cmds.map(c => `
+      <div class="cmd-block">
+        <div class="cmd-block-head">
+          <span class="cmd-token">${c.cmd}</span>
+          <span class="cmd-tag-text">${c.tag}</span>
+        </div>
+        <div class="cmd-block-body">
+          <div class="cmd-desc">${c.desc}</div>
+          <div class="code-box"><span class="code-prompt">$ </span>${c.ex}${c.out ? '\n<span class="code-out"># ' + c.out + '</span>' : ''}</div>
+        </div>
+      </div>`).join('');
+  } else {
+    cmdsHtml = `<div class="practice-notice">Practice zone — no new commands. Apply <strong>ls</strong>, <strong>cat</strong>, and <strong>cd</strong> to navigate and read files.</div>`;
+  }
+
+  const openedForZone = G.opened[zid] || {};
+  const filesHtml = z.files.map(f => `
+    <button class="file-btn ${openedForZone[f] ? 'opened' : ''}" onclick="openFile(${zid},'${f}')">
+      <span class="fi">${openedForZone[f] ? '📖' : '📄'}</span>
+      <span class="fn">${f}</span>
+    </button>`).join('');
+
+  const prevBtn = zid > 0 ? `<button class="btn btn-outline" onclick="goZone(${zid-1})">← Prev zone</button>` : '<span></span>';
+  const nextBtn = zid < 4
+    ? (isDone ? `<button class="btn btn-primary" onclick="goZone(${zid+1})">Next zone →</button>` : `<button class="btn btn-outline" style="opacity:.4;cursor:not-allowed">Next zone →</button>`)
+    : '<span></span>';
+
+  document.getElementById('main-col').innerHTML = `
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-icon ${z.iconCls}">${z.emoji}</div>
+        <div class="card-head-info">
+          <h3>${z.name}</h3>
+          <p>${z.sub}</p>
+        </div>
+        <span class="badge ${z.badgeCls}">${z.badge} of 5</span>
+      </div>
+      <div class="card-body">
+        <div class="story-strip"><p>${z.story}</p></div>
+        ${cmdsHtml}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-icon icon-forest">📂</div>
+        <div class="card-head-info">
+          <h3>Files in this zone</h3>
+          <p>Click any file to read its contents</p>
+        </div>
+        <span class="badge badge-gray">${z.files.length} files</span>
+      </div>
+      <div class="card-body">
+        <div class="files-grid">${filesHtml}</div>
+        <div class="file-result" id="file-result-panel">
+          <div class="file-result-head"><span id="fr-cmd">$ cat …</span></div>
+          <div class="file-result-body" id="fr-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-icon icon-purple">🎯</div>
+        <div class="card-head-info">
+          <h3>Your challenge</h3>
+          <p>${isDone ? 'Completed!' : 'Complete this to unlock the next zone'}</p>
+        </div>
+        ${isDone ? '<span class="badge badge-forest">Done</span>' : ''}
+      </div>
+      <div class="card-body">
+        <div class="challenge-box">
+          <div class="challenge-top">
+            <div class="challenge-eyebrow">Mission</div>
+            <div class="challenge-text">${z.challenge}</div>
+          </div>
+          <div class="challenge-actions">
+            <button class="btn btn-amber" onclick="toggleHint(${zid})">Show hint</button>
+            <div class="hint-panel" id="hint-panel-${zid}"><span style="font-weight:500;color:var(--amber)">Hint:</span><br>${z.hint.replace(/\n/g,'<br>')}</div>
+            <div class="result-toast" id="challenge-result"></div>
+            ${isDone ? '' : `<button class="unlock-btn" id="unlock-btn-${zid}" onclick="completeZone(${zid})">Mark complete &amp; unlock next zone ✓</button>`}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="zone-nav-row" style="margin-bottom:8px">
+      ${prevBtn}
+      <div class="zone-dots">${[0,1,2,3,4].map(i=>`<div class="zone-dot ${G.done.includes(i)?'d-done':i===zid?'d-active':''}"></div>`).join('')}</div>
+      ${nextBtn}
+    </div>`;
+
+  renderProgressSteps();
+}
+
+function openFile(zid, fname) {
+  if (!G.opened[zid]) G.opened[zid] = {};
+  G.opened[zid][fname] = true;
+  gainXP(8);
+
+  const z = ZONES[zid];
+  const panel = document.getElementById('file-result-panel');
+  panel.classList.add('show');
+  document.getElementById('fr-cmd').textContent = '$ cat ' + fname;
+  document.getElementById('fr-body').textContent = z.fileContent[fname] || '(file contents)';
+
+  document.querySelectorAll('.file-btn').forEach(btn => {
+    if (btn.querySelector('.fn').textContent === fname) {
+      btn.classList.add('opened');
+      btn.querySelector('.fi').textContent = '📖';
+    }
+  });
+
+  if (fname === z.successFile) {
+    if (z.word && !G.words.includes(z.word)) G.words.push(z.word);
+    renderWordCollect();
+    const ub = document.getElementById('unlock-btn-' + zid);
+    if (ub) ub.classList.add('show');
+    if (fname === 'treasure_chest.txt') setTimeout(() => showFinal(), 600);
+  }
+
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function toggleHint(zid) {
+  const hp = document.getElementById('hint-panel-' + zid);
+  const showing = hp.classList.toggle('show');
+  gainXP(2);
+  const btn = hp.previousElementSibling;
+  if (btn && btn.classList.contains('btn-amber')) btn.textContent = showing ? 'Hide hint' : 'Show hint';
+}
+
+function completeZone(zid) {
+  if (G.done.includes(zid)) return;
+  G.done.push(zid);
+  gainXP(60);
+
+  const z = ZONES[zid];
+  if (z.word && !G.words.includes(z.word)) G.words.push(z.word);
+  learnPills(z.learnPills);
+
+  const nextNode = document.getElementById('zn' + (zid + 1));
+  if (nextNode) {
+    nextNode.classList.remove('locked');
+    nextNode.classList.add('done');
+  }
+  const thisNode = document.getElementById('zn' + zid);
+  if (thisNode) {
+    thisNode.classList.remove('active');
+    thisNode.classList.add('done');
+  }
+
+  renderWordCollect();
+  renderProgressSteps();
+
+  if (zid === 4) showFinal();
+  else goZone(zid);
+
+  const cr = document.getElementById('challenge-result');
+  if (cr) {
+    cr.className = 'result-toast ok show';
+    cr.textContent = 'Zone complete! +60 XP — next zone unlocked.';
+  }
+}
+
+function goZone(zid) {
+  if (zid > 0 && !G.done.includes(zid - 1)) {
+    alert('Complete Zone ' + zid + ' first to unlock this zone.');
+    return;
+  }
+  renderZone(zid);
+  document.querySelector('.content-grid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showFinal() {
+  gainXP(100);
+  document.getElementById('final-section').classList.add('show');
+  document.getElementById('final-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+renderCmdsGrid();
+renderWordCollect();
+renderProgressSteps();
+renderZone(0);
+</script>
+</body>
+</html>
