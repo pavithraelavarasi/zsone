@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World Challenge - Learning Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .language-selector {
+            background: #f8f9fa;
+            padding: 25px;
+            text-align: center;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .language-selector h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .lang-btn {
+            padding: 12px 25px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .lang-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .lang-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .level {
+            margin-bottom: 50px;
+        }
+
+        .level-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #e9ecef;
+        }
+
+        .level-badge {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.5em;
+            color: white;
+            margin-right: 20px;
+        }
+
+        .level-1 .level-badge {
+            background: #10b981;
+        }
+
+        .level-2 .level-badge {
+            background: #f59e0b;
+        }
+
+        .level-title-section h2 {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .level-title-section p {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .section h4 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+        }
+
+        .requirements-list, .constraints-list, .tips-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .requirements-list li, .constraints-list li, .tips-list li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .requirements-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .constraints-list li {
+            padding-left: 25px;
+        }
+
+        .constraints-list li.allowed:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .constraints-list li.not-allowed:before {
+            content: "✗";
+            position: absolute;
+            left: 0;
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        .code-block.python { display: none; }
+        .code-block.java { display: none; }
+        .code-block.javascript { display: none; }
+
+        .code-block.python.active { display: block; }
+        .code-block.java.active { display: block; }
+        .code-block.javascript.active { display: block; }
+
+        .ascii-reference {
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 2px solid #667eea;
+        }
+
+        .ascii-reference h5 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .ascii-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .ascii-item {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid #d4d8f0;
+        }
+
+        .ascii-item .char {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.2em;
+        }
+
+        .ascii-item .value {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .success-criteria {
+            background: #ecfdf5;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .success-criteria h5 {
+            color: #059669;
+            margin-bottom: 10px;
+        }
+
+        .hint-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .hint-box h5 {
+            color: #d97706;
+            margin-bottom: 10px;
+        }
+
+        .submission-format {
+            background: #f3e8ff;
+            border-left: 4px solid #a855f7;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 40px;
+        }
+
+        .submission-format h3 {
+            color: #a855f7;
+            margin-bottom: 15px;
+        }
+
+        .submission-format pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.9em;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        .comparison-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .comparison-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-top: 2px solid #e9ecef;
+        }
+
+        .emoji {
+            font-size: 1.2em;
+            margin-right: 5px;
+        }
+
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .level-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .level-badge {
+                margin-bottom: 15px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .lang-btn {
+                width: 100%;
+            }
+
+            .ascii-grid {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Hello World Challenge</h1>
+            <p>A Progressive Learning Guide - Master Output Programming</p>
+        </header>
+
+        <div class="language-selector">
+            <h3>Choose Your Programming Language</h3>
+            <div class="button-group">
+                <button class="lang-btn active" onclick="selectLanguage('python')">🐍 Python</button>
+                <button class="lang-btn" onclick="selectLanguage('java')">☕ Java</button>
+                <button class="lang-btn" onclick="selectLanguage('javascript')">📜 JavaScript</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- LEVEL 1 -->
+            <div class="level level-1">
+                <div class="level-header">
+                    <div class="level-badge">1</div>
+                    <div class="level-title-section">
+                        <h2><span class="emoji">🟢</span>Level 1: Basic Execution</h2>
+                        <p><strong>Difficulty:</strong> Easy | <strong>Time Estimate:</strong> 5-10 minutes</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h4>📋 Requirements</h4>
+                    <ul class="requirements-list">
+                        <li>Output the exact string <code>Hello World</code> (capital H, lowercase w, ld, one space between words)</li>
+                        <li>Program must execute without errors</li>
+                        <li>Output must go to standard output (console/stdout)</li>
+                    </ul>
+                </div>
+
+                <div class="section">
+                    <h4>✅ Constraints (What you CAN do)</h4>
+                    <ul class="constraints-list">
+                        <li class="allowed"><strong>You CAN</strong> use string literals</li>
+                        <li class="allowed"><strong>You CAN</strong> use standard library functions</li>
+                        <li class="allowed"><strong>You CAN</strong> use any built-in print/output functions</li>
+                    </ul>
+                </div>
+
+                <div class="section">
+                    <h4>💻 Solution Example</h4>
+                    
+                    <div class="code-block python active">
+print("Hello World")
+                    </div>
+
+                    <div class="code-block java">
+public class HelloWorld {
+    public static void main(String[] args) {
+        System.out.println("Hello World");
+    }
+}
+                    </div>
+
+                    <div class="code-block javascript">
+console.log("Hello World");
+                    </div>
+                </div>
+
+                <div class="success-criteria">
+                    <h5>✨ Success Criteria</h5>
+                    <ul style="list-style: none; padding: 0;">
+                        <li>✓ Program runs and outputs exactly <code>Hello World</code></li>
+                        <li>✓ No extra output, warnings, or errors</li>
+                        <li>✓ Code is clean and easy to understand</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- LEVEL 2 -->
+            <div class="level level-2">
+                <div class="level-header">
+                    <div class="level-badge">2</div>
+                    <div class="level-title-section">
+                        <h2><span class="emoji">🟡</span>Level 2: No String Literals</h2>
+                        <p><strong>Difficulty:</strong> Medium | <strong>Time Estimate:</strong> 20-30 minutes</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h4>📋 Requirements</h4>
+                    <ul class="requirements-list">
+                        <li>Output the exact string <code>Hello World</code></li>
+                        <li><strong>NO direct string or character literals allowed</strong></li>
+                    </ul>
+                </div>
+
+                <div class="section">
+                    <h4>⚠️ Constraints</h4>
+                    <ul class="constraints-list">
+                        <li class="not-allowed"><strong>NO</strong> string literals (<code>"Hello World"</code>, <code>'H'</code>, etc.)</li>
+                        <li class="not-allowed"><strong>NO</strong> character literals</li>
+                        <li class="allowed"><strong>CAN</strong> use standard output functions</li>
+                        <li class="allowed"><strong>CAN</strong> use variables, loops, conditionals</li>
+                        <li class="allowed"><strong>CAN</strong> use ASCII values and mathematical operations</li>
+                        <li class="allowed"><strong>CAN</strong> use arrays or data structures</li>
+                    </ul>
+                </div>
+
+                <div class="ascii-reference">
+                    <h5>📊 ASCII Values Reference</h5>
+                    <div class="ascii-grid">
+                        <div class="ascii-item">
+                            <div class="char">H</div>
+                            <div class="value">72</div>
+                        </div>
+                        <div class="ascii-item">
+                            <div class="char">e</div>
+                            <div class="value">101</div>
+                        </div>
+                        <div class="ascii-item">
+                            <div class="char">l</div>
+                            <div class="value">108</div>
+                        </div>
+                        <div class="ascii-item">
+                            <div class="char">o</div>
+                            <div class="value">111</div>
+                        </div>
+                        <div class="ascii-item">
+                            <div class="char">space</div>
+                            <div class="value">32</div>
+                        </div>
+                        <div class="ascii-item">
+                            <div class="char">W</div>
+                            <div class="value">87</div>
+                        </div>
+                        <div class="ascii-item">
+                            <div class="char">r</div>
+                            <div class="value">114</div>
+                        </div>
+                        <div class="ascii-item">
+                            <div class="char">d</div>
+                            <div class="value">100</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h4>💡 Techniques to Consider</h4>
+                    <ul class="constraints-list">
+                        <li class="allowed">ASCII value generation through arithmetic</li>
+                        <li class="allowed">Reading from files or environment variables</li>
+                        <li class="allowed">Array/list manipulation</li>
+                        <li class="allowed">String concatenation from components</li>
+                        <li class="allowed">Using built-in char conversion functions</li>
+                    </ul>
+                </div>
+
+                <div class="section">
+                    <h4>💻 Solution Example</h4>
+                    
+                    <div class="code-block python active">
+# Method 1: Using chr() to convert ASCII values to characters
+ascii_values = [72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100]
+result = ''.join(chr(val) for val in ascii_values)
+print(result)
+
+# Method 2: Using arithmetic to generate ASCII values
+h = chr(64 + 8)      # H = 72
+e = chr(100 + 1)     # e = 101
+l = chr(100 + 8)     # l = 108
+o = chr(100 + 11)    # o = 111
+space = chr(16 + 16) # space = 32
+w = chr(80 + 7)      # W = 87
+r = chr(100 + 14)    # r = 114
+d = chr(100)         # d = 100
+
+print(h + e + l + l + o + space + w + o + r + l + d)
+                    </div>
+
+                    <div class="code-block java">
+// Method 1: Using array of ASCII values
+int[] asciiValues = {72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100};
+StringBuilder result = new StringBuilder();
+for (int val : asciiValues) {
+    result.append((char) val);
+}
+System.out.println(result.toString());
+
+// Method 2: Direct character conversion
+String output = "";
+output += (char) 72;   // H
+output += (char) 101;  // e
+output += (char) 108;  // l
+output += (char) 108;  // l
+output += (char) 111;  // o
+output += (char) 32;   // space
+output += (char) 87;   // W
+output += (char) 111;  // o
+output += (char) 114;  // r
+output += (char) 108;  // l
+output += (char) 100;  // d
+System.out.println(output);
+                    </div>
+
+                    <div class="code-block javascript">
+// Method 1: Using String.fromCharCode()
+let output = String.fromCharCode(72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100);
+console.log(output);
+
+// Method 2: Using array and mapping
+const asciiValues = [72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100];
+const result = asciiValues.map(val => String.fromCharCode(val)).join('');
+console.log(result);
+
+// Method 3: Using arithmetic for ASCII generation
+const h = String.fromCharCode(64 + 8);      // H
+const e = String.fromCharCode(100 + 1);     // e
+const l = String.fromCharCode(100 + 8);     // l
+const o = String.fromCharCode(100 + 11);    // o
+const space = String.fromCharCode(32);      // space
+const w = String.fromCharCode(80 + 7);      // W
+const r = String.fromCharCode(100 + 14);    // r
+const d = String.fromCharCode(100);         // d
+
+console.log(h + e + l + l + o + space + w + o + r + l + d);
+                    </div>
+                </div>
+
+                <div class="hint-box">
+                    <h5>💡 Helpful Hints</h5>
+                    <ul class="tips-list">
+                        <li><strong>Python:</strong> Use <code>chr()</code> to convert ASCII values to characters</li>
+                        <li><strong>Java:</strong> Use <code>(char)</code> casting to convert int to character</li>
+                        <li><strong>JavaScript:</strong> Use <code>String.fromCharCode()</code> to convert ASCII to characters</li>
+                        <li>You can perform arithmetic to generate ASCII values: e.g., <code>100 + 1 = 101 (character 'e')</code></li>
+                        <li>Store ASCII values in an array and iterate through them</li>
+                        <li>Combine characters using string concatenation</li>
+                    </ul>
+                </div>
+
+                <div class="success-criteria">
+                    <h5>✨ Success Criteria</h5>
+                    <ul style="list-style: none; padding: 0;">
+                        <li>✓ No string literals in your source code</li>
+                        <li>✓ Output is exactly <code>Hello World</code></li>
+                        <li>✓ Solution is reasonably efficient</li>
+                        <li>✓ Code is readable and commented</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Summary Table -->
+            <div class="section" style="margin-top: 50px;">
+                <h4>📊 Challenge Progression Summary</h4>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Level</th>
+                            <th>Difficulty</th>
+                            <th>Key Challenge</th>
+                            <th>Est. Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>🟢 Level 1</strong></td>
+                            <td>Easy</td>
+                            <td>Direct printing with string literals</td>
+                            <td>5-10 min</td>
+                        </tr>
+                        <tr>
+                            <td><strong>🟡 Level 2</strong></td>
+                            <td>Medium</td>
+                            <td>No string literals, use ASCII values</td>
+                            <td>20-30 min</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Submission Format -->
+            <div class="submission-format">
+                <h3>📝 Submission Format</h3>
+                <p style="margin-bottom: 15px;">When you submit your solutions, organize them like this:</p>
+                <pre>LANGUAGE: [Python / JavaScript / Java]
+
+LEVEL 1:
+[Your Code Here]
+Output: Hello World
+
+LEVEL 2:
+[Your Code Here]
+Techniques Used: [Brief description of your approach]
+Output: Hello World</pre>
+            </div>
+        </div>
+
+        <footer>
+            <p>💻 Happy Coding! Remember: The journey is more important than the destination.</p>
+            <p>Challenge created for learning fundamental programming concepts.</p>
+        </footer>
+    </div>
+
+    <script>
+        function selectLanguage(lang) {
+            // Update active button
+            const buttons = document.querySelectorAll('.lang-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update active code blocks
+            const codeBlocks = document.querySelectorAll('.code-block');
+            codeBlocks.forEach(block => block.classList.remove('active'));
+
+            document.querySelectorAll(`.code-block.${lang}`).forEach(block => {
+                block.classList.add('active');
+            });
+        }
+
+        // Set initial active state
+        document.addEventListener('DOMContentLoaded', function() {
+            selectLanguage('python');
+        });
+    </script>
+</body>
+</html>
