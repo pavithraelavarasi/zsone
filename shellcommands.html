@@ -417,7 +417,7 @@ const ZONES=[
       ]
     }
   ],
-  task:'SSH into the server your teacher has given you. Navigate to /home/treasure_hunt and explore Zone 1. One file inside the zone contains a line that looks like  clue : "WORD"  — find that word. It is your first zone word.',
+  task:'Connect to the server machine and Navigate to /home/treasure_hunt and explore Zone 1. One file inside the zone contains a line that looks like  clue : "WORD"  — find that word. It is your first zone word.',
 },
 {
   id:1,emoji:'🏛️',name:'Ancient Ruins',sub:'cat · cd',
@@ -464,7 +464,7 @@ const ZONES=[
       ]
     }
   ],
-  task:'Enter Zone 3. Rather than opening every file, use grep to search all of them at once for the pattern you know. The matching line will contain your third zone word in the same format as before.',
+  task:'Enter Zone 3. Rather than opening every file, search all of them at once for the pattern you know. The matching line will contain your third zone word in the same format as before.',
 },
 {
   id:3,emoji:'⚓',name:'Pirate Ship',sub:'Practice — no new commands',
@@ -483,8 +483,8 @@ const ZONES=[
       desc:'Makes a brand new empty folder at your current location. You will use this to build your personal submission folder inside the output directory.',
       syntax:'mkdir foldername',
       examples:[
-        ['mkdir aarthi','Create a folder named aarthi'],
-        ['mkdir output/aarthi','Create directly inside the output folder'],
+        ['mkdir myname','Create a folder named myname'],
+        ['mkdir output/myname','Create directly inside the output folder'],
         ['ls','Confirm the folder was created']
       ]
     },
@@ -493,9 +493,9 @@ const ZONES=[
       desc:'Moves a file from one place to another. Nothing is copied — the file is relocated. Use this to place your submission file inside your named folder.',
       syntax:'mv filename destination/',
       examples:[
-        ['mv answer.txt aarthi/','Move answer.txt into the aarthi folder'],
-        ['mv answer.txt /home/treasure_hunt/output/aarthi/','Move using a full path'],
-        ['ls aarthi/','Confirm the file arrived']
+        ['mv answer.txt myname/','Move answer.txt into the myname folder'],
+        ['mv answer.txt /home/treasure_hunt/output/myname/','Move using a full path'],
+        ['ls myname/','Confirm the file arrived']
       ]
     }
   ],
