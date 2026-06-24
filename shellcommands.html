@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZS2028 — Shell Treasure Hunt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cream:    #FDFCF8;
+  --warm:     #F5F2EC;
+  --warm2:    #EDE8DF;
+  --border:   #E2DDD5;
+  --border2:  #CFC9BE;
+  --ink:      #1C1917;
+  --ink2:     #44403C;
+  --ink3:     #78716C;
+  --ink4:     #A8A29E;
+  --green:    #2D5016;
+  --green-lt: #EEF5E8;
+  --green-md: #3F7021;
+  --green-bd: #B8D4A8;
+  --gold:     #92400E;
+  --gold-lt:  #FEF7EC;
+  --gold-bd:  #F0C070;
+  --rose:     #881337;
+  --rose-lt:  #FFF0F3;
+  --blue:     #1E3A5F;
+  --blue-lt:  #EFF4FB;
+  --blue-bd:  #AFC8E8;
+  --display:  'Playfair Display', Georgia, serif;
+  --body:     'Inter', system-ui, sans-serif;
+  --mono:     'JetBrains Mono', monospace;
+  --r:  10px;
+  --r2: 6px;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);background:var(--cream);color:var(--ink);font-size:14px;line-height:1.6;min-height:100vh}
+
+/* NAV */
+nav{
+  position:sticky;top:0;z-index:200;
+  background:rgba(253,252,248,.96);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  height:58px;padding:0 40px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.logo{display:flex;align-items:center;gap:12px;text-decoration:none}
+.logo-seal{
+  width:34px;height:34px;border-radius:50%;
+  background:var(--green);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;
+}
+.logo-name{font-family:var(--display);font-size:16px;font-weight:500;color:var(--ink);letter-spacing:.3px}
+.nav-xp{display:flex;align-items:center;gap:10px}
+.xp-lbl{font-size:11px;color:var(--ink4);font-family:var(--mono);letter-spacing:.5px}
+.xp-bar{width:100px;height:5px;background:var(--warm2);border-radius:3px;overflow:hidden}
+.xp-fill{height:100%;background:var(--green-md);border-radius:3px;transition:width .6s ease;width:0%}
+.xp-val{font-family:var(--mono);font-size:11px;color:var(--green);min-width:44px}
+
+/* HERO */
+.hero{
+  max-width:760px;margin:0 auto;
+  padding:72px 40px 56px;
+  text-align:center;
+}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--green);background:var(--green-lt);
+  border:1px solid var(--green-bd);border-radius:20px;
+  padding:5px 16px;margin-bottom:24px;
+}
+.hero h1{
+  font-family:var(--display);font-size:52px;font-weight:600;
+  line-height:1.1;letter-spacing:-.5px;color:var(--ink);
+  margin-bottom:18px;
+}
+.hero h1 em{font-style:italic;color:var(--green)}
+.hero-desc{font-size:16px;color:var(--ink3);line-height:1.75;max-width:520px;margin:0 auto 36px}
+
+/* Command pills in hero */
+.cmd-row{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:6px}
+.cmd-pill{
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  padding:5px 14px;border-radius:20px;
+  border:1px solid var(--border2);background:var(--warm);color:var(--ink4);
+  transition:all .3s;
+}
+.cmd-pill.learned{background:var(--green-lt);border-color:var(--green-bd);color:var(--green)}
+.pill-note{font-size:11px;color:var(--ink4);text-align:center}
+
+/* DIVIDER */
+.divider{max-width:760px;margin:0 auto;padding:0 40px;display:flex;align-items:center;gap:16px;margin-bottom:40px}
+.divider-line{flex:1;height:1px;background:var(--border)}
+.divider-text{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4)}
+
+/* ZONE MAP */
+.map-wrap{max-width:960px;margin:0 auto 56px;padding:0 40px}
+.map-label{font-size:11px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink4);margin-bottom:16px}
+.zone-row{display:flex;gap:0;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;background:var(--warm)}
+.zone-node{
+  flex:1;padding:18px 12px;text-align:center;cursor:pointer;
+  border-right:1px solid var(--border);
+  transition:all .2s;position:relative;background:transparent;
+}
+.zone-node:last-child{border-right:none}
+.zone-node:hover{background:var(--cream)}
+.zone-node.active{background:var(--cream)}
+.zone-node.zd{background:var(--green-lt)}
+.zone-node.locked{opacity:.4;cursor:not-allowed}
+.zone-top-bar{position:absolute;top:0;left:0;right:0;height:2px;background:transparent;transition:background .2s}
+.zone-node.active .zone-top-bar{background:var(--green-md)}
+.zone-node.zd .zone-top-bar{background:var(--green)}
+.z-emoji{font-size:22px;display:block;margin-bottom:6px}
+.z-name{font-size:11px;font-weight:500;color:var(--ink3);line-height:1.3}
+.zone-node.active .z-name{color:var(--green)}
+.zone-node.zd .z-name{color:var(--green)}
+.z-check{
+  position:absolute;top:6px;right:8px;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--green);display:none;
+  align-items:center;justify-content:center;
+}
+.z-check svg{width:8px;height:8px;stroke:white;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.zone-node.zd .z-check{display:flex}
+
+/* MAIN LAYOUT */
+.page{display:grid;grid-template-columns:1fr 288px;gap:24px;max-width:960px;margin:0 auto;padding:0 40px 80px;align-items:start}
+
+/* CARDS */
+.card{background:var(--cream);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+.card-top{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.ct-icon{width:36px;height:36px;border-radius:var(--r2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.ci-green{background:var(--green-lt)}
+.ci-gold{background:var(--gold-lt)}
+.ci-blue{background:var(--blue-lt)}
+.ci-rose{background:var(--rose-lt)}
+.ct-text{flex:1}
+.ct-text h3{font-size:14px;font-weight:500;color:var(--ink);margin-bottom:1px}
+.ct-text p{font-size:12px;color:var(--ink4)}
+.ct-badge{
+  font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;
+  padding:3px 10px;border-radius:20px;white-space:nowrap;
+}
+.bg-green{background:var(--green-lt);color:var(--green)}
+.bg-gold{background:var(--gold-lt);color:var(--gold)}
+.bg-blue{background:var(--blue-lt);color:var(--blue)}
+.bg-gray{background:var(--warm2);color:var(--ink3)}
+.card-body{padding:20px 22px}
+
+/* Story */
+.story{
+  background:var(--gold-lt);
+  border-left:2px solid var(--gold-bd);
+  border-radius:0 var(--r2) var(--r2) 0;
+  padding:13px 16px;margin-bottom:20px;
+}
+.story p{font-size:13px;color:var(--gold);line-height:1.75;font-style:italic}
+
+/* Practice notice */
+.practice{
+  background:var(--blue-lt);border:1px solid var(--blue-bd);
+  border-radius:var(--r2);padding:13px 16px;margin-bottom:16px;
+  font-size:13px;color:var(--blue);line-height:1.65;
+}
+.practice code{font-family:var(--mono);font-size:11px;background:rgba(30,58,95,.1);padding:1px 5px;border-radius:3px}
+
+/* Command learn */
+.cmd-card{border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:12px}
+.cmd-card-head{padding:11px 16px;background:var(--warm);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.cmd-badge{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--blue);background:var(--blue-lt);border:1px solid var(--blue-bd);padding:2px 10px;border-radius:4px}
+.cmd-role{font-size:12px;color:var(--ink3)}
+.cmd-card-body{padding:14px 16px}
+.cmd-desc{font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:14px}
+
+.code-panel{border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:10px}
+.code-label{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);padding:7px 14px;background:var(--warm);border-bottom:1px solid var(--border)}
+.code-body{font-family:var(--mono);font-size:12px;background:#FAFAF8;padding:12px 14px;line-height:2;color:var(--ink2)}
+.code-body .kw{color:#2D5016;font-weight:500}
+.code-body .cm{color:#A8A29E}
+.code-body .hl{color:#92400E}
+
+.ex-table{width:100%;border-collapse:collapse}
+.ex-table tr{border-bottom:1px solid var(--border)}
+.ex-table tr:last-child{border-bottom:none}
+.ex-table td{padding:8px 12px;font-size:12px;vertical-align:top}
+.ex-table td:first-child{font-family:var(--mono);color:var(--blue);white-space:nowrap;width:48%;padding-right:16px}
+.ex-table td:last-child{color:var(--ink3);line-height:1.5}
+
+/* Task */
+.task-box{border:1px solid var(--border2);border-radius:var(--r2);overflow:hidden}
+.task-header{padding:14px 18px;background:var(--warm)}
+.task-eyebrow{font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink4);margin-bottom:6px}
+.task-q{font-size:14px;font-weight:500;color:var(--ink);line-height:1.6}
+.task-footer{padding:14px 18px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
+.done-toast{background:var(--green-lt);border:1px solid var(--green-bd);border-radius:var(--r2);padding:10px 14px;font-size:13px;color:var(--green);display:none}
+.done-toast.show{display:block}
+.complete-btn{
+  width:100%;padding:11px;
+  border:1px solid var(--green-bd);border-radius:var(--r2);
+  background:var(--green);color:white;
+  font-family:var(--body);font-size:13px;font-weight:500;
+  cursor:pointer;transition:background .15s;
+  display:none;
+}
+.complete-btn.show{display:block}
+.complete-btn:hover{background:var(--green-md)}
+
+/* Zone nav */
+.zone-nav{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+.nav-dots{display:flex;gap:5px}
+.nd{width:6px;height:6px;border-radius:50%;background:var(--border2);transition:background .2s}
+.nd.na{background:var(--green-md)}
+.nd.nz{background:var(--green)}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:9px 18px;border-radius:var(--r2);
+  font-family:var(--body);font-size:13px;font-weight:500;
+  cursor:pointer;transition:all .15s;border:1px solid transparent;
+  text-decoration:none;
+}
+.btn-outline{background:var(--cream);color:var(--ink2);border-color:var(--border2)}
+.btn-outline:hover{background:var(--warm);border-color:var(--border2)}
+.btn-primary{background:var(--green);color:white;border-color:var(--green)}
+.btn-primary:hover{background:var(--green-md)}
+.btn-ghost{background:transparent;color:var(--ink4);border-color:var(--border);cursor:not-allowed;opacity:.5}
+
+/* SIDEBAR */
+.sb-card{background:var(--cream);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.sb-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;justify-content:space-between}
+.sb-head h4{font-size:13px;font-weight:500;color:var(--ink)}
+.sb-head span{font-size:11px;color:var(--ink4)}
+.sb-body{padding:14px 16px}
+
+.j-step{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--r2);cursor:pointer;transition:background .15s;margin-bottom:2px}
+.j-step:hover{background:var(--warm)}
+.j-dot{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;background:var(--warm);transition:all .2s}
+.j-dot.ja{border-color:var(--green-md);background:var(--green-lt)}
+.j-dot.jd{border-color:var(--green);background:var(--green)}
+.j-info h5{font-size:12px;font-weight:500;color:var(--ink2)}
+.j-info p{font-size:11px;color:var(--ink4)}
+.j-step.jcur .j-info h5{color:var(--green)}
+
+.w-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r2);border:1px solid var(--border);background:var(--warm);margin-bottom:6px;transition:all .2s}
+.w-row.wf{background:var(--green-lt);border-color:var(--green-bd)}
+.w-num{font-family:var(--mono);font-size:10px;color:var(--ink4);min-width:14px}
+.w-val{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--ink4);letter-spacing:2px}
+.w-row.wf .w-val{color:var(--green)}
+
+.cmd-row-sb{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.cmd-st{display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--border);border-radius:var(--r2);background:var(--warm);transition:all .2s}
+.cmd-st.lrn{background:var(--green-lt);border-color:var(--green-bd)}
+.c-dot{width:6px;height:6px;border-radius:50%;background:var(--border2);transition:background .2s;flex-shrink:0}
+.cmd-st.lrn .c-dot{background:var(--green-md)}
+.c-name{font-family:var(--mono);font-size:11px;color:var(--ink4);font-weight:500}
+.cmd-st.lrn .c-name{color:var(--green)}
+
+/* FINAL */
+.final-wrap{max-width:960px;margin:0 auto 80px;padding:0 40px;display:none}
+.final-wrap.show{display:block}
+.final-inner{
+  background:linear-gradient(145deg,var(--green-lt) 0%,var(--cream) 60%);
+  border:1px solid var(--green-bd);
+  border-radius:var(--r);padding:60px 40px;text-align:center;
+}
+.trophy{font-size:56px;margin-bottom:20px}
+.final-inner h2{font-family:var(--display);font-size:36px;font-weight:600;color:var(--green);margin-bottom:12px}
+.secret{
+  font-family:var(--mono);font-size:22px;font-weight:500;
+  color:var(--green);background:white;
+  border:1px solid var(--green-bd);border-radius:var(--r2);
+  padding:14px 32px;display:inline-block;margin:18px 0 24px;letter-spacing:1px;
+}
+.final-inner p{font-size:14px;color:var(--ink3);line-height:1.75;max-width:440px;margin:0 auto 28px}
+.final-chips{display:flex;justify-content:center;flex-wrap:wrap;gap:8px}
+.fc{font-family:var(--mono);font-size:12px;font-weight:500;padding:6px 16px;border-radius:20px;background:white;border:1px solid var(--green-bd);color:var(--green)}
+.fc.main{background:var(--green);color:white;border-color:var(--green)}
+
+@media(max-width:760px){
+  .zone-row{flex-direction:column;border-radius:var(--r)}
+  .zone-node{border-right:none;border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px;text-align:left}
+  .zone-node:last-child{border-bottom:none}
+  .z-emoji{font-size:18px;margin-bottom:0}
+  .page{grid-template-columns:1fr;padding:0 16px 60px}
+  .map-wrap,.divider,.hero{padding-left:16px;padding-right:16px}
+  .hero h1{font-size:36px}
+  .final-wrap{padding:0 16px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="#">
+    <div class="logo-seal">🗺️</div>
+    <span class="logo-name">ZS2028</span>
+  </a>
+  <div class="nav-xp">
+    <span class="xp-lbl">XP</span>
+    <div class="xp-bar"><div class="xp-fill" id="xp-fill"></div></div>
+    <span class="xp-val" id="xp-val">0 / 500</span>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-tag">🌿 Shell Learning Adventure</div>
+  <h1>Find the <em>ZS2028</em> treasure</h1>
+  <p class="hero-desc">Seven commands. Five zones. One secret phrase. Learn each command through the cards below, then find the clue on the real server.</p>
+  <div class="cmd-row">
+    <span class="cmd-pill" id="pill-ssh">ssh</span>
+    <span class="cmd-pill" id="pill-ls">ls</span>
+    <span class="cmd-pill" id="pill-cat">cat</span>
+    <span class="cmd-pill" id="pill-cd">cd</span>
+    <span class="cmd-pill" id="pill-grep">grep</span>
+    <span class="cmd-pill" id="pill-mkdir">mkdir</span>
+    <span class="cmd-pill" id="pill-mv">mv</span>
+  </div>
+  <p class="pill-note" style="margin-top:8px">Commands unlock as you progress</p>
+</section>
+
+<div class="divider">
+  <div class="divider-line"></div>
+  <div class="divider-text">World Map</div>
+  <div class="divider-line"></div>
+</div>
+
+<div class="map-wrap">
+  <div class="zone-row">
+    <div class="zone-node active" id="zn0" onclick="goZone(0)">
+      <div class="zone-top-bar"></div>
+      <div class="z-check"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+      <span class="z-emoji">🌲</span>
+      <div class="z-name">Dark Forest</div>
+    </div>
+    <div class="zone-node locked" id="zn1" onclick="goZone(1)">
+      <div class="zone-top-bar"></div>
+      <div class="z-check"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+      <span class="z-emoji">🏛️</span>
+      <div class="z-name">Ancient Ruins</div>
+    </div>
+    <div class="zone-node locked" id="zn2" onclick="goZone(2)">
+      <div class="zone-top-bar"></div>
+      <div class="z-check"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+      <span class="z-emoji">🦇</span>
+      <div class="z-name">Haunted Cave</div>
+    </div>
+    <div class="zone-node locked" id="zn3" onclick="goZone(3)">
+      <div class="zone-top-bar"></div>
+      <div class="z-check"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+      <span class="z-emoji">⚓</span>
+      <div class="z-name">Pirate Ship</div>
+    </div>
+    <div class="zone-node locked" id="zn4" onclick="goZone(4)">
+      <div class="zone-top-bar"></div>
+      <div class="z-check"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+      <span class="z-emoji">🏝️</span>
+      <div class="z-name">Treasure Island</div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+  <div id="main"></div>
+
+  <aside id="sidebar"></aside>
+</div>
+
+<div class="final-wrap" id="final">
+  <div class="final-inner">
+    <div class="trophy">🏆</div>
+    <h2>Treasure found!</h2>
+    <div class="secret">Welcome to ZS2028</div>
+    <p>You have learned every command this hunt had to teach. Now write the secret phrase into a file, create your folder, and place it inside.</p>
+    <div class="final-chips">
+      <span class="fc">WELCOME</span><span class="fc">+</span>
+      <span class="fc">TO</span><span class="fc">+</span>
+      <span class="fc">ZS</span><span class="fc">+</span>
+      <span class="fc">2028</span><span class="fc">=</span>
+      <span class="fc main">Welcome to ZS2028</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const G={xp:0,zone:0,done:[],words:[],learned:new Set()};
+const ALL=['ssh','ls','cat','cd','grep','mkdir','mv'];
+
+const ZONES=[
+{
+  id:0,emoji:'🌲',name:'Dark Forest',sub:'ssh · ls',
+  badge:'Zone 1',bc:'bg-blue',ic:'ci-blue',word:'WELCOME',pills:['ssh','ls'],
+  story:'You stand at the edge of a vast forest. Before you can explore, you need to enter the server — the forest itself. Once inside, your first task is simply to see what surrounds you.',
+  cmds:[
+    {
+      cmd:'ssh',role:'connect to a remote server',
+      desc:'Opens a secure connection from your machine to another computer over a network. Think of it as the door into the server. Without this, you cannot begin.',
+      syntax:'ssh username@server-address',
+      examples:[
+        ['ssh student01@192.168.1.10','Connect using a username and IP address'],
+        ['ssh student01@zs2028.local','Connect using a hostname'],
+        ['exit','Disconnect and return to your own machine']
+      ]
+    },
+    {
+      cmd:'ls',role:'list files and folders',
+      desc:'Shows everything at your current location — files, folders, hidden items. Use it every time you arrive somewhere new.',
+      syntax:'ls\nls foldername\nls -l',
+      examples:[
+        ['ls','List everything in the current folder'],
+        ['ls zone1_dark_forest','List what is inside a specific folder'],
+        ['ls -l','List with details — size, permissions, date']
+      ]
+    }
+  ],
+  task:'SSH into the server your teacher has given you. Navigate to /home/treasure_hunt and explore Zone 1. One file inside the zone contains a line that looks like  clue : "WORD"  — find that word. It is your first zone word.',
+},
+{
+  id:1,emoji:'🏛️',name:'Ancient Ruins',sub:'cat · cd',
+  badge:'Zone 2',bc:'bg-blue',ic:'ci-blue',word:'TO',pills:['cat','cd'],
+  story:'Ancient pillars rise around you, each one carved with a different message. You can see the files — now you need to walk between folders and open what you find.',
+  cmds:[
+    {
+      cmd:'cat',role:'read the contents of a file',
+      desc:'Prints everything inside a file to your screen. Use it to read clues, notes, and messages left throughout the zones.',
+      syntax:'cat filename',
+      examples:[
+        ['cat stone_tablet.txt','Read the contents of stone_tablet.txt'],
+        ['cat notes.txt','Read any file in your current folder'],
+        ['cat ../clue.txt','Read a file one folder level above you']
+      ]
+    },
+    {
+      cmd:'cd',role:'move between folders',
+      desc:'Changes your location from one folder to another. Like walking through a doorway. Use cd .. to step back one level.',
+      syntax:'cd foldername\ncd ..\ncd /full/path',
+      examples:[
+        ['cd zone2_ancient_ruins','Enter the zone2_ancient_ruins folder'],
+        ['cd ..','Go back one level to the parent folder'],
+        ['cd /home/treasure_hunt','Jump directly to an absolute path']
+      ]
+    }
+  ],
+  task:'Navigate into Zone 2. Several files are waiting — read through them using the commands you have learned. One file contains the pattern  clue : "WORD". Find and note your second zone word.',
+},
+{
+  id:2,emoji:'🦇',name:'Haunted Cave',sub:'grep',
+  badge:'Zone 3',bc:'bg-gold',ic:'ci-gold',word:'ZS',pills:['grep'],
+  story:'The cave is filled with files. Reading every single one takes time. There is a smarter way — you can search inside files for exactly what you need without opening each one.',
+  cmds:[
+    {
+      cmd:'grep',role:'search inside files for a pattern',
+      desc:'Scans files for a specific word or pattern and shows only the matching lines. Instead of reading everything, you tell grep what to find and it brings it to you.',
+      syntax:'grep "pattern" filename\ngrep "pattern" *\ngrep -i "pattern" *',
+      examples:[
+        ['grep "clue" notes.txt','Find lines with "clue" in a single file'],
+        ['grep "clue" *','Search every file in the current folder at once'],
+        ['grep -i "clue" *','Same search, case-insensitive'],
+        ['grep -n "clue" notes.txt','Show line numbers alongside matches']
+      ]
+    }
+  ],
+  task:'Enter Zone 3. Rather than opening every file, use grep to search all of them at once for the pattern you know. The matching line will contain your third zone word in the same format as before.',
+},
+{
+  id:3,emoji:'⚓',name:'Pirate Ship',sub:'Practice — no new commands',
+  badge:'Zone 4',bc:'bg-gold',ic:'ci-gold',word:'2028',pills:[],
+  story:'The ship has five decks of clues, each one leading to the next. No new commands here — this zone is pure practice. Navigate carefully, read in order, and the zone word will surface.',
+  cmds:[],
+  task:'Board Zone 4. The files must be read in a specific order — one points to the next. Work through them all. Your fourth zone word is waiting at the end of the trail.',
+},
+{
+  id:4,emoji:'🏝️',name:'Treasure Island',sub:'mkdir · mv',
+  badge:'Zone 5',bc:'bg-green',ic:'ci-green',word:null,pills:['mkdir','mv'],
+  story:'You reached the island. Two final commands will teach you how to create your own space on the server and place your work inside it — this is how you submit.',
+  cmds:[
+    {
+      cmd:'mkdir',role:'create a new folder',
+      desc:'Makes a brand new empty folder at your current location. You will use this to build your personal submission folder inside the output directory.',
+      syntax:'mkdir foldername',
+      examples:[
+        ['mkdir aarthi','Create a folder named aarthi'],
+        ['mkdir output/aarthi','Create directly inside the output folder'],
+        ['ls','Confirm the folder was created']
+      ]
+    },
+    {
+      cmd:'mv',role:'move a file to another location',
+      desc:'Moves a file from one place to another. Nothing is copied — the file is relocated. Use this to place your submission file inside your named folder.',
+      syntax:'mv filename destination/',
+      examples:[
+        ['mv answer.txt aarthi/','Move answer.txt into the aarthi folder'],
+        ['mv answer.txt /home/treasure_hunt/output/aarthi/','Move using a full path'],
+        ['ls aarthi/','Confirm the file arrived']
+      ]
+    }
+  ],
+  task:'Find the treasure chest file in Zone 5. Combine your four zone words in order — that is the secret phrase. Write it into a text file, navigate to the output folder, create a folder with your own name, and move your file inside it.',
+}
+];
+
+function gainXP(n){
+  G.xp=Math.min(500,G.xp+n);
+  document.getElementById('xp-fill').style.width=Math.round(G.xp/500*100)+'%';
+  document.getElementById('xp-val').textContent=G.xp+' / 500';
+}
+
+function unlock(pills){
+  pills.forEach(p=>{
+    G.learned.add(p);
+    const el=document.getElementById('pill-'+p);
+    if(el)el.classList.add('learned');
+  });
+  renderSidebar();
+}
+
+function renderSidebar(){
+  const steps=ZONES.map(z=>{
+    const d=G.done.includes(z.id),c=G.zone===z.id;
+    return`<div class="j-step ${c?'jcur':''}" onclick="goZone(${z.id})">
+      <div class="j-dot ${d?'jd':c?'ja':''}">
+        ${d?'<svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,6 5,9 10,3"/></svg>':z.emoji}
+      </div>
+      <div class="j-info">
+        <h5>${z.name}</h5>
+        <p>${d?'Complete':c?'In progress':'Locked'}</p>
+      </div>
+    </div>`;
+  }).join('');
+
+  const words=['WELCOME','TO','ZS','2028'].map((w,i)=>{
+    const f=G.words.includes(w);
+    return`<div class="w-row ${f?'wf':''}">
+      <span class="w-num">${i+1}</span>
+      <span class="w-val">${f?w:'?????'}</span>
+    </div>`;
+  }).join('');
+
+  const cmds=ALL.map(c=>`
+    <div class="cmd-st ${G.learned.has(c)?'lrn':''}">
+      <div class="c-dot"></div>
+      <span class="c-name">${c}</span>
+    </div>`).join('');
+
+  document.getElementById('sidebar').innerHTML=`
+    <div class="sb-card">
+      <div class="sb-head"><h4>Journey</h4><span>5 zones</span></div>
+      <div class="sb-body">${steps}</div>
+    </div>
+    <div class="sb-card">
+      <div class="sb-head"><h4>Zone words</h4><span>Collect 4</span></div>
+      <div class="sb-body">${words}</div>
+    </div>
+    <div class="sb-card">
+      <div class="sb-head"><h4>Commands</h4><span>7 total</span></div>
+      <div class="sb-body"><div class="cmd-row-sb">${cmds}</div></div>
+    </div>`;
+}
+
+function renderZone(zid){
+  G.zone=zid;
+  const z=ZONES[zid];
+  const done=G.done.includes(zid);
+
+  document.querySelectorAll('.zone-node').forEach((el,i)=>{
+    el.classList.remove('active');
+    if(i===zid&&!G.done.includes(i))el.classList.add('active');
+  });
+
+  let cmdsHtml='';
+  if(z.cmds.length===0){
+    cmdsHtml=`<div class="practice">
+      <strong>Practice zone</strong> — no new commands. Use ssh, ls, cat, cd, and grep together to navigate and find the zone word in the format
+      <code>clue : "WORD"</code>.
+    </div>`;
+  } else {
+    cmdsHtml=z.cmds.map(c=>{
+      const synLines=c.syntax.split('\n').map(l=>`<span class="kw">$ </span>${l}`).join('\n');
+      const exRows=c.examples.map(([ex,note])=>`<tr><td>${ex}</td><td>${note}</td></tr>`).join('');
+      return`<div class="cmd-card">
+        <div class="cmd-card-head">
+          <span class="cmd-badge">${c.cmd}</span>
+          <span class="cmd-role">${c.role}</span>
+        </div>
+        <div class="cmd-card-body">
+          <div class="cmd-desc">${c.desc}</div>
+          <div class="code-panel">
+            <div class="code-label">Syntax</div>
+            <div class="code-body">${synLines}</div>
+          </div>
+          <div class="code-panel">
+            <div class="code-label">Examples</div>
+            <div class="code-body" style="padding:0">
+              <table class="ex-table">${exRows}</table>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  const dots=[0,1,2,3,4].map(i=>`<div class="nd ${G.done.includes(i)?'nz':i===zid?'na':''}"></div>`).join('');
+  const prev=zid>0?`<button class="btn btn-outline" onclick="goZone(${zid-1})">← Previous</button>`:`<span></span>`;
+  const next=zid<4
+    ?(done?`<button class="btn btn-primary" onclick="goZone(${zid+1})">Next zone →</button>`:`<button class="btn btn-ghost">Next zone →</button>`)
+    :`<span></span>`;
+
+  document.getElementById('main').innerHTML=`
+    <div class="card">
+      <div class="card-top">
+        <div class="ct-icon ${z.ic}">${z.emoji}</div>
+        <div class="ct-text">
+          <h3>${z.name}</h3>
+          <p>${z.sub}</p>
+        </div>
+        <span class="ct-badge ${done?'bg-green':z.bc}">${done?'Complete':z.badge+' of 5'}</span>
+      </div>
+      <div class="card-body">
+        <div class="story"><p>${z.story}</p></div>
+        ${cmdsHtml}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div class="ct-icon ci-rose">🎯</div>
+        <div class="ct-text">
+          <h3>Your task</h3>
+          <p>Work on the actual server — come back when you find the word</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="task-box">
+          <div class="task-header">
+            <div class="task-eyebrow">What to do</div>
+            <div class="task-q">${z.task}</div>
+          </div>
+          <div class="task-footer">
+            <div class="done-toast ${done?'show':''}" id="t-${zid}">Zone complete — well done!</div>
+            ${done?'':`<button class="complete-btn show" onclick="completeZone(${zid})">I found the zone word — mark complete</button>`}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="zone-nav">
+      ${prev}
+      <div class="nav-dots">${dots}</div>
+      ${next}
+    </div>`;
+
+  renderSidebar();
+}
+
+function completeZone(zid){
+  if(G.done.includes(zid))return;
+  G.done.push(zid);
+  gainXP(80);
+  const z=ZONES[zid];
+  if(z.word)G.words.push(z.word);
+  unlock(z.pills);
+  const cur=document.getElementById('zn'+zid);
+  if(cur){cur.classList.remove('active');cur.classList.add('zd');}
+  const nxt=document.getElementById('zn'+(zid+1));
+  if(nxt)nxt.classList.remove('locked');
+  if(zid===4){
+    document.getElementById('final').classList.add('show');
+    setTimeout(()=>document.getElementById('final').scrollIntoView({behavior:'smooth'}),200);
+  }
+  renderZone(zid);
+}
+
+function goZone(zid){
+  if(zid>0&&!G.done.includes(zid-1))return;
+  renderZone(zid);
+  document.querySelector('.page').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+renderZone(0);
+renderSidebar();
+</script>
+</body>
+</html>
