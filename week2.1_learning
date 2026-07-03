@@ -1,0 +1,1907 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Learning to See — Read a webpage before you build one</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f6f8fa;
+        --panel: #ffffff;
+        --ink: #16273d;
+        --text: #2b3644;
+        --muted: #79838f;
+        --line: #e4e7eb;
+        --line-2: #d2d7de;
+        --accent: #d23b36; /* red — eyebrows, brand, links */
+        --accent-deep: #1d3e60; /* navy — primary buttons, structural */
+        --tint: #eaf0f7; /* active nav, callout (light steel-blue) */
+        --blue: #215c9c; /* steel-blue labels */
+        --red-deep: #b5332e;
+        --navy-deep: #15324f;
+        --hl: #215c9c; /* inspector highlight (steel blue) */
+        --hl-fill: rgba(33, 92, 156, 0.1);
+        --sans: "Inter", system-ui, -apple-system, sans-serif;
+        --mono: "JetBrains Mono", ui-monospace, monospace;
+        --sb: 280px;
+        --nav-h: 60px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        font-family: var(--sans);
+        color: var(--text);
+        background: var(--bg);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      h1,
+      h2,
+      h3 {
+        color: var(--ink);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.05;
+      }
+
+      /* ---------------- Sidebar ---------------- */
+      .sidebar {
+        position: fixed;
+        top: var(--nav-h);
+        left: 0;
+        bottom: 0;
+        width: var(--sb);
+        background: var(--panel);
+        border-right: 1px solid var(--line);
+        padding: 30px 0;
+        overflow-y: auto;
+        z-index: 60;
+        transition: transform 0.25s ease;
+      }
+      .brand {
+        padding: 0 28px 24px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 22px;
+      }
+      .brand .kicker {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        color: var(--accent);
+        margin: 0 0 12px;
+      }
+      .brand h1 {
+        font-size: 24px;
+        margin: 0 0 8px;
+        letter-spacing: -0.025em;
+      }
+      .brand p {
+        font-size: 13.5px;
+        color: var(--muted);
+        margin: 0;
+        line-height: 1.45;
+      }
+
+      nav {
+        padding: 0 16px;
+      }
+      .navgroup {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        color: var(--muted);
+        padding: 18px 12px 8px;
+        text-transform: uppercase;
+      }
+      .navlink {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 9px 12px;
+        border-radius: 8px;
+        color: var(--text);
+        font-size: 14.5px;
+        font-weight: 500;
+        cursor: pointer;
+        transition:
+          background 0.12s,
+          color 0.12s;
+      }
+      .navlink .n {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
+        min-width: 18px;
+      }
+      .navlink:hover {
+        background: #f1f3f6;
+      }
+      .navlink.active {
+        background: var(--tint);
+        color: var(--accent-deep);
+        font-weight: 600;
+      }
+      .navlink.active .n {
+        color: var(--accent-deep);
+      }
+
+      /* ---------------- Top nav bar ---------------- */
+      .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--nav-h);
+        z-index: 70;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 0 22px;
+        background: var(--accent-deep);
+        border-bottom: 3px solid var(--accent);
+      }
+      .nav-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+      }
+      .nav-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        min-width: 0;
+      }
+      /* Logo slot — swap the <img> src in the markup for your own logo */
+      .logo-slot {
+        display: grid;
+        place-items: center;
+        background: #fff;
+        border-radius: 9px;
+        width: 40px;
+        height: 40px;
+        padding: 6px;
+        flex: none;
+      }
+      .logo-img {
+        max-width: 100%;
+        max-height: 100%;
+        display: block;
+      }
+      .nav-title {
+        color: #fff;
+        font-weight: 800;
+        font-size: 17px;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+      }
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .nav-pill {
+        background: var(--accent);
+        color: #fff;
+        font-weight: 600;
+        font-size: 14px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: background 0.15s;
+      }
+      .nav-pill:hover {
+        background: var(--red-deep);
+      }
+      .nav-link {
+        color: rgba(255, 255, 255, 0.72);
+        font-weight: 500;
+        font-size: 14px;
+        text-decoration: none;
+        padding: 8px 10px;
+        transition: color 0.15s;
+      }
+      .nav-link:hover {
+        color: #fff;
+      }
+
+      .menu {
+        display: none;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: transparent;
+        border-radius: 8px;
+        width: 38px;
+        height: 38px;
+        cursor: pointer;
+        place-items: center;
+        padding: 0;
+      }
+      .menu span,
+      .menu span::before,
+      .menu span::after {
+        content: "";
+        display: block;
+        width: 16px;
+        height: 2px;
+        background: #fff;
+        position: relative;
+      }
+      .menu span::before {
+        position: absolute;
+        top: -5px;
+      }
+      .menu span::after {
+        position: absolute;
+        top: 5px;
+      }
+      .scrim {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(12, 19, 32, 0.35);
+        z-index: 55;
+      }
+
+      /* ---------------- Main ---------------- */
+      main {
+        margin-left: var(--sb);
+        padding-top: var(--nav-h);
+      }
+      .col {
+        max-width: 880px;
+        padding: 64px 56px 120px;
+      }
+
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        color: var(--accent);
+        text-transform: uppercase;
+        margin: 0 0 22px;
+      }
+      .hero h2 {
+        font-size: clamp(40px, 6vw, 68px);
+        margin: 0 0 26px;
+        letter-spacing: -0.03em;
+      }
+      .lede {
+        font-size: 19px;
+        color: var(--text);
+        max-width: 60ch;
+        margin: 0 0 14px;
+      }
+
+      .section {
+        padding-top: 64px;
+        margin-top: 48px;
+        border-top: 1px solid var(--line);
+        scroll-margin-top: calc(var(--nav-h) + 14px);
+      }
+      .section:first-of-type {
+        border-top: none;
+        margin-top: 0;
+      }
+      .part-badge {
+        display: inline-flex;
+        align-items: center;
+        font-family: var(--mono);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--blue);
+        border: 1px solid var(--line-2);
+        border-radius: 7px;
+        padding: 5px 12px;
+        margin-bottom: 14px;
+      }
+      .section h3 {
+        font-size: clamp(26px, 3.6vw, 36px);
+        margin: 0 0 18px;
+      }
+      .section p {
+        font-size: 16px;
+        margin: 0 0 16px;
+        max-width: 64ch;
+      }
+      .section p code,
+      .inlinecode {
+        font-family: var(--mono);
+        font-size: 0.86em;
+        background: #eef0f3;
+        color: var(--accent-deep);
+        padding: 2px 6px;
+        border-radius: 5px;
+      }
+
+      /* Callout */
+      .callout {
+        background: var(--tint);
+        border-radius: 12px;
+        padding: 18px 22px;
+        margin: 22px 0;
+        font-size: 15px;
+        color: var(--accent-deep);
+        max-width: 70ch;
+      }
+      .callout b {
+        color: var(--accent-deep);
+      }
+
+      /* ---------------- Playground ---------------- */
+      .pg {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        margin: 26px 0;
+        overflow: hidden;
+      }
+      .pg-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 13px 18px;
+        border-bottom: 1px solid var(--line);
+      }
+      .pg-head .label {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .pg-head .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 99px;
+        background: var(--blue);
+        flex: none;
+      }
+      .pg-body {
+        padding: 20px 18px;
+      }
+      .pg-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding: 14px 18px;
+        border-top: 1px solid var(--line);
+        background: #fafbfc;
+      }
+      .pg-out {
+        font-family: var(--mono);
+        font-size: 14px;
+        color: var(--text);
+      }
+      .pg-out b {
+        color: var(--ink);
+      }
+
+      /* Buttons */
+      .btn {
+        font-family: var(--sans);
+        font-weight: 600;
+        font-size: 14px;
+        background: var(--accent-deep);
+        color: #fff;
+        border: none;
+        border-radius: 9px;
+        padding: 11px 18px;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          transform 0.05s;
+      }
+      .btn:hover {
+        background: var(--navy-deep);
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn.ghost {
+        background: var(--panel);
+        color: var(--ink);
+        border: 1px solid var(--line-2);
+      }
+      .btn.ghost:hover {
+        background: #f1f3f6;
+      }
+      .btn.ghost.on {
+        background: var(--tint);
+        border-color: var(--accent-deep);
+        color: var(--accent-deep);
+      }
+      .btnrow {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      /* Chips (token style) */
+      .chip {
+        font-family: var(--mono);
+        font-size: 14px;
+        color: var(--ink);
+        background: var(--panel);
+        border: 1px solid var(--line-2);
+        border-radius: 9px;
+        padding: 12px 16px;
+        display: inline-flex;
+      }
+      .chiprow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .plus {
+        font-family: var(--mono);
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      /* Code surfaces */
+      .code {
+        font-family: var(--mono);
+        font-size: 13px;
+        line-height: 1.7;
+        background: #f7f8fa;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 14px 16px;
+        color: #27313f;
+        white-space: pre;
+        overflow-x: auto;
+        margin: 0;
+      }
+      .code .tag {
+        color: #1d3e60;
+      }
+      .code .c {
+        color: #94a0ae;
+      }
+      .code .str {
+        color: #1b7f5b;
+      }
+
+      /* Live preview frames */
+      .preview {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #fff;
+        min-height: 120px;
+      }
+      .twocol {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 760px) {
+        .twocol {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      textarea.editor {
+        width: 100%;
+        min-height: 150px;
+        font-family: var(--mono);
+        font-size: 13px;
+        line-height: 1.6;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 14px;
+        resize: vertical;
+        color: #27313f;
+        background: #fbfcfd;
+      }
+      textarea.editor:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px var(--hl-fill);
+      }
+
+      /* Controls */
+      .ctrl {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 10px 0;
+        font-size: 14px;
+      }
+      .ctrl label {
+        min-width: 120px;
+        color: var(--text);
+        font-weight: 500;
+      }
+      input[type="range"] {
+        flex: 1;
+        accent-color: var(--accent-deep);
+      }
+      .swatches {
+        display: flex;
+        gap: 8px;
+      }
+      .swatch {
+        width: 26px;
+        height: 26px;
+        border-radius: 7px;
+        border: 1px solid var(--line-2);
+        cursor: pointer;
+      }
+      .swatch.sel {
+        outline: 2px solid var(--accent-deep);
+        outline-offset: 2px;
+      }
+      .val {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
+        min-width: 46px;
+        text-align: right;
+      }
+
+      /* Inspector simulator */
+      .inspect-wrap {
+        position: relative;
+      }
+      .mini {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        overflow: hidden;
+        background: #fff;
+        position: relative;
+      }
+      .mini * {
+        transition: outline 0.1s;
+      }
+      .mini-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      .mini-logo {
+        font-weight: 800;
+        color: var(--ink);
+      }
+      .mini-nav {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .mini-hero {
+        padding: 22px 16px;
+      }
+      .mini-hero h4 {
+        margin: 0 0 8px;
+        font-size: 22px;
+        color: var(--ink);
+      }
+      .mini-hero p {
+        margin: 0;
+        font-size: 13.5px;
+        color: var(--text);
+      }
+      .mini-img {
+        height: 96px;
+        margin: 0 16px;
+        border-radius: 8px;
+        background: linear-gradient(120deg, #dfe6ef, #eef1f5);
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+      .mini-foot {
+        padding: 16px;
+        text-align: center;
+      }
+      .mini-btn {
+        background: var(--accent-deep);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 18px;
+        font-family: var(--sans);
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .inspect-hl {
+        outline: 2px solid var(--hl) !important;
+        outline-offset: 1px;
+        background: var(--hl-fill);
+      }
+      .inspect-badge {
+        position: absolute;
+        z-index: 5;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: #fff;
+        background: var(--hl);
+        padding: 2px 7px;
+        border-radius: 5px;
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(2px);
+        transition: opacity 0.1s;
+        white-space: nowrap;
+      }
+      .codelist {
+        font-family: var(--mono);
+        font-size: 12.5px;
+        line-height: 1.9;
+        background: #f7f8fa;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 12px 8px;
+        overflow-x: auto;
+      }
+      .codeline {
+        padding: 1px 8px;
+        border-radius: 5px;
+        cursor: default;
+        white-space: pre;
+        color: #27313f;
+      }
+      .codeline:hover,
+      .codeline.lit {
+        background: var(--hl-fill);
+        box-shadow: inset 2px 0 0 var(--hl);
+      }
+      .codeline .tag {
+        color: #1d3e60;
+      }
+
+      /* Quiz */
+      .quiz-el {
+        border: 1px dashed var(--line-2);
+        border-radius: 10px;
+        padding: 18px;
+        margin-bottom: 14px;
+        display: grid;
+        place-items: center;
+        min-height: 84px;
+        background: #fbfcfd;
+      }
+      .quiz-opts {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      @media (max-width: 520px) {
+        .quiz-opts {
+          grid-template-columns: 1fr;
+        }
+      }
+      .opt {
+        font-family: var(--mono);
+        font-size: 14px;
+        border: 1px solid var(--line-2);
+        background: #fff;
+        border-radius: 9px;
+        padding: 12px;
+        cursor: pointer;
+        transition: 0.12s;
+      }
+      .opt:hover {
+        border-color: var(--accent);
+      }
+      .opt.right {
+        background: #e7f3ec;
+        border-color: #3e9b68;
+        color: #22603f;
+      }
+      .opt.wrong {
+        background: #fbebea;
+        border-color: #cf6f66;
+        color: #8c322a;
+      }
+      .quiz-feedback {
+        font-size: 14px;
+        margin-top: 12px;
+        min-height: 20px;
+        color: var(--text);
+      }
+      .score {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      /* Cards multiplier */
+      .cardgrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+      }
+      .ucard {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 14px;
+        background: #fff;
+      }
+      .ucard .t {
+        font-weight: 700;
+        color: var(--ink);
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+      .ucard .d {
+        font-size: 12.5px;
+        color: var(--muted);
+      }
+
+      /* Hover lab */
+      .demo-btn {
+        font-family: var(--sans);
+        font-weight: 600;
+        font-size: 15px;
+        border: 1px solid var(--accent-deep);
+        background: #fff;
+        color: var(--accent-deep);
+        padding: 12px 22px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: 0.18s;
+      }
+      .demo-btn.fx-fill:hover {
+        background: var(--accent-deep);
+        color: #fff;
+      }
+      .demo-btn.fx-lift:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 18px rgba(12, 19, 32, 0.14);
+      }
+      .demo-btn.fx-grow:hover {
+        letter-spacing: 0.06em;
+      }
+
+      footer {
+        margin-top: 64px;
+        padding-top: 24px;
+        border-top: 1px solid var(--line);
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      @media (max-width: 880px) {
+        .sidebar {
+          transform: translateX(-100%);
+        }
+        .sidebar.open {
+          transform: none;
+          box-shadow: 0 0 40px rgba(12, 19, 32, 0.18);
+        }
+        .menu {
+          display: grid;
+        }
+        main {
+          margin-left: 0;
+        }
+        .col {
+          padding: 34px 22px 90px;
+        }
+        .scrim.show {
+          display: block;
+        }
+      }
+      @media (max-width: 520px) {
+        .nav-title {
+          display: none;
+        }
+        .nav-link {
+          display: none;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+          scroll-behavior: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <p class="kicker">WEB FOUNDATIONS</p>
+        <h1>Learning to See</h1>
+        <p>Read a webpage before you build one.</p>
+      </div>
+      <nav id="nav"></nav>
+    </aside>
+
+    <div class="scrim" id="scrim"></div>
+
+    <header class="navbar">
+      <div class="nav-left">
+        <button class="menu" id="menu" aria-label="Open navigation">
+          <span></span>
+        </button>
+        <a class="nav-brand" href="#s00">
+          <span class="logo-slot">
+            <!-- LOGO: replace the src below with your own image (PNG or SVG). ~28px tall renders best. -->
+            <img
+              id="site-logo"
+              class="logo-img"
+              src="logo.png"
+              alt="Site logo"
+            />
+          </span>
+          <span class="nav-title">Learning to See</span>
+        </a>
+      </div>
+      <nav class="nav-links">
+        <a class="nav-pill" href="#s00">Overview</a>
+        <a class="nav-link" href="#s10">Understanding</a>
+      </nav>
+    </header>
+
+    <main>
+      <div class="col">
+        <!-- 00 OVERVIEW -->
+        <section class="section hero" id="s00" data-nav="Overview">
+          <p class="eyebrow">Orientation Walkthrough</p>
+          <h2>See a webpage before you build one.</h2>
+          <p class="lede">
+            A webpage is not magic and it is not just design on a screen. It is
+            a set of instructions a browser reads. HTML is the structure, CSS is
+            the styling, and the visible page is the result those two produce.
+          </p>
+          <p class="lede">
+            Most beginners rush into typing code before they can recognize
+            layout, hierarchy, and behavior. This walkthrough slows that down on
+            purpose. You are not building yet. You are learning to look — with a
+            live playground in every part.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Structure vs. style</span>
+            </div>
+            <div class="pg-body">
+              <p style="margin-top: 0">
+                The same content, twice. Toggle styling on and off to see what
+                each layer is responsible for.
+              </p>
+              <div class="btnrow" style="margin-bottom: 14px">
+                <button class="btn ghost on" id="thesis-structure">
+                  Structure only (HTML)
+                </button>
+                <button class="btn ghost" id="thesis-styled">
+                  Structure + style (HTML + CSS)
+                </button>
+              </div>
+              <iframe
+                class="preview"
+                id="thesis-frame"
+                title="Structure vs style preview"
+                sandbox
+              ></iframe>
+            </div>
+            <div class="pg-foot">
+              <span class="pg-out" id="thesis-note"
+                ><b>HTML only:</b> all the content is here, but the browser uses
+                plain defaults.</span
+              >
+            </div>
+          </div>
+
+          <div class="callout">
+            <b>How to use this page.</b> Every part below has a live playground.
+            Edit the inputs, run the code, and watch how structure and styling
+            turn into the page you see.
+          </div>
+        </section>
+
+        <!-- 01 ANATOMY -->
+        <section class="section" id="s01" data-nav="Anatomy of a page">
+          <span class="part-badge">Part 01</span>
+          <h3>Anatomy of a page</h3>
+          <p>
+            What you see in a browser is the <i>result</i>. Underneath sit two
+            kinds of decisions: the <code>HTML</code> that says what things are
+            and how they nest, and the <code>CSS</code> that says how they
+            should look. Change the HTML and you change the structure. Type
+            below and watch the page rebuild in real time.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Live HTML editor</span>
+            </div>
+            <div class="pg-body twocol">
+              <div>
+                <p
+                  style="margin: 0 0 8px; font-size: 13px; color: var(--muted)"
+                >
+                  Edit the HTML
+                </p>
+                <textarea class="editor" id="anatomy-src">
+&lt;h1&gt;My first page&lt;/h1&gt;
+&lt;p&gt;This text is a paragraph.&lt;/p&gt;
+&lt;button&gt;A button&lt;/button&gt;</textarea
+                >
+              </div>
+              <div>
+                <p
+                  style="margin: 0 0 8px; font-size: 13px; color: var(--muted)"
+                >
+                  What the browser renders
+                </p>
+                <iframe
+                  class="preview"
+                  id="anatomy-frame"
+                  title="HTML editor preview"
+                  sandbox
+                ></iframe>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 02 HTML -->
+        <section class="section" id="s02" data-nav="HTML — structure">
+          <span class="part-badge">Part 02</span>
+          <h3>HTML — the structure</h3>
+          <p>
+            HTML is like the framing and rooms of a house: it decides what
+            exists and how it is arranged, before anything is painted. Almost
+            every page starts from the same small skeleton. Assemble it below,
+            one part at a time.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Build the skeleton</span>
+            </div>
+            <div class="pg-body">
+              <div class="chiprow" style="margin-bottom: 16px">
+                <span class="chip">&lt;!DOCTYPE html&gt;</span
+                ><span class="plus">+</span>
+                <span class="chip">&lt;html&gt;</span
+                ><span class="plus">+</span>
+                <span class="chip">&lt;head&gt;</span
+                ><span class="plus">+</span>
+                <span class="chip">&lt;body&gt;</span>
+              </div>
+              <pre
+                class="code"
+                id="skeleton-code"
+              ><span class="c">Press “Build the page” to assemble the skeleton.</span></pre>
+            </div>
+            <div class="pg-foot">
+              <span class="pg-out" id="skeleton-note"
+                >Four parts, in order, make a complete page.</span
+              >
+              <button class="btn" id="skeleton-build">Build the page</button>
+            </div>
+          </div>
+
+          <div class="callout">
+            <b>The takeaway.</b> That skeleton is not trivia.
+            <code>&lt;head&gt;</code> holds information about the page,
+            <code>&lt;body&gt;</code> holds what you actually see, and the whole
+            thing is the starting point for nearly every page you will build.
+          </div>
+        </section>
+
+        <!-- 03 CSS -->
+        <section class="section" id="s03" data-nav="CSS — styling">
+          <span class="part-badge">Part 03</span>
+          <h3>CSS — the styling</h3>
+          <p>
+            CSS does not change what a thing is, only how it looks. The same
+            paragraph can be small and gray or large and bold. Move the controls
+            and watch one element change while its HTML stays identical. The
+            generated CSS appears underneath.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Style controls</span>
+            </div>
+            <div class="pg-body twocol">
+              <div>
+                <div class="ctrl">
+                  <label>Background</label>
+                  <div class="swatches" id="css-swatches"></div>
+                </div>
+                <div class="ctrl">
+                  <label>Text size</label>
+                  <input
+                    type="range"
+                    id="css-size"
+                    min="12"
+                    max="40"
+                    value="18"
+                  />
+                  <span class="val" id="css-size-v">18px</span>
+                </div>
+                <div class="ctrl">
+                  <label>Padding</label>
+                  <input
+                    type="range"
+                    id="css-pad"
+                    min="0"
+                    max="48"
+                    value="20"
+                  />
+                  <span class="val" id="css-pad-v">20px</span>
+                </div>
+                <div class="ctrl">
+                  <label>Corner radius</label>
+                  <input
+                    type="range"
+                    id="css-rad"
+                    min="0"
+                    max="40"
+                    value="10"
+                  />
+                  <span class="val" id="css-rad-v">10px</span>
+                </div>
+                <pre class="code" id="css-out" style="margin-top: 14px"></pre>
+              </div>
+              <div>
+                <p
+                  style="margin: 0 0 8px; font-size: 13px; color: var(--muted)"
+                >
+                  Preview
+                </p>
+                <div id="css-target" style="font-weight: 600; color: #16273d">
+                  This box is styled by the controls.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 04 BROWSER -->
+        <section class="section" id="s04" data-nav="The browser">
+          <span class="part-badge">Part 04</span>
+          <h3>The browser</h3>
+          <p>
+            The browser is the tool that reads the HTML and CSS and draws the
+            page. To see an HTML file you saved, you open it in a browser —
+            double-click it, or drag it onto a browser window. The file is
+            instructions; the browser turns them into something you can look at.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Open the file</span>
+            </div>
+            <div class="pg-body">
+              <div
+                id="browser-stage"
+                style="
+                  display: grid;
+                  place-items: center;
+                  gap: 14px;
+                  padding: 10px 0 4px;
+                "
+              >
+                <div style="text-align: center">
+                  <div
+                    style="
+                      width: 64px;
+                      height: 78px;
+                      margin: 0 auto;
+                      border: 1px solid var(--line-2);
+                      border-radius: 8px;
+                      background: #fff;
+                      position: relative;
+                      box-shadow: 0 2px 0 var(--line);
+                    "
+                  >
+                    <div
+                      style="
+                        position: absolute;
+                        top: 0;
+                        right: 0;
+                        width: 18px;
+                        height: 18px;
+                        background: var(--bg);
+                        border-left: 1px solid var(--line-2);
+                        border-bottom: 1px solid var(--line-2);
+                        border-radius: 0 8px 0 8px;
+                      "
+                    ></div>
+                    <div
+                      style="
+                        position: absolute;
+                        bottom: 12px;
+                        left: 0;
+                        right: 0;
+                        text-align: center;
+                        font-family: var(--mono);
+                        font-size: 9px;
+                        color: var(--accent);
+                      "
+                    >
+                      HTML
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      font-family: var(--mono);
+                      font-size: 12px;
+                      margin-top: 8px;
+                      color: var(--text);
+                    "
+                  >
+                    index.html
+                  </div>
+                </div>
+                <button class="btn" id="browser-open">Open in browser</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 05 HIERARCHY -->
+        <section class="section" id="s05" data-nav="Visual hierarchy">
+          <span class="part-badge">Part 05</span>
+          <h3>Visual hierarchy</h3>
+          <p>
+            Why is the biggest text big and the smallest text small? Size,
+            weight, and color tell your eye what matters most and what to read
+            first. This is the same instinct behind the orientation questions:
+            what grabbed you first, and where did your eye move next. Adjust the
+            controls and feel how the order of attention shifts.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Hierarchy sandbox</span>
+            </div>
+            <div class="pg-body twocol">
+              <div>
+                <div class="ctrl">
+                  <label>Heading size</label>
+                  <input
+                    type="range"
+                    id="h-size"
+                    min="20"
+                    max="56"
+                    value="40"
+                  />
+                  <span class="val" id="h-size-v">40px</span>
+                </div>
+                <div class="ctrl">
+                  <label>Body size</label>
+                  <input
+                    type="range"
+                    id="b-size"
+                    min="12"
+                    max="22"
+                    value="15"
+                  />
+                  <span class="val" id="b-size-v">15px</span>
+                </div>
+                <div class="ctrl">
+                  <label>Heading weight</label>
+                  <div class="btnrow">
+                    <button class="btn ghost on" data-weight="800" id="hw-bold">
+                      Bold
+                    </button>
+                    <button class="btn ghost" data-weight="400" id="hw-reg">
+                      Regular
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div
+                id="hier-target"
+                style="
+                  border: 1px solid var(--line);
+                  border-radius: 10px;
+                  padding: 18px;
+                  background: #fff;
+                "
+              >
+                <div
+                  id="hier-h"
+                  style="
+                    color: #16273d;
+                    font-weight: 800;
+                    line-height: 1.1;
+                    margin-bottom: 8px;
+                  "
+                >
+                  The headline
+                </div>
+                <div id="hier-b" style="color: #2b3644">
+                  A supporting paragraph sits quietly beneath the headline,
+                  smaller and lighter, so the eye lands on the title first.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 06 PATTERNS -->
+        <section class="section" id="s06" data-nav="Patterns & templates">
+          <span class="part-badge">Part 06</span>
+          <h3>Patterns and templates</h3>
+          <p>
+            Real pages reuse the same shape over and over: identical cards,
+            repeated buttons, a row of feature boxes. Same layout, different
+            content. That repetition is usually one template filled by a list of
+            data. Change how many cards you want and watch a single pattern
+            repeat.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Repeat a pattern</span>
+            </div>
+            <div class="pg-body">
+              <div class="ctrl">
+                <label>How many cards</label>
+                <input type="range" id="card-count" min="1" max="6" value="3" />
+                <span class="val" id="card-count-v">3</span>
+              </div>
+              <div
+                class="cardgrid"
+                id="card-grid"
+                style="margin-top: 14px"
+              ></div>
+            </div>
+            <div class="pg-foot">
+              <span class="pg-out"
+                >One template, repeated for each item in a list. Spotting this
+                repetition is how you recognize reused parts on a real
+                site.</span
+              >
+            </div>
+          </div>
+        </section>
+
+        <!-- 07 HOVER -->
+        <section class="section" id="s07" data-nav="Hover & states">
+          <span class="part-badge">Part 07</span>
+          <h3>Hover and interactive states</h3>
+          <p>
+            One of the orientation tasks is to hover over a button and notice
+            what changes. Color, lift, or spacing can shift the moment your
+            pointer arrives — a small signal that an element is alive and
+            clickable. Pick an effect, then hover the button. The rule that
+            produces it is shown below.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Hover lab</span>
+            </div>
+            <div class="pg-body twocol">
+              <div>
+                <div class="btnrow" style="margin-bottom: 18px">
+                  <button class="btn ghost on" data-fx="fill">Fill</button>
+                  <button class="btn ghost" data-fx="lift">Lift</button>
+                  <button class="btn ghost" data-fx="grow">Spacing</button>
+                </div>
+                <div
+                  style="display: grid; place-items: center; padding: 18px 0"
+                >
+                  <button class="demo-btn fx-fill" id="hover-demo">
+                    Hover over me
+                  </button>
+                </div>
+              </div>
+              <div>
+                <p
+                  style="margin: 0 0 8px; font-size: 13px; color: var(--muted)"
+                >
+                  The CSS behind it
+                </p>
+                <pre class="code" id="hover-code"></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 08 DEVTOOLS -->
+        <section class="section" id="s08" data-nav="DevTools">
+          <span class="part-badge">Part 08</span>
+          <h3>Inspect — connecting code to the page</h3>
+          <p>
+            On a real site you would right-click and choose <i>Inspect</i> to
+            open DevTools, then hover lines of code and watch the matching part
+            of the page light up. Here is that exact experience in miniature.
+            Hover the code on the right, or the page on the left — the pair
+            highlights together.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Inspector simulator</span>
+            </div>
+            <div class="pg-body twocol">
+              <div class="inspect-wrap">
+                <div class="mini" id="mini">
+                  <div class="inspect-badge" id="badge"></div>
+                  <div class="mini-header" data-el="header">
+                    <div class="mini-logo" data-el="logo">Acme</div>
+                    <div class="mini-nav" data-el="nav">
+                      Home · Pricing · About
+                    </div>
+                  </div>
+                  <div class="mini-hero" data-el="hero">
+                    <h4 data-el="h1">Build faster.</h4>
+                    <p data-el="p">
+                      A short supporting line under the heading.
+                    </p>
+                  </div>
+                  <div class="mini-img" data-el="img">image</div>
+                  <div class="mini-foot" data-el="foot">
+                    <button class="mini-btn" data-el="button">
+                      Get started
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div class="codelist" id="codelist"></div>
+              </div>
+            </div>
+            <div class="pg-foot">
+              <span class="pg-out" id="inspect-note"
+                >Hover either side. A heading is an
+                <span class="inlinecode">h1</span>, an image is an
+                <span class="inlinecode">img</span>, a button is a
+                <span class="inlinecode">button</span>.</span
+              >
+            </div>
+          </div>
+        </section>
+
+        <!-- 09 MATCH -->
+        <section class="section" id="s09" data-nav="Match code to page">
+          <span class="part-badge">Part 09</span>
+          <h3>Match the code to what you saw</h3>
+          <p>
+            Now flip it around. You see something on the page; which tag most
+            likely produced it? This is the recognition the whole orientation is
+            building toward. Pick the tag for each element.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Tag quiz</span>
+            </div>
+            <div class="pg-body">
+              <div class="quiz-el" id="quiz-el"></div>
+              <div class="quiz-opts" id="quiz-opts"></div>
+              <div class="quiz-feedback" id="quiz-feedback"></div>
+            </div>
+            <div class="pg-foot">
+              <span class="score" id="quiz-score">Score 0 / 0</span>
+              <button class="btn ghost" id="quiz-next">Next element</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 10 UNDERSTANDING -->
+        <section class="section" id="s10" data-nav="Understanding">
+          <span class="part-badge">Part 10</span>
+          <h3>Understanding</h3>
+          <p>
+            Three ideas hold the whole picture together. HTML gives a page its
+            structure. CSS changes how that structure looks. The browser is the
+            tool that reads both and draws the result. Once you can see those
+            layers in any page you visit, you are ready to start writing them
+            yourself.
+          </p>
+          <div class="twocol">
+            <div class="callout" style="margin: 8px 0">
+              <b>HTML</b> — what things are and how they nest. The framing of
+              the house.
+            </div>
+            <div class="callout" style="margin: 8px 0">
+              <b>CSS</b> — how those things look. The paint, spacing, and
+              finish.
+            </div>
+          </div>
+          <div class="callout" style="max-width: none">
+            <b>The browser</b> reads both and produces the page you see.
+            Right-click and Inspect any site to watch the connection live.
+          </div>
+
+          <footer>
+            Learning to See · Web Foundations orientation. Built with HTML, CSS,
+            and vanilla JavaScript.
+          </footer>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      /* ---------------- Sidebar nav (built from sections) ---------------- */
+      (function () {
+        const groups = [
+          ["Start here", ["s00"]],
+          ["The page", ["s01", "s02", "s03", "s04"]],
+          ["Reading a page", ["s05", "s06", "s07"]],
+          ["Inspect", ["s08", "s09"]],
+          ["Wrap up", ["s10"]],
+        ];
+        const nav = document.getElementById("nav");
+        let html = "";
+        groups.forEach(([title, ids]) => {
+          html += `<div class="navgroup">${title}</div>`;
+          ids.forEach((id) => {
+            const sec = document.getElementById(id);
+            const n = id.replace("s", "");
+            const label = sec.getAttribute("data-nav");
+            html += `<div class="navlink" data-target="${id}"><span class="n">${n}</span>${label}</div>`;
+          });
+        });
+        nav.innerHTML = html;
+
+        const links = [...nav.querySelectorAll(".navlink")];
+        const sidebar = document.getElementById("sidebar");
+        const scrim = document.getElementById("scrim");
+        function closeMenu() {
+          sidebar.classList.remove("open");
+          scrim.classList.remove("show");
+        }
+
+        links.forEach((l) =>
+          l.addEventListener("click", () => {
+            document
+              .getElementById(l.dataset.target)
+              .scrollIntoView({ behavior: "smooth", block: "start" });
+            closeMenu();
+          }),
+        );
+
+        document.getElementById("menu").addEventListener("click", () => {
+          sidebar.classList.toggle("open");
+          scrim.classList.toggle("show");
+        });
+        scrim.addEventListener("click", closeMenu);
+
+        // Scrollspy
+        const byId = {};
+        links.forEach((l) => (byId[l.dataset.target] = l));
+        const obs = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((e) => {
+              if (e.isIntersecting) {
+                links.forEach((x) => x.classList.remove("active"));
+                if (byId[e.target.id])
+                  byId[e.target.id].classList.add("active");
+              }
+            });
+          },
+          { rootMargin: "-45% 0px -50% 0px", threshold: 0 },
+        );
+        document.querySelectorAll(".section").forEach((s) => obs.observe(s));
+      })();
+
+      /* ---------------- 00 · Structure vs style ---------------- */
+      (function () {
+        const frame = document.getElementById("thesis-frame");
+        const note = document.getElementById("thesis-note");
+        const bS = document.getElementById("thesis-structure");
+        const bT = document.getElementById("thesis-styled");
+        const content = `<h1>Daily Brief</h1>
+    <p>A short newsletter about reading the web.</p>
+    <a href="#">Read more</a>`;
+        const plain = `<!doctype html><meta charset="utf-8"><body style="font-family:system-ui;margin:16px">${content}</body>`;
+        const styled = `<!doctype html><meta charset="utf-8"><body style="font-family:system-ui;margin:0">
+    <div style="background:#1D3E60;color:#fff;padding:22px 20px">
+      <h1 style="margin:0 0 6px;font-size:24px;letter-spacing:-.02em">Daily Brief</h1>
+      <p style="margin:0;opacity:.85;font-size:14px">A short newsletter about reading the web.</p>
+      <a href="#" style="display:inline-block;margin-top:14px;background:#fff;color:#1D3E60;text-decoration:none;font-weight:600;font-size:13px;padding:9px 16px;border-radius:8px">Read more</a>
+    </div></body>`;
+        function show(styledMode) {
+          frame.srcdoc = styledMode ? styled : plain;
+          frame.style.height = styledMode ? "180px" : "150px";
+          bT.classList.toggle("on", styledMode);
+          bS.classList.toggle("on", !styledMode);
+          note.innerHTML = styledMode
+            ? "<b>HTML + CSS:</b> identical content, but styling decides color, spacing, and emphasis."
+            : "<b>HTML only:</b> all the content is here, but the browser uses plain defaults.";
+        }
+        bS.addEventListener("click", () => show(false));
+        bT.addEventListener("click", () => show(true));
+        show(false);
+      })();
+
+      /* ---------------- 01 · Live HTML editor ---------------- */
+      (function () {
+        const src = document.getElementById("anatomy-src");
+        const frame = document.getElementById("anatomy-frame");
+        let t;
+        function render() {
+          frame.srcdoc = `<!doctype html><meta charset="utf-8"><body style="font-family:system-ui;margin:14px;color:#16273D">${src.value}</body>`;
+        }
+        src.addEventListener("input", () => {
+          clearTimeout(t);
+          t = setTimeout(render, 250);
+        });
+        frame.style.height = "150px";
+        render();
+      })();
+
+      /* ---------------- 02 · Skeleton builder ---------------- */
+      (function () {
+        const out = document.getElementById("skeleton-code");
+        const note = document.getElementById("skeleton-note");
+        const btn = document.getElementById("skeleton-build");
+        const lines = [
+          ["&lt;!DOCTYPE html&gt;", "tells the browser this is HTML5"],
+          ["&lt;html&gt;", "the root — everything lives inside"],
+          ["  &lt;head&gt;", "information about the page"],
+          ["    &lt;title&gt;Hi&lt;/title&gt;", "the browser-tab name"],
+          ["  &lt;/head&gt;", ""],
+          ["  &lt;body&gt;", "the visible content"],
+          ["    Hello world", ""],
+        ];
+        const tail = ["  &lt;/body&gt;", "&lt;/html&gt;"];
+        btn.addEventListener("click", () => {
+          out.innerHTML = "";
+          let i = 0;
+          function step() {
+            if (i < lines.length) {
+              const [code, comment] = lines[i];
+              out.innerHTML += `<span class="tag">${code}</span>${comment ? `   <span class="c">// ${comment}</span>` : ""}\n`;
+              i++;
+              setTimeout(step, 160);
+            } else {
+              tail.forEach(
+                (t) => (out.innerHTML += `<span class="tag">${t}</span>\n`),
+              );
+              note.textContent =
+                "Done. head holds information about the page; body holds what you see.";
+            }
+          }
+          note.textContent = "Assembling…";
+          step();
+        });
+      })();
+
+      /* ---------------- 03 · CSS controls ---------------- */
+      (function () {
+        const target = document.getElementById("css-target");
+        const out = document.getElementById("css-out");
+        const size = document.getElementById("css-size");
+        const pad = document.getElementById("css-pad");
+        const rad = document.getElementById("css-rad");
+        const colors = ["#E9EFF6", "#1D3E60", "#FFF4E0", "#E7F3EC", "#F3F4F7"];
+        const sw = document.getElementById("css-swatches");
+        let bg = colors[0];
+        colors.forEach((c, i) => {
+          const d = document.createElement("div");
+          d.className = "swatch" + (i === 0 ? " sel" : "");
+          d.style.background = c;
+          d.addEventListener("click", () => {
+            bg = c;
+            [...sw.children].forEach((x) => x.classList.remove("sel"));
+            d.classList.add("sel");
+            apply();
+          });
+          sw.appendChild(d);
+        });
+        function apply() {
+          const s = size.value,
+            p = pad.value,
+            r = rad.value;
+          const dark = bg === "#1D3E60";
+          target.style.background = bg;
+          target.style.fontSize = s + "px";
+          target.style.padding = p + "px";
+          target.style.borderRadius = r + "px";
+          target.style.color = dark ? "#fff" : "#16273D";
+          document.getElementById("css-size-v").textContent = s + "px";
+          document.getElementById("css-pad-v").textContent = p + "px";
+          document.getElementById("css-rad-v").textContent = r + "px";
+          out.textContent = `.box {\n  background: ${bg};\n  font-size: ${s}px;\n  padding: ${p}px;\n  border-radius: ${r}px;\n}`;
+        }
+        [size, pad, rad].forEach((el) => el.addEventListener("input", apply));
+        apply();
+      })();
+
+      /* ---------------- 04 · Open the file ---------------- */
+      (function () {
+        const stage = document.getElementById("browser-stage");
+        const original = stage.innerHTML;
+        const opened = `
+      <div style="width:100%;border:1px solid var(--line-2);border-radius:10px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:6px;padding:9px 12px;background:#EDEFF2;border-bottom:1px solid var(--line-2)">
+          <span style="width:10px;height:10px;border-radius:99px;background:#C7CBD2"></span>
+          <span style="width:10px;height:10px;border-radius:99px;background:#C7CBD2"></span>
+          <span style="width:10px;height:10px;border-radius:99px;background:#C7CBD2"></span>
+          <span style="margin-left:8px;font-family:var(--mono);font-size:11px;color:#6B7280">file:///index.html</span>
+        </div>
+        <div style="padding:22px 18px;background:#fff">
+          <div style="font-weight:800;font-size:20px;color:#16273D;margin-bottom:6px">Hello world</div>
+          <div style="color:#2B3644;font-size:14px">The browser read your file and drew it.</div>
+        </div>
+      </div>
+      <button class="btn ghost" data-act="reset">Reset</button>`;
+        stage.addEventListener("click", (e) => {
+          const act =
+            e.target.getAttribute("id") || e.target.getAttribute("data-act");
+          if (act === "browser-open") {
+            stage.innerHTML = opened;
+          } else if (act === "reset") {
+            stage.innerHTML = original;
+          }
+        });
+      })();
+
+      /* ---------------- 05 · Hierarchy ---------------- */
+      (function () {
+        const h = document.getElementById("hier-h"),
+          b = document.getElementById("hier-b");
+        const hs = document.getElementById("h-size"),
+          bs = document.getElementById("b-size");
+        function apply() {
+          h.style.fontSize = hs.value + "px";
+          b.style.fontSize = bs.value + "px";
+          document.getElementById("h-size-v").textContent = hs.value + "px";
+          document.getElementById("b-size-v").textContent = bs.value + "px";
+        }
+        hs.addEventListener("input", apply);
+        bs.addEventListener("input", apply);
+        const bold = document.getElementById("hw-bold"),
+          reg = document.getElementById("hw-reg");
+        bold.addEventListener("click", () => {
+          h.style.fontWeight = 800;
+          bold.classList.add("on");
+          reg.classList.remove("on");
+        });
+        reg.addEventListener("click", () => {
+          h.style.fontWeight = 400;
+          reg.classList.add("on");
+          bold.classList.remove("on");
+        });
+        apply();
+      })();
+
+      /* ---------------- 06 · Pattern repeat ---------------- */
+      (function () {
+        const grid = document.getElementById("card-grid");
+        const range = document.getElementById("card-count");
+        const data = [
+          ["Fast", "Loads in a blink"],
+          ["Secure", "Encrypted by default"],
+          ["Simple", "One clear action"],
+          ["Global", "Served everywhere"],
+          ["Reliable", "Always on"],
+          ["Open", "Built on standards"],
+        ];
+        function render() {
+          const n = +range.value;
+          document.getElementById("card-count-v").textContent = n;
+          grid.innerHTML = "";
+          for (let i = 0; i < n; i++) {
+            const [t, d] = data[i % data.length];
+            const c = document.createElement("div");
+            c.className = "ucard";
+            c.innerHTML = `<div class="t">${t}</div><div class="d">${d}</div>`;
+            grid.appendChild(c);
+          }
+        }
+        range.addEventListener("input", render);
+        render();
+      })();
+
+      /* ---------------- 07 · Hover lab ---------------- */
+      (function () {
+        const demo = document.getElementById("hover-demo");
+        const code = document.getElementById("hover-code");
+        const buttons = [...document.querySelectorAll("[data-fx]")];
+        const rules = {
+          fill: `.button:hover {\n  background: #1D3E60;\n  color: #ffffff;\n}`,
+          lift: `.button:hover {\n  transform: translateY(-3px);\n  box-shadow: 0 8px 18px rgba(0,0,0,.14);\n}`,
+          grow: `.button:hover {\n  letter-spacing: 0.06em;\n}`,
+        };
+        function set(fx) {
+          demo.className = "demo-btn fx-" + fx;
+          code.textContent = rules[fx];
+          buttons.forEach((b) => b.classList.toggle("on", b.dataset.fx === fx));
+        }
+        buttons.forEach((b) =>
+          b.addEventListener("click", () => set(b.dataset.fx)),
+        );
+        set("fill");
+      })();
+
+      /* ---------------- 08 · Inspector simulator ---------------- */
+      (function () {
+        const mini = document.getElementById("mini");
+        const badge = document.getElementById("badge");
+        const list = document.getElementById("codelist");
+        const map = [
+          ["header", "&lt;header&gt;"],
+          ["logo", '  &lt;div class="logo"&gt;Acme&lt;/div&gt;'],
+          ["nav", "  &lt;nav&gt;Home · Pricing · About&lt;/nav&gt;"],
+          ["hero", '&lt;section class="hero"&gt;'],
+          ["h1", "  &lt;h1&gt;Build faster.&lt;/h1&gt;"],
+          ["p", "  &lt;p&gt;A short supporting line…&lt;/p&gt;"],
+          ["img", '&lt;img src="hero.png"&gt;'],
+          ["foot", "&lt;footer&gt;"],
+          ["button", "  &lt;button&gt;Get started&lt;/button&gt;"],
+        ];
+        list.innerHTML = map
+          .map(
+            ([el, code]) =>
+              `<div class="codeline" data-el="${el}"><span class="tag">${code}</span></div>`,
+          )
+          .join("");
+
+        function tagName(el) {
+          const m = {
+            header: "header",
+            logo: "div.logo",
+            nav: "nav",
+            hero: "section.hero",
+            h1: "h1",
+            p: "p",
+            img: "img",
+            foot: "footer",
+            button: "button",
+          };
+          return m[el] || el;
+        }
+        function highlight(el) {
+          clear();
+          const node = mini.querySelector(`[data-el="${el}"]`);
+          const line = list.querySelector(`.codeline[data-el="${el}"]`);
+          if (node) {
+            node.classList.add("inspect-hl");
+            const r = node.getBoundingClientRect(),
+              mr = mini.getBoundingClientRect();
+            badge.textContent = tagName(el);
+            badge.style.left = Math.max(2, r.left - mr.left) + "px";
+            let top = r.top - mr.top - 18;
+            if (top < 2) top = r.top - mr.top + 4;
+            badge.style.top = top + "px";
+            badge.style.opacity = "1";
+          }
+          if (line) line.classList.add("lit");
+        }
+        function clear() {
+          mini
+            .querySelectorAll(".inspect-hl")
+            .forEach((n) => n.classList.remove("inspect-hl"));
+          list
+            .querySelectorAll(".lit")
+            .forEach((n) => n.classList.remove("lit"));
+          badge.style.opacity = "0";
+        }
+        // hover code -> highlight element
+        list.querySelectorAll(".codeline").forEach((line) => {
+          line.addEventListener("mouseenter", () => highlight(line.dataset.el));
+          line.addEventListener("mouseleave", clear);
+        });
+        // hover element -> highlight code
+        mini.querySelectorAll("[data-el]").forEach((node) => {
+          node.addEventListener("mouseenter", (e) => {
+            e.stopPropagation();
+            highlight(node.dataset.el);
+          });
+          node.addEventListener("mouseleave", clear);
+        });
+      })();
+
+      /* ---------------- 09 · Tag quiz ---------------- */
+      (function () {
+        const elBox = document.getElementById("quiz-el");
+        const opts = document.getElementById("quiz-opts");
+        const fb = document.getElementById("quiz-feedback");
+        const scoreEl = document.getElementById("quiz-score");
+        const next = document.getElementById("quiz-next");
+        let score = 0,
+          asked = 0,
+          answered = false;
+        const items = [
+          {
+            render:
+              '<div style="font-weight:800;font-size:26px;color:#16273D">Page title</div>',
+            answer: "h1",
+            why: "Large, bold, top-of-page text is almost always a heading.",
+          },
+          {
+            render: '<button class="mini-btn">Sign up</button>',
+            answer: "button",
+            why: "A clickable control that performs an action is a button.",
+          },
+          {
+            render: '<div class="mini-img" style="width:160px">image</div>',
+            answer: "img",
+            why: "A standalone picture block is an image element.",
+          },
+          {
+            render:
+              '<a href="#" style="color:#1D3E60;font-weight:600">Learn more</a>',
+            answer: "a",
+            why: "Coloured, clickable text that takes you elsewhere is a link.",
+          },
+          {
+            render:
+              '<p style="color:#2B3644;max-width:220px">A block of ordinary reading text sits in a paragraph.</p>',
+            answer: "p",
+            why: "A run of body copy is a paragraph.",
+          },
+        ];
+        const choices = ["h1", "p", "img", "button", "a"];
+        let current;
+        function load() {
+          answered = false;
+          fb.textContent = "";
+          current = items[Math.floor(Math.random() * items.length)];
+          elBox.innerHTML = current.render;
+          opts.innerHTML = "";
+          choices.forEach((c) => {
+            const b = document.createElement("button");
+            b.className = "opt";
+            b.textContent = "<" + c + ">";
+            b.addEventListener("click", () => pick(b, c));
+            opts.appendChild(b);
+          });
+        }
+        function pick(btn, choice) {
+          if (answered) return;
+          answered = true;
+          asked++;
+          const right = choice === current.answer;
+          if (right) {
+            score++;
+            btn.classList.add("right");
+            fb.textContent = "Correct. " + current.why;
+          } else {
+            btn.classList.add("wrong");
+            [...opts.children]
+              .find((o) => o.textContent === "<" + current.answer + ">")
+              .classList.add("right");
+            fb.textContent = "Not quite. " + current.why;
+          }
+          scoreEl.textContent = `Score ${score} / ${asked}`;
+        }
+        next.addEventListener("click", load);
+        load();
+      })();
+    </script>
+  </body>
+</html>
