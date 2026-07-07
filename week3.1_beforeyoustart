@@ -1,0 +1,1849 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Before You Start — Navbar Prerequisites</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f6f8fa;
+        --panel: #ffffff;
+        --ink: #16273d;
+        --text: #2b3644;
+        --muted: #79838f;
+        --line: #e4e7eb;
+        --line-2: #d2d7de;
+        --accent: #d23b36;
+        --accent-deep: #1d3e60;
+        --tint: #eaf0f7;
+        --blue: #215c9c;
+        --red-deep: #b5332e;
+        --navy-deep: #15324f;
+        --hl: #215c9c;
+        --hl-fill: rgba(33, 92, 156, 0.1);
+        --sans: "Inter", system-ui, -apple-system, sans-serif;
+        --mono: "JetBrains Mono", ui-monospace, monospace;
+        --sb: 280px;
+        --nav-h: 60px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        font-family: var(--sans);
+        color: var(--text);
+        background: var(--bg);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      h1,
+      h2,
+      h3 {
+        color: var(--ink);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.05;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        position: fixed;
+        top: var(--nav-h);
+        left: 0;
+        bottom: 0;
+        width: var(--sb);
+        background: var(--panel);
+        border-right: 1px solid var(--line);
+        padding: 30px 0;
+        overflow-y: auto;
+        z-index: 60;
+        transition: transform 0.25s ease;
+      }
+      .brand {
+        padding: 0 28px 24px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 22px;
+      }
+      .brand .kicker {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        color: var(--accent);
+        margin: 0 0 12px;
+      }
+      .brand h1 {
+        font-size: 24px;
+        margin: 0 0 8px;
+        letter-spacing: -0.025em;
+      }
+      .brand p {
+        font-size: 13.5px;
+        color: var(--muted);
+        margin: 0;
+        line-height: 1.45;
+      }
+      nav {
+        padding: 0 16px;
+      }
+      .navgroup {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        color: var(--muted);
+        padding: 18px 12px 8px;
+        text-transform: uppercase;
+      }
+      .navlink {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 9px 12px;
+        border-radius: 8px;
+        color: var(--text);
+        font-size: 14.5px;
+        font-weight: 500;
+        cursor: pointer;
+        transition:
+          background 0.12s,
+          color 0.12s;
+      }
+      .navlink .n {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
+        min-width: 18px;
+      }
+      .navlink:hover {
+        background: #f1f3f6;
+      }
+      .navlink.active {
+        background: var(--tint);
+        color: var(--accent-deep);
+        font-weight: 600;
+      }
+      .navlink.active .n {
+        color: var(--accent-deep);
+      }
+
+      /* Top nav bar */
+      .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--nav-h);
+        z-index: 70;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 0 22px;
+        background: var(--accent-deep);
+        border-bottom: 3px solid var(--accent);
+      }
+      .nav-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+      }
+      .nav-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        min-width: 0;
+      }
+      .logo-slot {
+        display: grid;
+        place-items: center;
+        background: #fff;
+        border-radius: 9px;
+        width: 40px;
+        height: 40px;
+        padding: 6px;
+        flex: none;
+      }
+      .logo-img {
+        max-width: 100%;
+        max-height: 100%;
+        display: block;
+      }
+      .nav-title {
+        color: #fff;
+        font-weight: 800;
+        font-size: 17px;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+      }
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .nav-pill {
+        background: var(--accent);
+        color: #fff;
+        font-weight: 600;
+        font-size: 14px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: background 0.15s;
+      }
+      .nav-pill:hover {
+        background: var(--red-deep);
+      }
+      .nav-link {
+        color: rgba(255, 255, 255, 0.72);
+        font-weight: 500;
+        font-size: 14px;
+        text-decoration: none;
+        padding: 8px 10px;
+        transition: color 0.15s;
+      }
+      .nav-link:hover {
+        color: #fff;
+      }
+      .menu {
+        display: none;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: transparent;
+        border-radius: 8px;
+        width: 38px;
+        height: 38px;
+        cursor: pointer;
+        place-items: center;
+        padding: 0;
+      }
+      .menu span,
+      .menu span::before,
+      .menu span::after {
+        content: "";
+        display: block;
+        width: 16px;
+        height: 2px;
+        background: #fff;
+        position: relative;
+      }
+      .menu span::before {
+        position: absolute;
+        top: -5px;
+      }
+      .menu span::after {
+        position: absolute;
+        top: 5px;
+      }
+      .scrim {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(12, 19, 32, 0.35);
+        z-index: 55;
+      }
+
+      /* Main */
+      main {
+        margin-left: var(--sb);
+        padding-top: var(--nav-h);
+      }
+      .col {
+        max-width: 880px;
+        padding: 64px 56px 120px;
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        color: var(--accent);
+        text-transform: uppercase;
+        margin: 0 0 22px;
+      }
+      .hero h2 {
+        font-size: clamp(40px, 6vw, 68px);
+        margin: 0 0 26px;
+        letter-spacing: -0.03em;
+      }
+      .lede {
+        font-size: 19px;
+        color: var(--text);
+        max-width: 60ch;
+        margin: 0 0 14px;
+      }
+      .section {
+        padding-top: 64px;
+        margin-top: 48px;
+        border-top: 1px solid var(--line);
+        scroll-margin-top: calc(var(--nav-h) + 14px);
+      }
+      .section:first-of-type {
+        border-top: none;
+        margin-top: 0;
+      }
+      .part-badge {
+        display: inline-flex;
+        align-items: center;
+        font-family: var(--mono);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--blue);
+        border: 1px solid var(--line-2);
+        border-radius: 7px;
+        padding: 5px 12px;
+        margin-bottom: 14px;
+      }
+      .section h3 {
+        font-size: clamp(26px, 3.6vw, 36px);
+        margin: 0 0 18px;
+      }
+      .section p {
+        font-size: 16px;
+        margin: 0 0 16px;
+        max-width: 64ch;
+      }
+      .section p code,
+      .inlinecode {
+        font-family: var(--mono);
+        font-size: 0.86em;
+        background: #eef0f3;
+        color: var(--accent-deep);
+        padding: 2px 6px;
+        border-radius: 5px;
+      }
+
+      /* Callout */
+      .callout {
+        background: var(--tint);
+        border-radius: 12px;
+        padding: 18px 22px;
+        margin: 22px 0;
+        font-size: 15px;
+        color: var(--accent-deep);
+        max-width: 70ch;
+      }
+      .callout b {
+        color: var(--accent-deep);
+      }
+
+      /* Playground */
+      .pg {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        margin: 26px 0;
+        overflow: hidden;
+      }
+      .pg-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 13px 18px;
+        border-bottom: 1px solid var(--line);
+      }
+      .pg-head .label {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .pg-head .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 99px;
+        background: var(--blue);
+        flex: none;
+      }
+      .pg-body {
+        padding: 20px 18px;
+      }
+      .pg-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding: 14px 18px;
+        border-top: 1px solid var(--line);
+        background: #fafbfc;
+      }
+      .pg-out {
+        font-family: var(--mono);
+        font-size: 14px;
+        color: var(--text);
+      }
+      .pg-out b {
+        color: var(--ink);
+      }
+
+      /* Buttons */
+      .btn {
+        font-family: var(--sans);
+        font-weight: 600;
+        font-size: 14px;
+        background: var(--accent-deep);
+        color: #fff;
+        border: none;
+        border-radius: 9px;
+        padding: 11px 18px;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          transform 0.05s;
+      }
+      .btn:hover {
+        background: var(--navy-deep);
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn.ghost {
+        background: var(--panel);
+        color: var(--ink);
+        border: 1px solid var(--line-2);
+      }
+      .btn.ghost:hover {
+        background: #f1f3f6;
+      }
+      .btn.ghost.on {
+        background: var(--tint);
+        border-color: var(--accent-deep);
+        color: var(--accent-deep);
+      }
+      .btnrow {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      /* Chips */
+      .chip {
+        font-family: var(--mono);
+        font-size: 14px;
+        color: var(--ink);
+        background: var(--panel);
+        border: 1px solid var(--line-2);
+        border-radius: 9px;
+        padding: 12px 16px;
+        display: inline-flex;
+      }
+      .chiprow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .plus {
+        font-family: var(--mono);
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      /* Code */
+      .code {
+        font-family: var(--mono);
+        font-size: 13px;
+        line-height: 1.7;
+        background: #f7f8fa;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 14px 16px;
+        color: #27313f;
+        white-space: pre;
+        overflow-x: auto;
+        margin: 0;
+      }
+      .code .tag {
+        color: #1d3e60;
+      }
+      .code .c {
+        color: #94a0ae;
+      }
+      .code .str {
+        color: #1b7f5b;
+      }
+      .code .cut {
+        color: #b5332e;
+      }
+      .code .keep {
+        color: #22603f;
+      }
+
+      /* Preview frames */
+      .preview {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #fff;
+        min-height: 120px;
+      }
+      .twocol {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 760px) {
+        .twocol {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Controls */
+      .ctrl {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 10px 0;
+        font-size: 14px;
+      }
+      .ctrl label {
+        min-width: 120px;
+        color: var(--text);
+        font-weight: 500;
+      }
+      input[type="range"] {
+        flex: 1;
+        accent-color: var(--accent-deep);
+      }
+      .swatches {
+        display: flex;
+        gap: 8px;
+      }
+      .swatch {
+        width: 26px;
+        height: 26px;
+        border-radius: 7px;
+        border: 1px solid var(--line-2);
+        cursor: pointer;
+      }
+      .swatch.sel {
+        outline: 2px solid var(--accent-deep);
+        outline-offset: 2px;
+      }
+      .val {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
+        min-width: 52px;
+        text-align: right;
+      }
+
+      /* Inspector */
+      .inspect-wrap {
+        position: relative;
+      }
+      .mini {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        overflow: hidden;
+        background: #fff;
+        position: relative;
+      }
+      .mini * {
+        transition: outline 0.1s;
+      }
+      .inspect-hl {
+        outline: 2px solid var(--hl) !important;
+        outline-offset: 1px;
+        background: var(--hl-fill);
+      }
+      .inspect-badge {
+        position: absolute;
+        z-index: 5;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: #fff;
+        background: var(--hl);
+        padding: 2px 7px;
+        border-radius: 5px;
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(2px);
+        transition: opacity 0.1s;
+        white-space: nowrap;
+      }
+      .codelist {
+        font-family: var(--mono);
+        font-size: 12.5px;
+        line-height: 1.9;
+        background: #f7f8fa;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 12px 8px;
+        overflow-x: auto;
+      }
+      .codeline {
+        padding: 1px 8px;
+        border-radius: 5px;
+        cursor: default;
+        white-space: pre;
+        color: #27313f;
+      }
+      .codeline:hover,
+      .codeline.lit {
+        background: var(--hl-fill);
+        box-shadow: inset 2px 0 0 var(--hl);
+      }
+      .codeline .tag {
+        color: #1d3e60;
+      }
+
+      /* Quiz */
+      .quiz-el {
+        border: 1px dashed var(--line-2);
+        border-radius: 10px;
+        padding: 18px;
+        margin-bottom: 14px;
+        display: grid;
+        place-items: center;
+        min-height: 84px;
+        background: #fbfcfd;
+      }
+      .quiz-opts {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      @media (max-width: 520px) {
+        .quiz-opts {
+          grid-template-columns: 1fr;
+        }
+      }
+      .opt {
+        font-family: var(--mono);
+        font-size: 14px;
+        border: 1px solid var(--line-2);
+        background: #fff;
+        border-radius: 9px;
+        padding: 12px;
+        cursor: pointer;
+        transition: 0.12s;
+      }
+      .opt:hover {
+        border-color: var(--accent);
+      }
+      .opt.right {
+        background: #e7f3ec;
+        border-color: #3e9b68;
+        color: #22603f;
+      }
+      .opt.wrong {
+        background: #fbebea;
+        border-color: #cf6f66;
+        color: #8c322a;
+      }
+      .quiz-feedback {
+        font-size: 14px;
+        margin-top: 12px;
+        min-height: 20px;
+        color: var(--text);
+      }
+      .score {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      footer {
+        margin-top: 64px;
+        padding-top: 24px;
+        border-top: 1px solid var(--line);
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      @media (max-width: 880px) {
+        .sidebar {
+          transform: translateX(-100%);
+        }
+        .sidebar.open {
+          transform: none;
+          box-shadow: 0 0 40px rgba(12, 19, 32, 0.18);
+        }
+        .menu {
+          display: grid;
+        }
+        main {
+          margin-left: 0;
+        }
+        .col {
+          padding: 34px 22px 90px;
+        }
+        .scrim.show {
+          display: block;
+        }
+      }
+      @media (max-width: 520px) {
+        .nav-title {
+          display: none;
+        }
+        .nav-link {
+          display: none;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+          scroll-behavior: auto;
+        }
+      }
+
+      /* ---------------- Bespoke prerequisite-playground styles ---------------- */
+      .nl-demo {
+        font-family: var(--sans);
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--accent-deep);
+        text-decoration: none;
+        padding: 8px 6px;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.18s;
+      }
+      .nl-demo.fx-color:hover {
+        color: var(--accent);
+      }
+      .nl-demo.fx-underline:hover {
+        border-bottom-color: var(--accent);
+      }
+      .nl-demo.fx-bg:hover {
+        background: var(--accent-deep);
+        color: #fff;
+        border-radius: 8px;
+        border-bottom-color: transparent;
+      }
+      .sel-hit {
+        outline: 2px solid var(--hl) !important;
+        outline-offset: 2px;
+        background: var(--hl-fill);
+      }
+      .bm-wrap {
+        overflow-x: auto;
+        display: flex;
+        justify-content: center;
+        padding: 6px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <p class="kicker">NAVBAR PREREQUISITES</p>
+        <h1>Before You Start</h1>
+        <p>The tools and language the navbar brief assumes you already know.</p>
+      </div>
+      <nav id="nav"></nav>
+    </aside>
+
+    <div class="scrim" id="scrim"></div>
+
+    <header class="navbar">
+      <div class="nav-left">
+        <button class="menu" id="menu" aria-label="Open navigation">
+          <span></span>
+        </button>
+        <a class="nav-brand" href="#s00">
+          <span class="logo-slot"
+            ><img
+              id="site-logo"
+              class="logo-img"
+              src="logo.png"
+              alt="ZS One logo"
+          /></span>
+          <span class="nav-title">ZS One</span>
+        </a>
+      </div>
+      <nav class="nav-links">
+        <a class="nav-pill" href="#s00">Overview</a>
+        <a class="nav-link" href="#s09">Wrap up</a>
+      </nav>
+    </header>
+
+    <main>
+      <div class="col">
+        <!-- ===================== s00 HERO ===================== -->
+        <section class="section hero" id="s00" data-nav="Overview">
+          <p class="eyebrow">What the brief doesn't tell you</p>
+          <h2>The skills the assignment assumes you have.</h2>
+          <p class="lede">
+            The brief tells you what to do — inspect navbars, plan, write a
+            spec, build, add a hover effect. It never teaches the tools and the
+            language you need to actually do any of it.
+          </p>
+          <p class="lede">
+            This page fills those gaps: how to drive DevTools, the handful of
+            HTML elements a navbar is made of, the box model, flexbox, CSS
+            selectors, colour contrast, and how <code>:hover</code> really
+            works. Each one is a playground you can touch.
+          </p>
+
+          <div class="callout">
+            <b>How to use this page.</b> Do this before you build. Every section
+            is a skill the brief leans on but skips — get these into your hands
+            and the assignment becomes mechanical.
+          </div>
+        </section>
+
+        <!-- ===================== s01 DEVTOOLS ===================== -->
+        <section class="section" id="s01" data-nav="DevTools">
+          <span class="part-badge">Part 01</span>
+          <h3>How to actually use DevTools</h3>
+          <p>
+            The brief says "use DevTools to inspect the navbar" — but not how.
+            Open it with <code>Cmd/Ctrl + Shift + C</code> (or right-click any
+            element and choose <i>Inspect</i>). The <b>Elements</b> panel shows
+            the HTML tree; the <b>Styles</b> panel next to it shows the CSS
+            hitting the selected element.
+          </p>
+          <p>
+            The core move: hover a line of HTML and the matching pixels light up
+            on the page — and back. Try it below.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Inspect like DevTools</span>
+            </div>
+            <div class="pg-body twocol">
+              <div class="inspect-wrap">
+                <div class="mini" id="dv-mini">
+                  <div class="inspect-badge" id="dv-badge"></div>
+                  <div
+                    data-el="nav"
+                    style="
+                      display: flex;
+                      align-items: center;
+                      justify-content: space-between;
+                      background: var(--accent-deep);
+                      padding: 14px 16px;
+                    "
+                  >
+                    <span
+                      data-el="brand"
+                      style="color: #fff; font-weight: 800; font-size: 15px"
+                      >ZS One</span
+                    >
+                    <span style="display: flex; align-items: center; gap: 12px">
+                      <span
+                        data-el="link"
+                        style="
+                          color: rgba(255, 255, 255, 0.82);
+                          font-size: 13px;
+                        "
+                        >Games</span
+                      >
+                      <span
+                        data-el="button"
+                        style="
+                          background: var(--accent);
+                          color: #fff;
+                          font-size: 13px;
+                          font-weight: 600;
+                          padding: 7px 14px;
+                          border-radius: 7px;
+                        "
+                        >Play Now</span
+                      >
+                    </span>
+                  </div>
+                  <div
+                    data-el="body"
+                    style="
+                      padding: 22px 16px;
+                      color: var(--muted);
+                      font-family: var(--mono);
+                      font-size: 12px;
+                    "
+                  >
+                    page content…
+                  </div>
+                </div>
+              </div>
+              <div><div class="codelist" id="dv-codelist"></div></div>
+            </div>
+            <div class="pg-foot">
+              <span class="pg-out" id="dv-note"
+                >Hover a line of code, or a part of the page.</span
+              >
+            </div>
+          </div>
+
+          <div class="callout">
+            <b>Do not edit the real site.</b> Changes you type in DevTools are
+            temporary — they vanish on refresh. It is a lens for reading, not
+            your editor.
+          </div>
+        </section>
+
+        <!-- ===================== s02 ELEMENTS ===================== -->
+        <section class="section" id="s02" data-nav="Elements">
+          <span class="part-badge">Part 02</span>
+          <h3>The elements a navbar is made of</h3>
+          <p>
+            A navbar uses only a few tags: <code>&lt;nav&gt;</code> wraps it,
+            <code>&lt;ul&gt;</code> and <code>&lt;li&gt;</code> hold the list,
+            <code>&lt;a&gt;</code> is a link that goes somewhere, and
+            <code>&lt;button&gt;</code> does something. The trap is
+            <b>link vs. button</b>: use <code>&lt;a&gt;</code> to navigate,
+            <code>&lt;button&gt;</code> to trigger an action. Test yourself.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Name the element</span>
+            </div>
+            <div class="pg-body">
+              <div class="quiz-el" id="tq-el"></div>
+              <div class="quiz-opts" id="tq-opts"></div>
+              <div class="quiz-feedback" id="tq-feedback"></div>
+            </div>
+            <div class="pg-foot">
+              <span class="score" id="tq-score">Score 0 / 0</span>
+              <button class="btn ghost" id="tq-next">Next element</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== s03 BOX MODEL ===================== -->
+        <section class="section" id="s03" data-nav="Box model">
+          <span class="part-badge">Part 03</span>
+          <h3>The box model — spacing without guessing</h3>
+          <p>
+            The brief asks you to "change one spacing value" and "add a border,"
+            but spacing is not one thing. Every element is four nested layers:
+            <b>content</b>, then <code>padding</code> (space inside, around the
+            content), then <code>border</code>, then <code>margin</code> (space
+            outside, between elements). Drag the sliders and watch the layers.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Box model layers</span>
+            </div>
+            <div class="pg-body twocol">
+              <div>
+                <div class="ctrl">
+                  <label>Content width</label
+                  ><input
+                    type="range"
+                    id="bm-w"
+                    min="60"
+                    max="180"
+                    value="120"
+                  /><span class="val" id="bm-w-v">120px</span>
+                </div>
+                <div class="ctrl">
+                  <label>Padding</label
+                  ><input
+                    type="range"
+                    id="bm-p"
+                    min="0"
+                    max="32"
+                    value="12"
+                  /><span class="val" id="bm-p-v">12px</span>
+                </div>
+                <div class="ctrl">
+                  <label>Border</label
+                  ><input
+                    type="range"
+                    id="bm-b"
+                    min="0"
+                    max="12"
+                    value="3"
+                  /><span class="val" id="bm-b-v">3px</span>
+                </div>
+                <div class="ctrl">
+                  <label>Margin</label
+                  ><input
+                    type="range"
+                    id="bm-m"
+                    min="0"
+                    max="32"
+                    value="10"
+                  /><span class="val" id="bm-m-v">10px</span>
+                </div>
+                <pre class="code" id="bm-out" style="margin-top: 14px"></pre>
+              </div>
+              <div>
+                <p
+                  style="margin: 0 0 8px; font-size: 13px; color: var(--muted)"
+                >
+                  Nested layers
+                </p>
+                <div class="bm-wrap">
+                  <div id="bm-margin" style="background: #fbe6d8">
+                    <div
+                      id="bm-border"
+                      style="
+                        border-style: solid;
+                        border-color: var(--accent-deep);
+                        background: #e3f0e7;
+                      "
+                    >
+                      <div
+                        id="bm-content"
+                        style="
+                          height: 46px;
+                          background: #dce8f5;
+                          display: grid;
+                          place-items: center;
+                          font-family: var(--mono);
+                          font-size: 12px;
+                          color: #16273d;
+                        "
+                      >
+                        content
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <p
+                  class="pg-out"
+                  id="bm-total"
+                  style="margin-top: 12px; font-size: 13px"
+                ></p>
+              </div>
+            </div>
+            <div class="pg-foot">
+              <span class="pg-out"
+                >Orange = margin · navy line = border · green = padding · blue =
+                content.</span
+              >
+            </div>
+          </div>
+
+          <div class="callout">
+            <b>Padding vs. margin.</b> Padding pushes the border away from the
+            content (bigger box); margin pushes other elements away (more gap).
+            Picking the wrong one is the most common beginner mistake.
+          </div>
+        </section>
+
+        <!-- ===================== s04 FLEXBOX ===================== -->
+        <section class="section" id="s04" data-nav="Flexbox">
+          <span class="part-badge">Part 04</span>
+          <h3>Flexbox — how the row is actually made</h3>
+          <p>
+            This is the single most important thing the brief skips. A navbar is
+            a row, and that row is built with <b>flexbox</b>. Set
+            <code>display:flex</code> on the container and its children sit in a
+            line. Then <code>justify-content</code> decides how they spread
+            along the row, and <code>gap</code> sets the space between them.
+            Change them and watch.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · justify-content and gap</span>
+            </div>
+            <div class="pg-body twocol">
+              <div>
+                <p
+                  style="margin: 0 0 6px; font-size: 13px; color: var(--muted)"
+                >
+                  justify-content
+                </p>
+                <div class="btnrow" style="margin-bottom: 14px">
+                  <button class="btn ghost on" data-jc="flex-start">
+                    start
+                  </button>
+                  <button class="btn ghost" data-jc="center">center</button>
+                  <button class="btn ghost" data-jc="space-between">
+                    space-between
+                  </button>
+                  <button class="btn ghost" data-jc="flex-end">end</button>
+                </div>
+                <div class="ctrl">
+                  <label>gap</label
+                  ><input
+                    type="range"
+                    id="fx-gap"
+                    min="0"
+                    max="40"
+                    value="12"
+                  /><span class="val" id="fx-gap-v">12px</span>
+                </div>
+                <pre class="code" id="fx-out" style="margin-top: 12px"></pre>
+              </div>
+              <div>
+                <p
+                  style="margin: 0 0 8px; font-size: 13px; color: var(--muted)"
+                >
+                  Preview
+                </p>
+                <div
+                  id="fx-box"
+                  style="
+                    display: flex;
+                    justify-content: flex-start;
+                    gap: 12px;
+                    align-items: center;
+                    border: 1px dashed var(--line-2);
+                    border-radius: 8px;
+                    padding: 12px;
+                    background: #fff;
+                    min-height: 64px;
+                  "
+                >
+                  <span style="font-weight: 800; color: var(--ink)"
+                    >ZS One</span
+                  >
+                  <span style="color: var(--accent-deep); font-size: 14px"
+                    >Games</span
+                  >
+                  <span style="color: var(--accent-deep); font-size: 14px"
+                    >Studio</span
+                  >
+                </div>
+              </div>
+            </div>
+            <div class="pg-foot">
+              <span class="pg-out"
+                ><b>space-between</b> is what pins the brand left and the links
+                right — the classic navbar split.</span
+              >
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== s05 SELECTORS ===================== -->
+        <section class="section" id="s05" data-nav="Selectors">
+          <span class="part-badge">Part 05</span>
+          <h3>Selectors — how CSS finds the thing to style</h3>
+          <p>
+            Before you can style a navbar you have to <i>target</i> its parts. A
+            selector is the address: <code>a</code> hits every link,
+            <code>.cta</code> hits only elements with <code>class="cta"</code>,
+            and <code>nav a</code> hits links <i>inside</i> a nav. Pick one and
+            see what lights up.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Selector matcher</span>
+            </div>
+            <div class="pg-body twocol">
+              <div>
+                <div class="btnrow" style="margin-bottom: 14px">
+                  <button class="btn ghost on" data-sel="a">a</button>
+                  <button class="btn ghost" data-sel=".cta">.cta</button>
+                  <button class="btn ghost" data-sel="nav a">nav a</button>
+                  <button class="btn ghost" data-sel="button">button</button>
+                </div>
+                <pre class="code" id="sel-out"></pre>
+              </div>
+              <div>
+                <p
+                  style="margin: 0 0 8px; font-size: 13px; color: var(--muted)"
+                >
+                  What it selects
+                </p>
+                <div
+                  id="sel-stage"
+                  style="
+                    border: 1px solid var(--line);
+                    border-radius: 10px;
+                    padding: 16px;
+                    background: #fff;
+                  "
+                >
+                  <div
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 12px;
+                      margin-bottom: 12px;
+                    "
+                  >
+                    <span style="font-weight: 800; color: var(--ink)"
+                      >ZS One</span
+                    >
+                    <a
+                      href="#"
+                      style="color: var(--accent-deep); font-size: 14px"
+                      >Games</a
+                    >
+                    <a
+                      href="#"
+                      style="color: var(--accent-deep); font-size: 14px"
+                      >Studio</a
+                    >
+                    <a
+                      href="#"
+                      class="cta"
+                      style="
+                        background: var(--accent);
+                        color: #fff;
+                        font-size: 13px;
+                        padding: 6px 12px;
+                        border-radius: 6px;
+                      "
+                      >Play Now</a
+                    >
+                  </div>
+                  <button
+                    style="
+                      border: 1px solid var(--line-2);
+                      background: #fff;
+                      border-radius: 7px;
+                      padding: 7px 12px;
+                      font-size: 13px;
+                    "
+                  >
+                    A button outside the nav
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="pg-foot">
+              <span class="pg-out" id="sel-note"></span>
+            </div>
+          </div>
+
+          <div class="callout">
+            <b>Why it matters for the CTA.</b> The "Play Now" button looks
+            different only because a more specific selector (<code>.cta</code>)
+            targets it and overrides the plain link style.
+          </div>
+        </section>
+
+        <!-- ===================== s06 COLOR ===================== -->
+        <section class="section" id="s06" data-nav="Color & contrast">
+          <span class="part-badge">Part 06</span>
+          <h3>Colour that stays readable</h3>
+          <p>
+            The brief hands you colours but never mentions <b>contrast</b> — and
+            text that does not contrast with its background is unreadable.
+            Colours are written as hex (<code>#1D3E60</code>) or
+            <code>rgba(13,107,171,1)</code>. Pick a background and a text colour
+            and watch whether the pair passes the readability bar.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Contrast checker</span>
+            </div>
+            <div class="pg-body twocol">
+              <div>
+                <div class="ctrl">
+                  <label>Background</label>
+                  <div class="swatches" id="ct-bg"></div>
+                </div>
+                <div class="ctrl">
+                  <label>Text</label>
+                  <div class="swatches" id="ct-fg"></div>
+                </div>
+                <pre class="code" id="ct-out" style="margin-top: 14px"></pre>
+              </div>
+              <div>
+                <p
+                  style="margin: 0 0 8px; font-size: 13px; color: var(--muted)"
+                >
+                  Preview
+                </p>
+                <div
+                  id="ct-sample"
+                  style="
+                    border-radius: 10px;
+                    padding: 20px;
+                    font-weight: 600;
+                    font-size: 16px;
+                  "
+                >
+                  ZS One — Games · Studio · News
+                </div>
+                <p
+                  id="ct-verdict"
+                  style="
+                    margin-top: 12px;
+                    font-family: var(--mono);
+                    font-size: 13px;
+                  "
+                ></p>
+              </div>
+            </div>
+            <div class="pg-foot">
+              <span class="pg-out"
+                >The readability bar (WCAG AA) is a contrast ratio of
+                <b>4.5:1</b> for normal text.</span
+              >
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== s07 HOVER ===================== -->
+        <section class="section" id="s07" data-nav="Hover & transition">
+          <span class="part-badge">Part 07</span>
+          <h3>How <code>:hover</code> and transitions work</h3>
+          <p>
+            The bonus asks for a hover effect but never explains the mechanism.
+            <code>:hover</code> is a <b>pseudo-class</b> — a second set of
+            styles the browser applies only while the pointer is over the
+            element. Add <code>transition</code> and the change eases in instead
+            of snapping. Pick an effect, set the speed, and hover the link.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Hover state builder</span>
+            </div>
+            <div class="pg-body twocol">
+              <div>
+                <p
+                  style="margin: 0 0 6px; font-size: 13px; color: var(--muted)"
+                >
+                  Effect on hover
+                </p>
+                <div class="btnrow" style="margin-bottom: 14px">
+                  <button class="btn ghost on" data-hv="color">Colour</button>
+                  <button class="btn ghost" data-hv="underline">
+                    Underline
+                  </button>
+                  <button class="btn ghost" data-hv="bg">Background</button>
+                </div>
+                <div class="ctrl">
+                  <label>Transition</label
+                  ><input
+                    type="range"
+                    id="hv-dur"
+                    min="0"
+                    max="500"
+                    value="180"
+                    step="20"
+                  /><span class="val" id="hv-dur-v">180ms</span>
+                </div>
+                <div
+                  style="display: grid; place-items: center; padding: 18px 0"
+                >
+                  <a href="#" class="nl-demo fx-color" id="hv-demo">Games</a>
+                </div>
+              </div>
+              <div>
+                <p
+                  style="margin: 0 0 8px; font-size: 13px; color: var(--muted)"
+                >
+                  The CSS behind it
+                </p>
+                <pre class="code" id="hv-code"></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout">
+            <b>Why bother?</b> A hover response is feedback — it tells the user
+            the link is live and that they are aimed at the right one. Set the
+            transition to 0ms above to feel how abrupt "no transition" is.
+          </div>
+        </section>
+
+        <!-- ===================== s08 READING AI CODE ===================== -->
+        <section class="section" id="s08" data-nav="Reading AI code">
+          <span class="part-badge">Part 08</span>
+          <h3>Reading code you didn't write</h3>
+          <p>
+            The brief tells you to accept, reject, or simplify the AI's answer —
+            but not how to judge it. You cannot accept or reject code you cannot
+            read. Run every AI snippet through four questions:
+          </p>
+          <ul>
+            <li>
+              <b>Does it nest correctly?</b> Every opening tag has a matching
+              close, indented sensibly.
+            </li>
+            <li>
+              <b>Is anything unused?</b> Wrapper <code>&lt;div&gt;</code>s,
+              classes, or features you never asked for.
+            </li>
+            <li>
+              <b>Do the selectors hit real elements?</b> A CSS rule for
+              <code>.navbar__cta</code> is dead if no element has that class.
+            </li>
+            <li>
+              <b>Is it the right element?</b> A link (<code>&lt;a&gt;</code>)
+              for navigation, a <code>&lt;button&gt;</code> for an action.
+            </li>
+          </ul>
+
+          <pre class="code"><span class="c">// the same navbar, annotated</span>
+<span class="keep">&lt;nav class="navbar"&gt;</span>            <span class="keep">// keep — semantic, one clear wrapper</span>
+  <span class="cut">&lt;div class="inner-wrap"&gt;</span>      <span class="cut">// cut  — an extra box doing nothing</span>
+    <span class="keep">&lt;a class="brand"&gt;ZS One&lt;/a&gt;</span>   <span class="keep">// keep</span>
+    <span class="cut">&lt;input placeholder="Search"&gt;</span> <span class="cut">// cut  — never in the plan</span>
+    <span class="keep">&lt;a class="cta"&gt;Play Now&lt;/a&gt;</span>    <span class="keep">// keep — the one action</span>
+  <span class="cut">&lt;/div&gt;</span>
+<span class="keep">&lt;/nav&gt;</span></pre>
+
+          <div class="callout">
+            <b>Simplify by default.</b> If you cannot explain what a line does,
+            do not keep it. Fewer lines you understand beat more lines you
+            don't.
+          </div>
+        </section>
+
+        <!-- ===================== s09 WRAP UP ===================== -->
+        <section class="section" id="s09" data-nav="Wrap up">
+          <span class="part-badge">Part 09</span>
+          <h3>The hidden checklist</h3>
+          <p>
+            None of these appear in the brief, yet you need every one to finish
+            it. If you can do the things below, the assignment is now just
+            typing.
+          </p>
+
+          <div class="chiprow" style="margin-bottom: 8px">
+            <span class="chip">Open &amp; read DevTools</span>
+            <span class="chip">nav / ul / li / a / button</span>
+            <span class="chip">link vs. button</span>
+          </div>
+          <div class="chiprow" style="margin-bottom: 8px">
+            <span class="chip">padding vs. margin</span>
+            <span class="chip">display: flex</span>
+            <span class="chip">justify-content + gap</span>
+          </div>
+          <div class="chiprow">
+            <span class="chip">class vs. element selector</span>
+            <span class="chip">colour contrast</span>
+            <span class="chip">:hover + transition</span>
+          </div>
+
+          <footer>
+            ZS One · Navbar prerequisites · Built on the Learning-Site template.
+            Palette: red #D23B36, navy #1D3E60.
+          </footer>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      /* ---------------- Framework engine ---------------- */
+      (function () {
+        const groups = [
+          ["Start here", ["s00"]],
+          ["The tools", ["s01"]],
+          ["The language", ["s02", "s03", "s04", "s05"]],
+          ["Making choices", ["s06", "s07", "s08"]],
+          ["Wrap up", ["s09"]],
+        ];
+        const nav = document.getElementById("nav");
+        let html = "";
+        groups.forEach(([title, ids]) => {
+          html += `<div class="navgroup">${title}</div>`;
+          ids.forEach((id) => {
+            const sec = document.getElementById(id);
+            const n = id.replace("s", "");
+            const label = sec.getAttribute("data-nav");
+            html += `<div class="navlink" data-target="${id}"><span class="n">${n}</span>${label}</div>`;
+          });
+        });
+        nav.innerHTML = html;
+
+        const links = [...nav.querySelectorAll(".navlink")];
+        const sidebar = document.getElementById("sidebar");
+        const scrim = document.getElementById("scrim");
+        function closeMenu() {
+          sidebar.classList.remove("open");
+          scrim.classList.remove("show");
+        }
+        links.forEach((l) =>
+          l.addEventListener("click", () => {
+            document
+              .getElementById(l.dataset.target)
+              .scrollIntoView({ behavior: "smooth", block: "start" });
+            closeMenu();
+          }),
+        );
+        document.getElementById("menu").addEventListener("click", () => {
+          sidebar.classList.toggle("open");
+          scrim.classList.toggle("show");
+        });
+        scrim.addEventListener("click", closeMenu);
+        const byId = {};
+        links.forEach((l) => (byId[l.dataset.target] = l));
+        const obs = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((e) => {
+              if (e.isIntersecting) {
+                links.forEach((x) => x.classList.remove("active"));
+                if (byId[e.target.id])
+                  byId[e.target.id].classList.add("active");
+              }
+            });
+          },
+          { rootMargin: "-45% 0px -50% 0px", threshold: 0 },
+        );
+        document.querySelectorAll(".section").forEach((s) => obs.observe(s));
+      })();
+
+      /* ---------------- s01: DevTools inspector ---------------- */
+      (function () {
+        const mini = document.getElementById("dv-mini");
+        const badge = document.getElementById("dv-badge");
+        const list = document.getElementById("dv-codelist");
+        const note = document.getElementById("dv-note");
+        const map = [
+          ["nav", '&lt;nav class="navbar"&gt;', "nav.navbar"],
+          ["brand", '  &lt;a class="brand"&gt;ZS One&lt;/a&gt;', "a.brand"],
+          ["link", "  &lt;a&gt;Games&lt;/a&gt;", "a"],
+          [
+            "button",
+            '  &lt;button class="cta"&gt;Play Now&lt;/button&gt;',
+            "button.cta",
+          ],
+          ["body", "&lt;main&gt; page content &lt;/main&gt;", "main"],
+        ];
+        const sel = {};
+        map.forEach(([el, , s]) => (sel[el] = s));
+        list.innerHTML = map
+          .map(
+            ([el, code]) =>
+              `<div class="codeline" data-el="${el}"><span class="tag">${code}</span></div>`,
+          )
+          .join("");
+        function clear() {
+          mini
+            .querySelectorAll(".inspect-hl")
+            .forEach((n) => n.classList.remove("inspect-hl"));
+          list
+            .querySelectorAll(".lit")
+            .forEach((n) => n.classList.remove("lit"));
+          badge.style.opacity = "0";
+          note.textContent = "Hover a line of code, or a part of the page.";
+        }
+        function highlight(el) {
+          clear();
+          const node = mini.querySelector(`[data-el="${el}"]`);
+          const line = list.querySelector(`.codeline[data-el="${el}"]`);
+          if (node) {
+            node.classList.add("inspect-hl");
+            const r = node.getBoundingClientRect(),
+              mr = mini.getBoundingClientRect();
+            badge.textContent = sel[el];
+            badge.style.left = Math.max(2, r.left - mr.left) + "px";
+            let top = r.top - mr.top - 18;
+            if (top < 2) top = r.top - mr.top + 4;
+            badge.style.top = top + "px";
+            badge.style.opacity = "1";
+          }
+          if (line) line.classList.add("lit");
+          note.innerHTML =
+            "In DevTools this row is selected as <b>" +
+            sel[el] +
+            "</b> — the Styles panel would list its CSS.";
+        }
+        list.querySelectorAll(".codeline").forEach((line) => {
+          line.addEventListener("mouseenter", () => highlight(line.dataset.el));
+          line.addEventListener("mouseleave", clear);
+        });
+        mini.querySelectorAll("[data-el]").forEach((node) => {
+          node.addEventListener("mouseenter", (e) => {
+            e.stopPropagation();
+            highlight(node.dataset.el);
+          });
+          node.addEventListener("mouseleave", clear);
+        });
+      })();
+
+      /* ---------------- s02: Element quiz ---------------- */
+      (function () {
+        const elBox = document.getElementById("tq-el");
+        const opts = document.getElementById("tq-opts");
+        const fb = document.getElementById("tq-feedback");
+        const scoreEl = document.getElementById("tq-score");
+        const next = document.getElementById("tq-next");
+        let score = 0,
+          asked = 0,
+          answered = false,
+          current;
+        const items = [
+          {
+            render:
+              '<a href="#" style="color:#1D3E60;font-weight:600">Games</a>',
+            answer: "a",
+            why: "Coloured, clickable text that takes you to another page is a link.",
+          },
+          {
+            render:
+              '<button style="background:#1D3E60;color:#fff;border:none;border-radius:7px;padding:9px 16px;font-weight:600">Play Now</button>',
+            answer: "button",
+            why: "A control that performs an action (not navigation) is a button.",
+          },
+          {
+            render:
+              '<div style="display:flex;gap:10px;color:#2B3644;font-size:14px"><span>Games</span><span>Studio</span><span>News</span></div>',
+            answer: "ul",
+            why: "A repeated set of links is marked up as a list — ul with li items.",
+          },
+          {
+            render:
+              '<div style="font-weight:800;font-size:22px;color:#16273D">ZS One</div>',
+            answer: "nav",
+            why: "The whole bar that holds the brand and links is wrapped in a nav.",
+          },
+          {
+            render:
+              '<div style="font-weight:800;font-size:26px;color:#16273D">Read the docs</div>',
+            answer: "h1",
+            why: "Large, bold, top-of-page text is a heading.",
+          },
+        ];
+        const choices = ["a", "button", "ul", "nav", "h1"];
+        function load() {
+          answered = false;
+          fb.textContent = "";
+          current = items[Math.floor(Math.random() * items.length)];
+          elBox.innerHTML = current.render;
+          opts.innerHTML = "";
+          choices.forEach((c) => {
+            const b = document.createElement("button");
+            b.className = "opt";
+            b.textContent = "<" + c + ">";
+            b.addEventListener("click", () => pick(b, c));
+            opts.appendChild(b);
+          });
+        }
+        function pick(btn, choice) {
+          if (answered) return;
+          answered = true;
+          asked++;
+          if (choice === current.answer) {
+            score++;
+            btn.classList.add("right");
+            fb.textContent = "Correct. " + current.why;
+          } else {
+            btn.classList.add("wrong");
+            [...opts.children]
+              .find((o) => o.textContent === "<" + current.answer + ">")
+              .classList.add("right");
+            fb.textContent = "Not quite. " + current.why;
+          }
+          scoreEl.textContent = `Score ${score} / ${asked}`;
+        }
+        next.addEventListener("click", load);
+        load();
+      })();
+
+      /* ---------------- s03: Box model ---------------- */
+      (function () {
+        const w = document.getElementById("bm-w"),
+          p = document.getElementById("bm-p"),
+          b = document.getElementById("bm-b"),
+          m = document.getElementById("bm-m");
+        const marginEl = document.getElementById("bm-margin"),
+          borderEl = document.getElementById("bm-border"),
+          contentEl = document.getElementById("bm-content");
+        const out = document.getElementById("bm-out"),
+          total = document.getElementById("bm-total");
+        function apply() {
+          const W = +w.value,
+            P = +p.value,
+            B = +b.value,
+            M = +m.value;
+          marginEl.style.padding = M + "px";
+          borderEl.style.borderWidth = B + "px";
+          borderEl.style.padding = P + "px";
+          contentEl.style.width = W + "px";
+          document.getElementById("bm-w-v").textContent = W + "px";
+          document.getElementById("bm-p-v").textContent = P + "px";
+          document.getElementById("bm-b-v").textContent = B + "px";
+          document.getElementById("bm-m-v").textContent = M + "px";
+          out.textContent = `.box {\n  width: ${W}px;\n  padding: ${P}px;\n  border: ${B}px solid #1D3E60;\n  margin: ${M}px;\n}`;
+          const totalW = W + 2 * P + 2 * B + 2 * M;
+          total.innerHTML =
+            "Total footprint: <b>" +
+            totalW +
+            "px</b> wide  (" +
+            W +
+            " + " +
+            P +
+            "×2 + " +
+            B +
+            "×2 + " +
+            M +
+            "×2).";
+        }
+        [w, p, b, m].forEach((el) => el.addEventListener("input", apply));
+        apply();
+      })();
+
+      /* ---------------- s04: Flexbox ---------------- */
+      (function () {
+        const box = document.getElementById("fx-box");
+        const gap = document.getElementById("fx-gap");
+        const out = document.getElementById("fx-out");
+        const btns = [...document.querySelectorAll("[data-jc]")];
+        let jc = "flex-start";
+        function apply() {
+          box.style.justifyContent = jc;
+          box.style.gap = gap.value + "px";
+          document.getElementById("fx-gap-v").textContent = gap.value + "px";
+          btns.forEach((b) => b.classList.toggle("on", b.dataset.jc === jc));
+          out.textContent = `.navbar {\n  display: flex;\n  justify-content: ${jc};\n  gap: ${gap.value}px;\n}`;
+        }
+        btns.forEach((b) =>
+          b.addEventListener("click", () => {
+            jc = b.dataset.jc;
+            apply();
+          }),
+        );
+        gap.addEventListener("input", apply);
+        apply();
+      })();
+
+      /* ---------------- s05: Selector matcher ---------------- */
+      (function () {
+        const stage = document.getElementById("sel-stage");
+        const out = document.getElementById("sel-out");
+        const note = document.getElementById("sel-note");
+        const btns = [...document.querySelectorAll("[data-sel]")];
+        const explain = {
+          a: "Type selector: every <a> element, wherever it is.",
+          ".cta": 'Class selector: only elements carrying class="cta".',
+          "nav a": "Descendant selector: <a> elements that sit inside a <nav>.",
+          button: "Type selector: every <button> element.",
+        };
+        function apply(selector) {
+          stage
+            .querySelectorAll(".sel-hit")
+            .forEach((n) => n.classList.remove("sel-hit"));
+          let hits = [];
+          try {
+            hits = [...stage.querySelectorAll(selector)];
+          } catch (e) {
+            hits = [];
+          }
+          hits.forEach((n) => n.classList.add("sel-hit"));
+          out.textContent = `${selector} {\n  /* styles apply here */\n}`;
+          note.innerHTML =
+            "<b>" +
+            hits.length +
+            " element" +
+            (hits.length === 1 ? "" : "s") +
+            " matched.</b> " +
+            (explain[selector] || "");
+          btns.forEach((b) =>
+            b.classList.toggle("on", b.dataset.sel === selector),
+          );
+        }
+        btns.forEach((b) =>
+          b.addEventListener("click", () => apply(b.dataset.sel)),
+        );
+        apply("a");
+      })();
+
+      /* ---------------- s06: Contrast checker ---------------- */
+      (function () {
+        const bgWrap = document.getElementById("ct-bg");
+        const fgWrap = document.getElementById("ct-fg");
+        const sample = document.getElementById("ct-sample");
+        const verdict = document.getElementById("ct-verdict");
+        const out = document.getElementById("ct-out");
+        const bgs = ["#1D3E60", "#D23B36", "#16273D", "#FFFFFF", "#F3F4F7"];
+        const fgs = ["#FFFFFF", "#16273D", "#D23B36", "#1D3E60"];
+        let bg = bgs[0],
+          fg = fgs[0];
+        function lum(hex) {
+          const c = hex.replace("#", "");
+          const r = parseInt(c.substr(0, 2), 16) / 255,
+            g = parseInt(c.substr(2, 2), 16) / 255,
+            b = parseInt(c.substr(4, 2), 16) / 255;
+          const f = (x) =>
+            x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+          return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+        }
+        function ratio(a, b) {
+          const L1 = lum(a),
+            L2 = lum(b);
+          const hi = Math.max(L1, L2),
+            lo = Math.min(L1, L2);
+          return (hi + 0.05) / (lo + 0.05);
+        }
+        function build(wrap, list, pick) {
+          list.forEach((c, i) => {
+            const d = document.createElement("div");
+            d.className = "swatch" + (i === 0 ? " sel" : "");
+            d.style.background = c;
+            if (c === "#FFFFFF") d.style.borderColor = "#c9ced6";
+            d.addEventListener("click", () => {
+              pick(c);
+              [...wrap.children].forEach((x) => x.classList.remove("sel"));
+              d.classList.add("sel");
+              apply();
+            });
+            wrap.appendChild(d);
+          });
+        }
+        function apply() {
+          sample.style.background = bg;
+          sample.style.color = fg;
+          const r = ratio(bg, fg);
+          const pass = r >= 4.5;
+          verdict.innerHTML =
+            "Contrast <b>" +
+            r.toFixed(2) +
+            ":1</b> — " +
+            (pass
+              ? '<span style="color:#22603F">passes AA</span>'
+              : '<span style="color:#B5332E">fails AA (hard to read)</span>');
+          out.textContent = `background: ${bg};\ncolor: ${fg};\n/* ratio ${r.toFixed(2)}:1 */`;
+        }
+        build(bgWrap, bgs, (c) => (bg = c));
+        build(fgWrap, fgs, (c) => (fg = c));
+        apply();
+      })();
+
+      /* ---------------- s07: Hover state builder ---------------- */
+      (function () {
+        const demo = document.getElementById("hv-demo");
+        const code = document.getElementById("hv-code");
+        const dur = document.getElementById("hv-dur");
+        const btns = [...document.querySelectorAll("[data-hv]")];
+        let fx = "color";
+        const rules = {
+          color: "  color: #D23B36;",
+          underline: "  border-bottom: 2px solid #D23B36;",
+          bg: "  background: #1D3E60;\n  color: #ffffff;",
+        };
+        function apply() {
+          demo.className = "nl-demo fx-" + fx;
+          demo.style.transitionDuration = dur.value + "ms";
+          document.getElementById("hv-dur-v").textContent = dur.value + "ms";
+          btns.forEach((b) => b.classList.toggle("on", b.dataset.hv === fx));
+          code.textContent = `.link {\n  transition: all ${dur.value}ms ease;\n}\n.link:hover {\n${rules[fx]}\n}`;
+        }
+        btns.forEach((b) =>
+          b.addEventListener("click", () => {
+            fx = b.dataset.hv;
+            apply();
+          }),
+        );
+        dur.addEventListener("input", apply);
+        apply();
+      })();
+    </script>
+  </body>
+</html>
