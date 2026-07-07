@@ -1,0 +1,1723 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Navbar Detective — ZS One</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f6f8fa;
+        --panel: #ffffff;
+        --ink: #16273d;
+        --text: #2b3644;
+        --muted: #79838f;
+        --line: #e4e7eb;
+        --line-2: #d2d7de;
+        --accent: #d23b36; /* red — eyebrows, brand, links */
+        --accent-deep: #1d3e60; /* navy — primary buttons, structural */
+        --tint: #eaf0f7; /* active nav, callout (light steel-blue) */
+        --blue: #215c9c; /* steel-blue labels */
+        --red-deep: #b5332e;
+        --navy-deep: #15324f;
+        --hl: #215c9c; /* inspector highlight (steel blue) */
+        --hl-fill: rgba(33, 92, 156, 0.1);
+        --sans: "Inter", system-ui, -apple-system, sans-serif;
+        --mono: "JetBrains Mono", ui-monospace, monospace;
+        --sb: 280px;
+        --nav-h: 60px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        font-family: var(--sans);
+        color: var(--text);
+        background: var(--bg);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      h1,
+      h2,
+      h3 {
+        color: var(--ink);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.05;
+      }
+
+      /* ---------------- Sidebar ---------------- */
+      .sidebar {
+        position: fixed;
+        top: var(--nav-h);
+        left: 0;
+        bottom: 0;
+        width: var(--sb);
+        background: var(--panel);
+        border-right: 1px solid var(--line);
+        padding: 30px 0;
+        overflow-y: auto;
+        z-index: 60;
+        transition: transform 0.25s ease;
+      }
+      .brand {
+        padding: 0 28px 24px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 22px;
+      }
+      .brand .kicker {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        color: var(--accent);
+        margin: 0 0 12px;
+      }
+      .brand h1 {
+        font-size: 24px;
+        margin: 0 0 8px;
+        letter-spacing: -0.025em;
+      }
+      .brand p {
+        font-size: 13.5px;
+        color: var(--muted);
+        margin: 0;
+        line-height: 1.45;
+      }
+
+      nav {
+        padding: 0 16px;
+      }
+      .navgroup {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        color: var(--muted);
+        padding: 18px 12px 8px;
+        text-transform: uppercase;
+      }
+      .navlink {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 9px 12px;
+        border-radius: 8px;
+        color: var(--text);
+        font-size: 14.5px;
+        font-weight: 500;
+        cursor: pointer;
+        transition:
+          background 0.12s,
+          color 0.12s;
+      }
+      .navlink .n {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
+        min-width: 18px;
+      }
+      .navlink:hover {
+        background: #f1f3f6;
+      }
+      .navlink.active {
+        background: var(--tint);
+        color: var(--accent-deep);
+        font-weight: 600;
+      }
+      .navlink.active .n {
+        color: var(--accent-deep);
+      }
+
+      /* ---------------- Top nav bar ---------------- */
+      .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--nav-h);
+        z-index: 70;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 0 22px;
+        background: var(--accent-deep);
+        border-bottom: 3px solid var(--accent);
+      }
+      .nav-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+      }
+      .nav-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        min-width: 0;
+      }
+      .logo-slot {
+        display: grid;
+        place-items: center;
+        background: #fff;
+        border-radius: 9px;
+        width: 40px;
+        height: 40px;
+        padding: 6px;
+        flex: none;
+      }
+      .logo-img {
+        max-width: 100%;
+        max-height: 100%;
+        display: block;
+      }
+      .nav-title {
+        color: #fff;
+        font-weight: 800;
+        font-size: 17px;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+      }
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .nav-pill {
+        background: var(--accent);
+        color: #fff;
+        font-weight: 600;
+        font-size: 14px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: background 0.15s;
+      }
+      .nav-pill:hover {
+        background: var(--red-deep);
+      }
+      .nav-link {
+        color: rgba(255, 255, 255, 0.72);
+        font-weight: 500;
+        font-size: 14px;
+        text-decoration: none;
+        padding: 8px 10px;
+        transition: color 0.15s;
+      }
+      .nav-link:hover {
+        color: #fff;
+      }
+
+      .menu {
+        display: none;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: transparent;
+        border-radius: 8px;
+        width: 38px;
+        height: 38px;
+        cursor: pointer;
+        place-items: center;
+        padding: 0;
+      }
+      .menu span,
+      .menu span::before,
+      .menu span::after {
+        content: "";
+        display: block;
+        width: 16px;
+        height: 2px;
+        background: #fff;
+        position: relative;
+      }
+      .menu span::before {
+        position: absolute;
+        top: -5px;
+      }
+      .menu span::after {
+        position: absolute;
+        top: 5px;
+      }
+      .scrim {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(12, 19, 32, 0.35);
+        z-index: 55;
+      }
+
+      /* ---------------- Main ---------------- */
+      main {
+        margin-left: var(--sb);
+        padding-top: var(--nav-h);
+      }
+      .col {
+        max-width: 880px;
+        padding: 64px 56px 120px;
+      }
+
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        color: var(--accent);
+        text-transform: uppercase;
+        margin: 0 0 22px;
+      }
+      .hero h2 {
+        font-size: clamp(40px, 6vw, 68px);
+        margin: 0 0 26px;
+        letter-spacing: -0.03em;
+      }
+      .lede {
+        font-size: 19px;
+        color: var(--text);
+        max-width: 60ch;
+        margin: 0 0 14px;
+      }
+
+      .section {
+        padding-top: 64px;
+        margin-top: 48px;
+        border-top: 1px solid var(--line);
+        scroll-margin-top: calc(var(--nav-h) + 14px);
+      }
+      .section:first-of-type {
+        border-top: none;
+        margin-top: 0;
+      }
+      .part-badge {
+        display: inline-flex;
+        align-items: center;
+        font-family: var(--mono);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--blue);
+        border: 1px solid var(--line-2);
+        border-radius: 7px;
+        padding: 5px 12px;
+        margin-bottom: 14px;
+      }
+      .section h3 {
+        font-size: clamp(26px, 3.6vw, 36px);
+        margin: 0 0 18px;
+      }
+      .section p {
+        font-size: 16px;
+        margin: 0 0 16px;
+        max-width: 64ch;
+      }
+      .section p code,
+      .inlinecode {
+        font-family: var(--mono);
+        font-size: 0.86em;
+        background: #eef0f3;
+        color: var(--accent-deep);
+        padding: 2px 6px;
+        border-radius: 5px;
+      }
+
+      /* Callout */
+      .callout {
+        background: var(--tint);
+        border-radius: 12px;
+        padding: 18px 22px;
+        margin: 22px 0;
+        font-size: 15px;
+        color: var(--accent-deep);
+        max-width: 70ch;
+      }
+      .callout b {
+        color: var(--accent-deep);
+      }
+
+      /* ---------------- Playground ---------------- */
+      .pg {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        margin: 26px 0;
+        overflow: hidden;
+      }
+      .pg-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 13px 18px;
+        border-bottom: 1px solid var(--line);
+      }
+      .pg-head .label {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .pg-head .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 99px;
+        background: var(--blue);
+        flex: none;
+      }
+      .pg-body {
+        padding: 20px 18px;
+      }
+      .pg-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding: 14px 18px;
+        border-top: 1px solid var(--line);
+        background: #fafbfc;
+      }
+      .pg-out {
+        font-family: var(--mono);
+        font-size: 14px;
+        color: var(--text);
+      }
+      .pg-out b {
+        color: var(--ink);
+      }
+
+      /* Buttons */
+      .btn {
+        font-family: var(--sans);
+        font-weight: 600;
+        font-size: 14px;
+        background: var(--accent-deep);
+        color: #fff;
+        border: none;
+        border-radius: 9px;
+        padding: 11px 18px;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          transform 0.05s;
+      }
+      .btn:hover {
+        background: var(--navy-deep);
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn.ghost {
+        background: var(--panel);
+        color: var(--ink);
+        border: 1px solid var(--line-2);
+      }
+      .btn.ghost:hover {
+        background: #f1f3f6;
+      }
+      .btn.ghost.on {
+        background: var(--tint);
+        border-color: var(--accent-deep);
+        color: var(--accent-deep);
+      }
+      .btnrow {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      /* Chips (token style) */
+      .chip {
+        font-family: var(--mono);
+        font-size: 14px;
+        color: var(--ink);
+        background: var(--panel);
+        border: 1px solid var(--line-2);
+        border-radius: 9px;
+        padding: 12px 16px;
+        display: inline-flex;
+      }
+      .chiprow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .plus {
+        font-family: var(--mono);
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      /* Code surfaces */
+      .code {
+        font-family: var(--mono);
+        font-size: 13px;
+        line-height: 1.7;
+        background: #f7f8fa;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 14px 16px;
+        color: #27313f;
+        white-space: pre;
+        overflow-x: auto;
+        margin: 0;
+      }
+      .code .tag {
+        color: #1d3e60;
+      }
+      .code .c {
+        color: #94a0ae;
+      }
+      .code .str {
+        color: #1b7f5b;
+      }
+
+      /* Live preview frames */
+      .preview {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #fff;
+        min-height: 120px;
+      }
+      .twocol {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 760px) {
+        .twocol {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      textarea.editor {
+        width: 100%;
+        min-height: 220px;
+        font-family: var(--mono);
+        font-size: 13px;
+        line-height: 1.6;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 14px;
+        resize: vertical;
+        color: #27313f;
+        background: #fbfcfd;
+      }
+      textarea.editor:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px var(--hl-fill);
+      }
+
+      /* Controls */
+      .ctrl {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 10px 0;
+        font-size: 14px;
+      }
+      .ctrl label {
+        min-width: 120px;
+        color: var(--text);
+        font-weight: 500;
+      }
+      input[type="range"] {
+        flex: 1;
+        accent-color: var(--accent-deep);
+      }
+      .swatches {
+        display: flex;
+        gap: 8px;
+      }
+      .swatch {
+        width: 26px;
+        height: 26px;
+        border-radius: 7px;
+        border: 1px solid var(--line-2);
+        cursor: pointer;
+      }
+      .swatch.sel {
+        outline: 2px solid var(--accent-deep);
+        outline-offset: 2px;
+      }
+      .val {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
+        min-width: 46px;
+        text-align: right;
+      }
+
+      /* Inspector simulator */
+      .inspect-wrap {
+        position: relative;
+      }
+      .mini {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        overflow: hidden;
+        background: #fff;
+        position: relative;
+      }
+      .mini * {
+        transition: outline 0.1s;
+      }
+      .mini-btn {
+        background: var(--accent-deep);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 18px;
+        font-family: var(--sans);
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .inspect-hl {
+        outline: 2px solid var(--hl) !important;
+        outline-offset: 1px;
+        background: var(--hl-fill);
+      }
+      .inspect-badge {
+        position: absolute;
+        z-index: 5;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: #fff;
+        background: var(--hl);
+        padding: 2px 7px;
+        border-radius: 5px;
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(2px);
+        transition: opacity 0.1s;
+        white-space: nowrap;
+      }
+
+      footer {
+        margin-top: 64px;
+        padding-top: 24px;
+        border-top: 1px solid var(--line);
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      @media (max-width: 880px) {
+        .sidebar {
+          transform: translateX(-100%);
+        }
+        .sidebar.open {
+          transform: none;
+          box-shadow: 0 0 40px rgba(12, 19, 32, 0.18);
+        }
+        .menu {
+          display: grid;
+        }
+        main {
+          margin-left: 0;
+        }
+        .col {
+          padding: 34px 22px 90px;
+        }
+        .scrim.show {
+          display: block;
+        }
+      }
+      @media (max-width: 520px) {
+        .nav-title {
+          display: none;
+        }
+        .nav-link {
+          display: none;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+          scroll-behavior: auto;
+        }
+      }
+
+      /* ---------------- Bespoke playground styles (topic: navbars) ---------------- */
+      .rl-a {
+        color: var(--accent-deep);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .rolecard {
+        padding: 11px 13px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        margin-bottom: 8px;
+        cursor: default;
+        transition: 0.12s;
+        background: #fff;
+      }
+      .rolecard:hover,
+      .rolecard.lit {
+        background: var(--hl-fill);
+        box-shadow: inset 2px 0 0 var(--hl);
+      }
+      .rolecard .rk {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        color: var(--blue);
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        margin-bottom: 2px;
+      }
+      .rolecard .rd {
+        font-size: 13.5px;
+        color: var(--text);
+        line-height: 1.45;
+      }
+      .nl-demo {
+        font-family: var(--sans);
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--accent-deep);
+        text-decoration: none;
+        padding: 8px 4px;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition: 0.18s;
+      }
+      .nl-demo.fx-color:hover {
+        color: var(--accent);
+      }
+      .nl-demo.fx-underline:hover {
+        border-bottom-color: var(--accent);
+      }
+      .nl-demo.fx-bg:hover {
+        background: var(--accent-deep);
+        color: #fff;
+        border-radius: 8px;
+        padding: 8px 14px;
+        border-bottom-color: transparent;
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <p class="kicker">UI FOUNDATIONS</p>
+        <h1>Navbar Detective</h1>
+        <p>Study real navigation, then build your own — the ZS One way.</p>
+      </div>
+      <nav id="nav"></nav>
+    </aside>
+
+    <div class="scrim" id="scrim"></div>
+
+    <header class="navbar">
+      <div class="nav-left">
+        <button class="menu" id="menu" aria-label="Open navigation">
+          <span></span>
+        </button>
+        <a class="nav-brand" href="#s00">
+          <span class="logo-slot">
+            <img
+              id="site-logo"
+              class="logo-img"
+              src="logo.png"
+              alt="ZS One logo"
+            />
+          </span>
+          <span class="nav-title">ZS One</span>
+        </a>
+      </div>
+      <nav class="nav-links">
+        <a class="nav-pill" href="#s00">Overview</a>
+        <a class="nav-link" href="#s09">Wrap up</a>
+      </nav>
+    </header>
+
+    <main>
+      <div class="col">
+        <!-- ===================== s00 HERO ===================== -->
+        <section class="section hero" id="s00" data-nav="Overview">
+          <p class="eyebrow">Navbar Walkthrough</p>
+          <h2>Read a navbar before you build one.</h2>
+          <p class="lede">
+            A navbar is one of the first things people notice on a page — and
+            one of the easiest things to copy without understanding. It is not
+            just a row of links.
+          </p>
+          <p class="lede">
+            This walkthrough slows the copying down. You inspect real navbars,
+            question what an AI generates, write a design spec, then change the
+            code yourself. Every part has a playground you can touch.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label"
+                >Playground · Restructure a row of links</span
+              >
+            </div>
+            <div class="pg-body">
+              <p style="margin-top: 0">
+                Start with five plain links. Switch on each transformation and
+                watch the very same links turn into a navbar.
+              </p>
+              <div class="btnrow" style="margin-bottom: 16px">
+                <button class="btn ghost" data-rl="brand" id="rl-brand">
+                  Anchor the brand left
+                </button>
+                <button class="btn ghost" data-rl="group" id="rl-group">
+                  Group the links
+                </button>
+                <button class="btn ghost" data-rl="promote" id="rl-promote">
+                  Promote one action
+                </button>
+              </div>
+              <div
+                id="rl-bar"
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  background: #fff;
+                  border: 1px solid var(--line);
+                  border-radius: 8px;
+                  padding: 12px 16px;
+                "
+              >
+                <span
+                  id="rl-brandmk"
+                  style="font-weight: 800; color: var(--ink); font-size: 16px"
+                  >ZS One</span
+                >
+                <span
+                  id="rl-links"
+                  style="display: flex; align-items: center; gap: 10px"
+                >
+                  <a href="#" class="rl-a">Games</a>
+                  <a href="#" class="rl-a">Studio</a>
+                  <a href="#" class="rl-a">News</a>
+                  <a href="#" class="rl-a" id="rl-cta">Play Now</a>
+                </span>
+              </div>
+            </div>
+            <div class="pg-foot"><span class="pg-out" id="rl-note"></span></div>
+          </div>
+
+          <div class="callout">
+            <b>How to use this page.</b> Read top to bottom and touch every
+            playground — toggle, drag, hover, type. The goal is to see the
+            pattern, not memorize the code.
+          </div>
+        </section>
+
+        <!-- ===================== s01 NAVBAR DETECTIVE ===================== -->
+        <section class="section" id="s01" data-nav="Navbar detective">
+          <span class="part-badge">Part 01</span>
+          <h3>Navbar detective</h3>
+          <p>
+            Open DevTools on a site you already use and inspect <i>only</i> the
+            navbar. Every visible piece is doing a job. Hover a part of the
+            navbar below — or a role card — to see what each piece is for.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Inspect the parts</span>
+            </div>
+            <div class="pg-body twocol">
+              <div class="inspect-wrap">
+                <div class="mini" id="pi-mini">
+                  <div class="inspect-badge" id="pi-badge"></div>
+                  <div
+                    style="
+                      display: flex;
+                      align-items: center;
+                      justify-content: space-between;
+                      background: var(--accent-deep);
+                      padding: 14px 16px;
+                    "
+                  >
+                    <span
+                      data-role="brand"
+                      style="color: #fff; font-weight: 800; font-size: 15px"
+                      >ZS One</span
+                    >
+                    <span
+                      data-role="links"
+                      style="display: flex; align-items: center; gap: 14px"
+                    >
+                      <span
+                        data-role="link"
+                        style="
+                          color: rgba(255, 255, 255, 0.82);
+                          font-size: 13px;
+                        "
+                        >Games</span
+                      >
+                      <span
+                        style="
+                          color: rgba(255, 255, 255, 0.82);
+                          font-size: 13px;
+                        "
+                        >Studio</span
+                      >
+                      <span
+                        data-role="action"
+                        style="
+                          background: var(--accent);
+                          color: #fff;
+                          font-size: 13px;
+                          font-weight: 600;
+                          padding: 7px 14px;
+                          border-radius: 7px;
+                        "
+                        >Play Now</span
+                      >
+                    </span>
+                  </div>
+                  <div
+                    style="
+                      padding: 22px 16px;
+                      color: var(--muted);
+                      font-family: var(--mono);
+                      font-size: 12px;
+                    "
+                  >
+                    page content…
+                  </div>
+                </div>
+              </div>
+              <div id="pi-cards"></div>
+            </div>
+            <div class="pg-foot">
+              <span class="pg-out" id="pi-note"
+                >Hover any part of the navbar, or a card.</span
+              >
+            </div>
+          </div>
+
+          <div class="callout">
+            <b>What to look for.</b> How the bar is separated from the page, how
+            links are grouped, and what makes one action look more important
+            than the rest.
+          </div>
+        </section>
+
+        <!-- ===================== s02 ANATOMY ===================== -->
+        <section class="section" id="s02" data-nav="Anatomy">
+          <span class="part-badge">Part 02</span>
+          <h3>Anatomy of a navbar</h3>
+          <p>
+            Stripped down, almost every navbar is the same three things: a
+            <b>brand</b>, a <b>list of links</b>, and <b>one action</b>. The
+            link list is just that — a list. Add or remove items and the
+            structure holds. Drag the slider and watch the markup keep its
+            shape.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · The links are a list</span>
+            </div>
+            <div class="pg-body twocol">
+              <div>
+                <div class="ctrl">
+                  <label>Number of links</label
+                  ><input
+                    type="range"
+                    id="an-count"
+                    min="2"
+                    max="6"
+                    value="4"
+                  /><span class="val" id="an-count-v">4</span>
+                </div>
+                <div
+                  id="an-bar"
+                  style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    background: var(--accent-deep);
+                    border-bottom: 3px solid var(--accent);
+                    border-radius: 8px;
+                    padding: 12px 14px;
+                    margin-top: 10px;
+                  "
+                >
+                  <span style="color: #fff; font-weight: 800; font-size: 15px"
+                    >ZS One</span
+                  >
+                  <span
+                    id="an-links"
+                    style="display: flex; align-items: center; gap: 14px"
+                  ></span>
+                </div>
+              </div>
+              <div>
+                <p
+                  style="margin: 0 0 8px; font-size: 13px; color: var(--muted)"
+                >
+                  The HTML it maps to
+                </p>
+                <pre class="code" id="an-code"></pre>
+              </div>
+            </div>
+            <div class="pg-foot">
+              <span class="pg-out"
+                >Every link is one <b>&lt;li&gt;</b>. The brand and the action
+                sit outside the list.</span
+              >
+            </div>
+          </div>
+
+          <div class="callout">
+            <b>Structure first.</b> Get the HTML right — a brand, a
+            <code>&lt;ul&gt;</code> of links, one button — before you touch a
+            single color.
+          </div>
+        </section>
+
+        <!-- ===================== s03 PLAN FIRST ===================== -->
+        <section class="section" id="s03" data-nav="Plan first">
+          <span class="part-badge">Part 03</span>
+          <h3>Plan before you prompt</h3>
+          <p>
+            Decide everything before you ask an AI for anything. Pick a context,
+            a brand, three to five links, the single most important link, and
+            whether you need a button. Sketch it as boxes first.
+          </p>
+
+          <div class="chiprow" style="margin-bottom: 10px">
+            <span class="chip">Context — game studio</span>
+            <span class="chip">Brand — ZS One</span>
+            <span class="chip">Most important — Play Now</span>
+          </div>
+          <div class="chiprow" style="margin-bottom: 18px">
+            <span class="chip">Games</span><span class="plus">+</span>
+            <span class="chip">Studio</span><span class="plus">+</span>
+            <span class="chip">News</span><span class="plus">+</span>
+            <span class="chip">Support</span>
+          </div>
+
+          <pre
+            class="code"
+          ><span class="c">// paper sketch — boxes before code</span>
+[ logo  ZS One ]        Games   Studio   News   Support      [ Play Now ]
+brand, far left               grouped links                one action, right</pre>
+
+          <p style="margin-top: 22px">
+            Only after the plan exists do you write the prompt:
+          </p>
+          <pre class="code">
+Create simple HTML for a navbar for a game studio.
+The brand name is ZS One. The links are Games, Studio, News, Support.
+The most important link is Play Now. Keep the code beginner-friendly
+and explain the structure.</pre
+          >
+
+          <div class="callout">
+            <b>Plan beats prompt.</b> When you already know the answer you want,
+            you can tell when the AI hands you something worse.
+          </div>
+        </section>
+
+        <!-- ===================== s04 PROMPT & COMPARE ===================== -->
+        <section class="section" id="s04" data-nav="Prompt & compare">
+          <span class="part-badge">Part 04</span>
+          <h3>Compare what the AI gives you</h3>
+          <p>
+            Ask for the navbar, then hold its answer against your plan and real
+            sites. Toggle between what the AI produced and what you chose to
+            keep.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · AI version vs. yours</span>
+            </div>
+            <div class="pg-body">
+              <div class="btnrow" style="margin-bottom: 14px">
+                <button class="btn ghost on" id="cmp-ai">
+                  What the AI gave
+                </button>
+                <button class="btn ghost" id="cmp-mine">What I kept</button>
+              </div>
+              <iframe
+                class="preview"
+                id="cmp-frame"
+                title="AI navbar versus edited navbar"
+                sandbox
+              ></iframe>
+            </div>
+            <div class="pg-foot">
+              <span class="pg-out" id="cmp-note"></span>
+            </div>
+          </div>
+
+          <div class="callout">
+            <b>Accept:</b> the overall shape — brand left, links grouped, one
+            action set apart. <b>Reject or simplify:</b> the search box and
+            hamburger you never asked for, the extra wrapper divs, and the
+            generic gray — swapped for the ZS One brand.
+          </div>
+        </section>
+
+        <!-- ===================== s05 DESIGN SPEC ===================== -->
+        <section class="section" id="s05" data-nav="Design spec">
+          <span class="part-badge">Part 05</span>
+          <h3>Write a design spec</h3>
+          <p>
+            Before styling, write the decisions down: background, text color,
+            font, link spacing, border or shadow, padding, and the overall feel.
+            A spec keeps the AI — and you — honest.
+          </p>
+
+          <pre
+            class="code"
+          ><span class="c">// design spec — ZS One navbar</span>
+background     : #1D3E60   (deep navy)
+text color     : #FFFFFF on the bar
+font           : Inter — clean and highly readable
+link spacing   : 16-24px between links
+border         : 3px solid #D23B36 along the bottom
+padding        : 12px top / bottom, 18px on the sides
+overall feel   : clean, bold, confident</pre>
+
+          <div class="callout">
+            <b>Feel drives the numbers.</b> "Confident game studio" is why the
+            bar is a solid navy with a sharp red edge — not a timid gray line.
+          </div>
+        </section>
+
+        <!-- ===================== s06 FIRST PAINT ===================== -->
+        <section class="section" id="s06" data-nav="First paint">
+          <span class="part-badge">Part 06</span>
+          <h3>First paint</h3>
+          <p>
+            Now turn the spec into CSS. Edit the code on the left and watch the
+            navbar repaint on the right. Change a color, a padding, a gap — one
+            thing at a time.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Edit and repaint</span>
+            </div>
+            <div class="pg-body twocol">
+              <div>
+                <p
+                  style="margin: 0 0 8px; font-size: 13px; color: var(--muted)"
+                >
+                  Edit the HTML + CSS
+                </p>
+                <textarea class="editor" id="fp-src">
+&lt;style&gt;
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1D3E60;
+    padding: 12px 18px;
+    border-bottom: 3px solid #D23B36;
+  }
+  .navbar a { color:#fff; text-decoration:none;
+    margin-left:16px; font-size:14px; }
+  .brand { font-weight:800; font-size:17px; }
+&lt;/style&gt;
+&lt;div class="navbar"&gt;
+  &lt;span class="brand"&gt;ZS One&lt;/span&gt;
+  &lt;span&gt;
+    &lt;a href="#"&gt;Games&lt;/a&gt;
+    &lt;a href="#"&gt;Studio&lt;/a&gt;
+    &lt;a href="#"&gt;Play Now&lt;/a&gt;
+  &lt;/span&gt;
+&lt;/div&gt;</textarea
+                >
+              </div>
+              <div>
+                <p
+                  style="margin: 0 0 8px; font-size: 13px; color: var(--muted)"
+                >
+                  Live result
+                </p>
+                <iframe
+                  class="preview"
+                  id="fp-frame"
+                  title="Live navbar preview"
+                  sandbox
+                ></iframe>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== s07 TOUCH THE CODE ===================== -->
+        <section class="section" id="s07" data-nav="Touch the code">
+          <span class="part-badge">Part 07</span>
+          <h3>Touch the code</h3>
+          <p>
+            Make the required changes without typing: pick a background, change
+            the link spacing, adjust the padding, round the corners. The
+            generated CSS updates as you go.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Navbar style controls</span>
+            </div>
+            <div class="pg-body twocol">
+              <div>
+                <div class="ctrl">
+                  <label>Background</label>
+                  <div class="swatches" id="sc-swatches"></div>
+                </div>
+                <div class="ctrl">
+                  <label>Link spacing</label
+                  ><input
+                    type="range"
+                    id="sc-gap"
+                    min="8"
+                    max="40"
+                    value="18"
+                  /><span class="val" id="sc-gap-v">18px</span>
+                </div>
+                <div class="ctrl">
+                  <label>Padding</label
+                  ><input
+                    type="range"
+                    id="sc-pad"
+                    min="6"
+                    max="32"
+                    value="14"
+                  /><span class="val" id="sc-pad-v">14px</span>
+                </div>
+                <div class="ctrl">
+                  <label>Corner radius</label
+                  ><input
+                    type="range"
+                    id="sc-rad"
+                    min="0"
+                    max="24"
+                    value="10"
+                  /><span class="val" id="sc-rad-v">10px</span>
+                </div>
+                <pre class="code" id="sc-out" style="margin-top: 14px"></pre>
+              </div>
+              <div>
+                <p
+                  style="margin: 0 0 8px; font-size: 13px; color: var(--muted)"
+                >
+                  Preview
+                </p>
+                <div
+                  id="sc-target"
+                  style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    font-weight: 600;
+                    color: #fff;
+                  "
+                >
+                  <span style="font-weight: 800">ZS One</span>
+                  <span
+                    id="sc-links"
+                    style="display: flex; align-items: center"
+                  >
+                    <a
+                      href="#"
+                      style="
+                        color: inherit;
+                        text-decoration: none;
+                        font-size: 14px;
+                      "
+                      >Games</a
+                    >
+                    <a
+                      href="#"
+                      style="
+                        color: inherit;
+                        text-decoration: none;
+                        font-size: 14px;
+                      "
+                      >Studio</a
+                    >
+                    <a
+                      href="#"
+                      style="
+                        color: inherit;
+                        text-decoration: none;
+                        font-size: 14px;
+                      "
+                      >Support</a
+                    >
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout">
+            <b>One value at a time.</b> Changing a single property makes it
+            obvious which line controls what. You never have to guess.
+          </div>
+        </section>
+
+        <!-- ===================== s08 HOVER & STATES ===================== -->
+        <section class="section" id="s08" data-nav="Hover & states">
+          <span class="part-badge">Part 08</span>
+          <h3>Hover and states</h3>
+          <p>
+            A navbar should respond when someone points at a link. Pick an
+            effect, hover the link, and read the exact CSS that produces it.
+          </p>
+
+          <div class="pg">
+            <div class="pg-head">
+              <span class="dot"></span
+              ><span class="label">Playground · Hover lab</span>
+            </div>
+            <div class="pg-body twocol">
+              <div>
+                <div class="btnrow" style="margin-bottom: 18px">
+                  <button class="btn ghost on" data-hv="color">Color</button>
+                  <button class="btn ghost" data-hv="underline">
+                    Underline
+                  </button>
+                  <button class="btn ghost" data-hv="bg">Background</button>
+                </div>
+                <div
+                  style="display: grid; place-items: center; padding: 20px 0"
+                >
+                  <a href="#" class="nl-demo fx-color" id="hv-demo">Games</a>
+                </div>
+              </div>
+              <div>
+                <p
+                  style="margin: 0 0 8px; font-size: 13px; color: var(--muted)"
+                >
+                  The CSS behind it
+                </p>
+                <pre class="code" id="hv-code"></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout">
+            <b>Why react to a hover?</b> A hover response is feedback — it
+            confirms the link is clickable and that you are aimed at the right
+            one. It reduces mis-clicks and makes the page feel alive. Without
+            it, links read as flat, dead text and people are unsure what is
+            interactive.
+          </div>
+        </section>
+
+        <!-- ===================== s09 WRAP UP ===================== -->
+        <section class="section" id="s09" data-nav="Wrap up">
+          <span class="part-badge">Part 09</span>
+          <h3>What you learned</h3>
+          <p>
+            You restructured a plain row into a navbar, inspected each part's
+            job, saw the links are just a list, planned before prompting,
+            questioned the AI's answer, wrote a spec, painted it, and made it
+            react to a hover.
+          </p>
+          <p>
+            The habit matters more than this one navbar:
+            <b
+              >look before you build, plan before you prompt, and decide for
+              yourself which lines to keep.</b
+            >
+          </p>
+
+          <footer>
+            ZS One · Navbar walkthrough · Built on the Learning-Site template.
+            Palette: red #D23B36, navy #1D3E60.
+          </footer>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      /* ---------------- Framework engine: sidebar, scroll, menu, scrollspy ---------------- */
+      (function () {
+        const groups = [
+          ["Start here", ["s00"]],
+          ["Investigate", ["s01", "s02"]],
+          ["Plan with AI", ["s03", "s04"]],
+          ["Build", ["s05", "s06", "s07"]],
+          ["Polish", ["s08"]],
+          ["Wrap up", ["s09"]],
+        ];
+        const nav = document.getElementById("nav");
+        let html = "";
+        groups.forEach(([title, ids]) => {
+          html += `<div class="navgroup">${title}</div>`;
+          ids.forEach((id) => {
+            const sec = document.getElementById(id);
+            const n = id.replace("s", "");
+            const label = sec.getAttribute("data-nav");
+            html += `<div class="navlink" data-target="${id}"><span class="n">${n}</span>${label}</div>`;
+          });
+        });
+        nav.innerHTML = html;
+
+        const links = [...nav.querySelectorAll(".navlink")];
+        const sidebar = document.getElementById("sidebar");
+        const scrim = document.getElementById("scrim");
+        function closeMenu() {
+          sidebar.classList.remove("open");
+          scrim.classList.remove("show");
+        }
+
+        links.forEach((l) =>
+          l.addEventListener("click", () => {
+            document
+              .getElementById(l.dataset.target)
+              .scrollIntoView({ behavior: "smooth", block: "start" });
+            closeMenu();
+          }),
+        );
+
+        document.getElementById("menu").addEventListener("click", () => {
+          sidebar.classList.toggle("open");
+          scrim.classList.toggle("show");
+        });
+        scrim.addEventListener("click", closeMenu);
+
+        const byId = {};
+        links.forEach((l) => (byId[l.dataset.target] = l));
+        const obs = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((e) => {
+              if (e.isIntersecting) {
+                links.forEach((x) => x.classList.remove("active"));
+                if (byId[e.target.id])
+                  byId[e.target.id].classList.add("active");
+              }
+            });
+          },
+          { rootMargin: "-45% 0px -50% 0px", threshold: 0 },
+        );
+        document.querySelectorAll(".section").forEach((s) => obs.observe(s));
+      })();
+
+      /* ---------------- s00: Restructure lab ---------------- */
+      (function () {
+        const g = document.getElementById.bind(document);
+        const bar = g("rl-bar"),
+          links = g("rl-links"),
+          cta = g("rl-cta"),
+          note = g("rl-note");
+        const st = { brand: false, group: false, promote: false };
+        const btns = [...document.querySelectorAll("[data-rl]")];
+        function apply() {
+          bar.style.justifyContent = st.brand ? "space-between" : "flex-start";
+          links.style.gap = st.group ? "24px" : "10px";
+          links.style.marginLeft = st.group && !st.brand ? "auto" : "0";
+          if (st.promote) {
+            cta.style.background = "var(--accent)";
+            cta.style.color = "#fff";
+            cta.style.padding = "7px 14px";
+            cta.style.borderRadius = "7px";
+            cta.style.fontWeight = "600";
+          } else {
+            cta.style.background = "";
+            cta.style.color = "";
+            cta.style.padding = "";
+            cta.style.borderRadius = "";
+            cta.style.fontWeight = "";
+          }
+          const n = [st.brand, st.group, st.promote].filter(Boolean).length;
+          note.innerHTML =
+            n === 0
+              ? "<b>Just a row of links.</b> Nothing signals structure or importance."
+              : n === 3
+                ? "<b>A real navbar.</b> Brand anchored, links grouped, one action promoted."
+                : "<b>Getting there.</b> Structure is what separates a navbar from a list.";
+          btns.forEach((b) => b.classList.toggle("on", st[b.dataset.rl]));
+        }
+        btns.forEach((b) =>
+          b.addEventListener("click", () => {
+            st[b.dataset.rl] = !st[b.dataset.rl];
+            apply();
+          }),
+        );
+        apply();
+      })();
+
+      /* ---------------- s01: Part inspector ---------------- */
+      (function () {
+        const mini = document.getElementById("pi-mini");
+        const badge = document.getElementById("pi-badge");
+        const cards = document.getElementById("pi-cards");
+        const note = document.getElementById("pi-note");
+        const roles = [
+          [
+            "brand",
+            "Brand",
+            "Says who this is. Anchored far left so people always find it.",
+          ],
+          [
+            "links",
+            "Link group",
+            "The pages, kept together and evenly spaced so they scan as one set.",
+          ],
+          [
+            "link",
+            "A single link",
+            "One destination in plain text — it competes with nothing around it.",
+          ],
+          [
+            "action",
+            "Primary action",
+            "The one thing you most want clicked, promoted into a button.",
+          ],
+        ];
+        const names = {
+          brand: "Brand",
+          links: "Link group",
+          link: "Link",
+          action: "Primary action",
+        };
+        cards.innerHTML = roles
+          .map(
+            ([role, name, desc]) =>
+              `<div class="rolecard" data-role="${role}"><div class="rk">${name}</div><div class="rd">${desc}</div></div>`,
+          )
+          .join("");
+
+        function clear() {
+          mini
+            .querySelectorAll(".inspect-hl")
+            .forEach((n) => n.classList.remove("inspect-hl"));
+          cards
+            .querySelectorAll(".lit")
+            .forEach((n) => n.classList.remove("lit"));
+          badge.style.opacity = "0";
+          note.textContent = "Hover any part of the navbar, or a card.";
+        }
+        function highlight(role) {
+          clear();
+          const node = mini.querySelector(`[data-role="${role}"]`);
+          const card = cards.querySelector(`.rolecard[data-role="${role}"]`);
+          if (node) {
+            node.classList.add("inspect-hl");
+            const r = node.getBoundingClientRect(),
+              mr = mini.getBoundingClientRect();
+            badge.textContent = names[role] || role;
+            badge.style.left = Math.max(2, r.left - mr.left) + "px";
+            let top = r.top - mr.top - 18;
+            if (top < 2) top = r.top - mr.top + 4;
+            badge.style.top = top + "px";
+            badge.style.opacity = "1";
+          }
+          if (card) {
+            card.classList.add("lit");
+            note.innerHTML =
+              "<b>" +
+              (names[role] || role) +
+              ".</b> " +
+              card.querySelector(".rd").textContent;
+          }
+        }
+        cards.querySelectorAll(".rolecard").forEach((card) => {
+          card.addEventListener("mouseenter", () =>
+            highlight(card.dataset.role),
+          );
+          card.addEventListener("mouseleave", clear);
+        });
+        mini.querySelectorAll("[data-role]").forEach((node) => {
+          node.addEventListener("mouseenter", (e) => {
+            e.stopPropagation();
+            highlight(node.dataset.role);
+          });
+          node.addEventListener("mouseleave", clear);
+        });
+      })();
+
+      /* ---------------- s02: The links are a list ---------------- */
+      (function () {
+        const range = document.getElementById("an-count");
+        const linksWrap = document.getElementById("an-links");
+        const out = document.getElementById("an-code");
+        const val = document.getElementById("an-count-v");
+        const labels = ["Games", "Studio", "News", "Support", "Shop", "About"];
+        function render() {
+          const n = +range.value;
+          val.textContent = n;
+          // rendered navbar: first n-1 are plain links, last is the promoted action
+          let items = "";
+          for (let i = 0; i < n; i++) {
+            if (i === n - 1) {
+              items += `<span style="background:var(--accent);color:#fff;font-size:13px;font-weight:600;padding:7px 14px;border-radius:7px">Play Now</span>`;
+            } else {
+              items += `<span style="color:rgba(255,255,255,.82);font-size:13px">${labels[i]}</span>`;
+            }
+          }
+          linksWrap.innerHTML = items;
+          // generated HTML (escaped, syntax-coloured)
+          let li = "";
+          for (let i = 0; i < n - 1; i++) {
+            li += `    <span class="tag">&lt;li&gt;&lt;a href="#"&gt;</span>${labels[i]}<span class="tag">&lt;/a&gt;&lt;/li&gt;</span>\n`;
+          }
+          out.innerHTML =
+            `<span class="tag">&lt;nav class="navbar"&gt;</span>\n` +
+            `  <span class="tag">&lt;a class="brand"&gt;</span>ZS One<span class="tag">&lt;/a&gt;</span>\n` +
+            `  <span class="tag">&lt;ul&gt;</span>\n` +
+            li +
+            `  <span class="tag">&lt;/ul&gt;</span>\n` +
+            `  <span class="tag">&lt;a class="cta"&gt;</span>Play Now<span class="tag">&lt;/a&gt;</span>\n` +
+            `<span class="tag">&lt;/nav&gt;</span>`;
+        }
+        range.addEventListener("input", render);
+        render();
+      })();
+
+      /* ---------------- s04: AI vs mine (compare) ---------------- */
+      (function () {
+        const frame = document.getElementById("cmp-frame");
+        const note = document.getElementById("cmp-note");
+        const bAI = document.getElementById("cmp-ai");
+        const bMine = document.getElementById("cmp-mine");
+        // srcdoc strings deliberately omit the closing body tag (live-reload safety)
+        const ai = `<!doctype html><meta charset="utf-8"><body style="font-family:system-ui;margin:0">
+    <div style="display:flex;align-items:center;gap:10px;background:#f0f0f0;border-bottom:1px solid #cccccc;padding:10px 14px">
+      <span style="font-weight:700;color:#333333">Brand</span>
+      <input placeholder="Search" style="padding:5px 8px;border:1px solid #bbbbbb;border-radius:5px;flex:1">
+      <button style="border:1px solid #bbbbbb;background:#fff;border-radius:5px;padding:5px 10px">Menu</button>
+      <span style="color:#555555;font-size:13px">Games</span>
+      <span style="color:#555555;font-size:13px">Studio</span>
+      <span style="color:#555555;font-size:13px">News</span>
+      <span style="color:#555555;font-size:13px">Support</span>
+      <span style="color:#555555;font-size:13px">Play Now</span>
+    </div>`;
+        const mine = `<!doctype html><meta charset="utf-8"><body style="font-family:system-ui;margin:0">
+    <nav style="display:flex;align-items:center;justify-content:space-between;background:#1D3E60;border-bottom:3px solid #D23B36;padding:14px 18px">
+      <span style="color:#fff;font-weight:800;font-size:17px">ZS One</span>
+      <span style="display:flex;align-items:center;gap:18px">
+        <a href="#" style="color:rgba(255,255,255,.82);text-decoration:none;font-size:14px">Games</a>
+        <a href="#" style="color:rgba(255,255,255,.82);text-decoration:none;font-size:14px">Studio</a>
+        <a href="#" style="color:rgba(255,255,255,.82);text-decoration:none;font-size:14px">News</a>
+        <a href="#" style="color:rgba(255,255,255,.82);text-decoration:none;font-size:14px">Support</a>
+        <a href="#" style="background:#D23B36;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:8px 16px;border-radius:8px">Play Now</a>
+      </span>
+    </nav>`;
+        function show(isAI) {
+          frame.srcdoc = isAI ? ai : mine;
+          frame.style.height = "96px";
+          bAI.classList.toggle("on", isAI);
+          bMine.classList.toggle("on", !isAI);
+          note.innerHTML = isAI
+            ? "<b>AI version:</b> a search box and a Menu button you never asked for, and everything the same gray weight."
+            : "<b>My version:</b> only what the plan called for — brand, four links, one promoted action, in the ZS One colors.";
+        }
+        bAI.addEventListener("click", () => show(true));
+        bMine.addEventListener("click", () => show(false));
+        show(true);
+      })();
+
+      /* ---------------- s06: Live navbar editor ---------------- */
+      (function () {
+        const src = document.getElementById("fp-src");
+        const frame = document.getElementById("fp-frame");
+        let t;
+        function render() {
+          // no closing body tag in the wrapper (live-reload safety)
+          frame.srcdoc = `<!doctype html><meta charset="utf-8"><body style="font-family:system-ui;margin:0;color:#16273D">${src.value}`;
+        }
+        src.addEventListener("input", () => {
+          clearTimeout(t);
+          t = setTimeout(render, 250);
+        });
+        frame.style.height = "200px";
+        render();
+      })();
+
+      /* ---------------- s07: Navbar style controls ---------------- */
+      (function () {
+        const target = document.getElementById("sc-target");
+        const linksEl = document.getElementById("sc-links");
+        const out = document.getElementById("sc-out");
+        const gap = document.getElementById("sc-gap");
+        const pad = document.getElementById("sc-pad");
+        const rad = document.getElementById("sc-rad");
+        const colors = ["#1D3E60", "#16273D", "#D23B36", "#FFFFFF", "#F3F4F7"];
+        const darkSet = ["#1D3E60", "#16273D", "#D23B36"];
+        const sw = document.getElementById("sc-swatches");
+        let bg = colors[0];
+        colors.forEach((c, i) => {
+          const d = document.createElement("div");
+          d.className = "swatch" + (i === 0 ? " sel" : "");
+          d.style.background = c;
+          d.addEventListener("click", () => {
+            bg = c;
+            [...sw.children].forEach((x) => x.classList.remove("sel"));
+            d.classList.add("sel");
+            apply();
+          });
+          sw.appendChild(d);
+        });
+        function apply() {
+          const gp = gap.value,
+            p = pad.value,
+            r = rad.value;
+          const dark = darkSet.includes(bg);
+          target.style.background = bg;
+          target.style.padding = p + "px";
+          target.style.borderRadius = r + "px";
+          target.style.color = dark ? "#fff" : "#16273D";
+          linksEl.style.gap = gp + "px";
+          document.getElementById("sc-gap-v").textContent = gp + "px";
+          document.getElementById("sc-pad-v").textContent = p + "px";
+          document.getElementById("sc-rad-v").textContent = r + "px";
+          out.textContent = `.navbar {\n  background: ${bg};\n  gap: ${gp}px;\n  padding: ${p}px;\n  border-radius: ${r}px;\n}`;
+        }
+        [gap, pad, rad].forEach((el) => el.addEventListener("input", apply));
+        apply();
+      })();
+
+      /* ---------------- s08: Hover lab ---------------- */
+      (function () {
+        const demo = document.getElementById("hv-demo");
+        const code = document.getElementById("hv-code");
+        const buttons = [...document.querySelectorAll("[data-hv]")];
+        const rules = {
+          color: `.link:hover {\n  color: #D23B36;\n}`,
+          underline: `.link:hover {\n  border-bottom: 2px solid #D23B36;\n}`,
+          bg: `.link:hover {\n  background: #1D3E60;\n  color: #ffffff;\n}`,
+        };
+        function set(fx) {
+          demo.className = "nl-demo fx-" + fx;
+          code.textContent = rules[fx];
+          buttons.forEach((b) => b.classList.toggle("on", b.dataset.hv === fx));
+        }
+        buttons.forEach((b) =>
+          b.addEventListener("click", () => set(b.dataset.hv)),
+        );
+        set("color");
+      })();
+    </script>
+  </body>
+</html>
