@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Learning Guide — Lists, For Loops &amp; Conditionals</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F7FA;
+    --ink:#16243A;
+    --body:#3A4A5C;
+    --amber:#C93634;
+    --pine:#2A537D;
+    --brick:#A62C2A;
+    --slate:#5C6B7A;
+    --card:#FFFFFF;
+    --card2:#EEF3F8;
+    --line:rgba(22,36,58,.10);
+    --terminal:#16273D;
+    --terminal-text:#EAF0F6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--body);font-family:'Inter',sans-serif;line-height:1.6;}
+  .wrap{max-width:960px;margin:0 auto;padding:56px 24px 120px;}
+  .eyebrow{font-family:'JetBrains Mono',monospace;color:var(--amber);font-size:13px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 10px;}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(30px,4.6vw,42px);margin:0 0 8px;color:var(--ink);}
+  .sub{color:var(--slate);font-size:16px;margin:0 0 34px;max-width:680px;}
+  .badge-row{display:flex;gap:10px;margin-bottom:44px;flex-wrap:wrap;}
+  .badge{font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 12px;border-radius:999px;border:1px solid rgba(201,54,52,.35);color:var(--amber);background:rgba(201,54,52,.08);}
+  section{margin-bottom:56px;}
+  .section-num{font-family:'JetBrains Mono',monospace;color:var(--amber);font-size:13px;letter-spacing:.1em;text-transform:uppercase;margin:0 0 4px;}
+  h2{font-family:'Space Grotesk',sans-serif;font-size:21px;color:var(--ink);margin:0 0 6px;}
+  h3.sub-head{font-family:'Space Grotesk',sans-serif;font-size:16.5px;color:var(--ink);margin:26px 0 10px;}
+  h3.sub-head:first-of-type{margin-top:4px;}
+  .section-desc{color:var(--slate);font-size:15px;margin:0 0 20px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 28px;box-shadow:0 1px 2px rgba(22,36,58,.04), 0 10px 24px rgba(22,36,58,.05);}
+  p{margin:0 0 12px;}
+  code{background:rgba(22,36,58,.06);padding:1px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--ink);}
+
+  .code-block{background:var(--terminal);color:var(--terminal-text);border-radius:10px;padding:16px 18px;font-family:'JetBrains Mono',monospace;font-size:13.5px;line-height:1.7;overflow-x:auto;white-space:pre;}
+  .code-block .kw{color:#7BAFE0;}
+  .code-block .str{color:#E8A79C;}
+  .code-block .cm{color:#8592A0;font-style:italic;}
+
+  /* Tabs */
+  .tab-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .tab-btn{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer;background:transparent;border:1px solid var(--line);color:var(--slate);}
+  .tab-btn.active{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  /* Mini reference cards */
+  .basics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+  @media (max-width:760px){.basics-grid{grid-template-columns:1fr;}}
+  .basics-card{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:16px 18px;}
+  .basics-card h4{margin:0 0 6px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--amber);text-transform:uppercase;letter-spacing:.06em;}
+  .basics-card p{margin:0;font-size:14px;color:var(--body);}
+
+  /* List tiles + branching stepper */
+  .list-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:22px 0 8px;}
+  .list-tile{position:relative;width:64px;height:52px;border-radius:8px;background:var(--card2);border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--ink);transition:background .3s,border-color .3s;}
+  .list-tile.checking{background:rgba(201,54,52,.10);border-color:var(--amber);border-width:2px;}
+  .list-tile.pass{background:rgba(42,83,125,.12);border-color:var(--pine);border-width:2px;color:var(--pine);}
+  .list-tile.fail{background:rgba(166,44,42,.10);border-color:var(--brick);border-width:2px;color:var(--brick);}
+  .list-tile .idx{position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-size:11px;color:var(--slate);}
+
+  .counter-row{display:flex;gap:24px;justify-content:center;margin:34px 0 22px;font-family:'JetBrains Mono',monospace;font-size:15px;}
+  .counter{display:flex;align-items:center;gap:8px;}
+  .counter-dot{width:10px;height:10px;border-radius:50%;}
+  .counter-dot.pass{background:var(--pine);}
+  .counter-dot.fail{background:var(--brick);}
+
+  .stepper-readout{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--ink);text-align:center;margin:6px 0 4px;min-height:22px;}
+  .pseudo-line{font-family:'JetBrains Mono',monospace;font-size:14.5px;padding:8px 12px;border-radius:6px;color:var(--slate);margin-bottom:2px;border-left:3px solid transparent;transition:all .25s;}
+  .pseudo-line.active{background:rgba(201,54,52,.10);border-left-color:var(--amber);color:var(--ink);}
+  .pseudo-line.active-pass{background:rgba(42,83,125,.10);border-left-color:var(--pine);color:var(--ink);}
+  .pseudo-line.active-fail{background:rgba(166,44,42,.10);border-left-color:var(--brick);color:var(--ink);}
+  .pseudo-line .indent{padding-left:22px;display:block;}
+  .pseudo-line .indent2{padding-left:44px;display:block;}
+  .stepper-controls{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;justify-content:center;}
+
+  button{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;border:none;border-radius:8px;padding:10px 18px;cursor:pointer;background:var(--amber);color:#FFFFFF;}
+  button.secondary{background:transparent;border:1px solid var(--line);color:var(--ink);}
+  button:disabled{opacity:.4;cursor:default;}
+  .status-line{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--slate);margin-top:14px;min-height:18px;text-align:center;}
+
+  .choice-row{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 4px;}
+  .choice-btn{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:9px 16px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--ink);cursor:pointer;}
+  .choice-btn:hover{border-color:var(--amber);}
+  .choice-btn.correct{border-color:var(--pine);background:rgba(42,83,125,.12);}
+  .choice-btn.wrong{border-color:var(--brick);background:rgba(166,44,42,.10);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Learning Guide</p>
+  <h1>Conditionals, For Loops &amp; Lists</h1>
+  <p class="sub">
+    An if/elif/else makes a decision. A for loop repeats it. A list gives it something real to repeat
+    over. Learn them in that order, then see all three combined.
+  </p>
+
+  <div class="badge-row">
+    <span class="badge">Concept: if / elif / else</span>
+    <span class="badge">Concept: for loop</span>
+    <span class="badge">Concept: lists</span>
+    <span class="badge">Difficulty: Beginner</span>
+  </div>
+
+  <!-- ============ TABS: CONDITIONALS + LOOPS + LISTS ============ -->
+  <section>
+    <p class="section-num">Start here</p>
+    <h2>Decisions, then repetition, then data</h2>
+    <p class="section-desc">Three ideas, in the order you'll actually use them: decide once, repeat that decision, then apply it to a real list of values.</p>
+
+    <div class="tab-bar" role="tablist">
+      <button class="tab-btn active" data-tab="conditionals" role="tab" aria-selected="true">Conditionals</button>
+      <button class="tab-btn" data-tab="loops" role="tab" aria-selected="false">For Loops</button>
+      <button class="tab-btn" data-tab="list" role="tab" aria-selected="false">Lists</button>
+    </div>
+
+    <div class="card tab-panel active" id="tab-conditionals">
+      <p>Before there's anything to repeat, there's a decision to make. A conditional runs different code depending on whether something is true.</p>
+      <div class="code-block">score = 45
+<span class="kw">if</span> score &gt;= 40:
+    print(<span class="str">"Pass"</span>)
+<span class="kw">else</span>:
+    print(<span class="str">"Fail"</span>)</div>
+
+      <h3 class="sub-head">if / else — two-way</h3>
+      <p>Exactly one of the two branches runs, every time.</p>
+      <div class="code-block"><span class="kw">if</span> score &gt;= 40:
+    print(<span class="str">"Pass"</span>)
+<span class="kw">else</span>:
+    print(<span class="str">"Fail"</span>)</div>
+
+      <h3 class="sub-head">if / elif / else — three-way (or more)</h3>
+      <p><code>elif</code> only gets checked if everything above it was false. Order matters — the most specific condition goes first.</p>
+      <div class="code-block"><span class="kw">if</span> temp &gt;= 38:
+    print(<span class="str">"Heat Warning"</span>)
+<span class="kw">elif</span> temp &gt;= 15:
+    print(<span class="str">"Pleasant"</span>)
+<span class="kw">else</span>:
+    print(<span class="str">"Cold Alert"</span>)</div>
+
+      <div class="basics-grid" style="margin-top:22px;">
+        <div class="basics-card">
+          <h4>Exactly one branch runs</h4>
+          <p>Python checks top to bottom and stops at the first true condition — the rest are skipped, even if they'd also be true.</p>
+        </div>
+        <div class="basics-card">
+          <h4>else is optional</h4>
+          <p>You can have <code>if</code> alone, or <code>if</code>/<code>else</code>, with no <code>elif</code> at all — add branches only when you need them.</p>
+        </div>
+        <div class="basics-card">
+          <h4>Indentation marks the branch</h4>
+          <p>Whatever's indented under <code>if</code> belongs to that branch. A line back at the <code>if</code>'s level is outside it.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card tab-panel" id="tab-loops">
+      <p>A for loop repeats a block of code once for every item in a sequence. The simplest sequence to start with is a range of numbers.</p>
+      <div class="code-block"><span class="kw">for</span> i <span class="kw">in</span> range(1, 6):
+    print(i)</div>
+      <p style="margin-top:10px;">This prints <code>1 2 3 4 5</code>. <code>range(1, 6)</code> counts from 1 up to 6 — the second number is never reached.</p>
+
+      <h3 class="sub-head">Step through it</h3>
+      <p>Now add the conditional from the last tab, so the loop does something different each time round.</p>
+
+      <div class="list-row" id="loopStepperRow"></div>
+      <div class="stepper-readout" id="loopStepperReadout">not started</div>
+
+      <div class="counter-row">
+        <div class="counter"><span class="counter-dot pass"></span><span id="evenReadout">Evens: 0</span></div>
+        <div class="counter"><span class="counter-dot fail"></span><span id="oddReadout">Odds: 0</span></div>
+      </div>
+
+      <div class="pseudo-line" id="pl2-header"><span><span class="kw">for</span> i <span class="kw">in</span> range(1, 7):</span></div>
+      <div class="pseudo-line" id="pl2-cond"><span class="indent"><span class="kw">if</span> i % 2 == 0:</span></div>
+      <div class="pseudo-line" id="pl2-true"><span class="indent2">print(<span class="str">"Even"</span>)</span></div>
+      <div class="pseudo-line" id="pl2-else"><span class="indent"><span class="kw">else</span>:</span></div>
+      <div class="pseudo-line" id="pl2-false"><span class="indent2">print(<span class="str">"Odd"</span>)</span></div>
+      <div class="pseudo-line" id="pl2-exit"><span>no numbers left → loop ends</span></div>
+
+      <div class="stepper-controls">
+        <button id="loopStepBtn">Step ▸</button>
+        <button id="loopPlayBtn" class="secondary">Play</button>
+        <button id="loopResetBtn" class="secondary">Reset</button>
+      </div>
+      <div class="status-line" id="loopStepperStatus">Click Step to begin.</div>
+    </div>
+
+    <div class="card tab-panel" id="tab-list">
+      <p>
+        A list holds many values in one variable, in a fixed order. Instead of <code>score1</code>,
+        <code>score2</code>, <code>score3</code>..., you get one name for the whole collection:
+      </p>
+      <div class="code-block">scores = [45, 32, 78, 40, 55, 21, 90]</div>
+
+      <div class="basics-grid" style="margin-top:22px;">
+        <div class="basics-card">
+          <h4>Creating a list</h4>
+          <p>Square brackets, values separated by commas: <code>[45, 32, 78]</code>. Order is preserved — the first value stays first.</p>
+        </div>
+        <div class="basics-card">
+          <h4>Indexing</h4>
+          <p>Every item has a position, starting at <code>0</code>, not <code>1</code>. <code>scores[0]</code> is the first item.</p>
+        </div>
+        <div class="basics-card">
+          <h4>len()</h4>
+          <p><code>len(scores)</code> gives you the count of items — how many positions there are to visit.</p>
+        </div>
+      </div>
+
+      <h3 class="sub-head">Picture it</h3>
+      <p>Each box below is one item in <code>scores</code>. The number underneath is its index.</p>
+      <div class="list-row" id="indexRow"></div>
+      <p class="status-line" style="margin-top:30px;">scores[0] is 45 &middot; scores[3] is 40 &middot; scores[6] is the last item, at index len(scores) - 1</p>
+
+      <h3 class="sub-head">Reading from a list</h3>
+      <div class="code-block">print(scores[0])   <span class="cm"># 45 — the first item</span>
+print(scores[3])   <span class="cm"># 40</span>
+print(len(scores)) <span class="cm"># 7 — there are 7 items</span></div>
+
+      <h3 class="sub-head">Iterating a list with a loop</h3>
+      <p>
+        Here's where the last two tabs meet a real container. A for loop can walk through <code>scores</code>
+        directly, one item at a time — no index needed at all:
+      </p>
+      <div class="code-block"><span class="kw">for</span> score <span class="kw">in</span> scores:
+    print(score)</div>
+      <p style="margin-top:10px;">
+        Each time round, <code>score</code> is reassigned to the next value in the list — first <code>45</code>,
+        then <code>32</code>, and so on — until every item has been visited once. That's the whole loop,
+        with the indexing handled for you.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ PUTTING THEM TOGETHER ============ -->
+  <section>
+    <p class="section-num">Combine them</p>
+    <h2>Loop + condition, two shapes you'll keep seeing</h2>
+    <p class="section-desc">Both of these are a for loop with a decision inside it. The number of branches is the only real difference.</p>
+    <div class="card">
+      <h3 class="sub-head">Two-way split — counting</h3>
+      <div class="code-block">pass_count = 0
+fail_count = 0
+<span class="kw">for</span> score <span class="kw">in</span> scores:
+    <span class="kw">if</span> score &gt;= 40:
+        pass_count += 1
+    <span class="kw">else</span>:
+        fail_count += 1
+print(<span class="str">f"Passed: {pass_count}, Failed: {fail_count}"</span>)</div>
+      <p style="margin-top:10px;">This is the shape behind <strong>Read the Code: Pass/Fail Counter</strong>.</p>
+
+      <h3 class="sub-head">Three-way split — classifying</h3>
+      <div class="code-block"><span class="kw">for</span> temp <span class="kw">in</span> temps:
+    <span class="kw">if</span> temp &gt;= 38:
+        print(<span class="str">"Heat Warning"</span>)
+    <span class="kw">elif</span> temp &gt;= 15:
+        print(<span class="str">"Pleasant"</span>)
+    <span class="kw">else</span>:
+        print(<span class="str">"Cold Alert"</span>)</div>
+      <p style="margin-top:10px;">This is the shape behind <strong>Read the Code: Weather Alert Classifier</strong>.</p>
+    </div>
+  </section>
+
+  <!-- ============ QUICK CHECK ============ -->
+  <section>
+    <p class="section-num">Quick check</p>
+    <h2>Before you move on</h2>
+    <p class="section-desc"><code>scores = [10, 45, 39, 40]</code>. How many times does this print <code>"Pass"</code>?</p>
+    <div class="card">
+      <div class="code-block"><span class="kw">for</span> score <span class="kw">in</span> scores:
+    <span class="kw">if</span> score &gt;= 40:
+        print(<span class="str">"Pass"</span>)
+    <span class="kw">else</span>:
+        print(<span class="str">"Fail"</span>)</div>
+      <div class="choice-row" id="quickCheck">
+        <button class="choice-btn" data-val="1">1</button>
+        <button class="choice-btn" data-val="2">2</button>
+        <button class="choice-btn" data-val="3">3</button>
+        <button class="choice-btn" data-val="4">4</button>
+      </div>
+      <div class="status-line" id="quickCheckStatus"></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const scores = [45, 32, 78, 40, 55, 21, 90];
+
+/* ---------- Tabs ---------- */
+(function(){
+  const btns = document.querySelectorAll('.tab-btn');
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      btns.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected','true');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+})();
+
+/* ---------- List indexing diagram ---------- */
+(function(){
+  const row = document.getElementById('indexRow');
+  scores.forEach((val, i) => {
+    const tile = document.createElement('div');
+    tile.className = 'list-tile';
+    tile.innerHTML = val + '<span class="idx">' + i + '</span>';
+    row.appendChild(tile);
+  });
+  const tiles = row.querySelectorAll('.list-tile');
+  const highlightSeq = [0, 3, 6];
+  let step = 0;
+  function run(){
+    tiles.forEach(t => t.classList.remove('checking'));
+    if (step < highlightSeq.length) {
+      tiles[highlightSeq[step]].classList.add('checking');
+      step++;
+      setTimeout(run, 850);
+    }
+  }
+  setTimeout(run, 500);
+})();
+
+/* ---------- Loop stepper (range + even/odd) ---------- */
+(function(){
+  const rangeNums = [1, 2, 3, 4, 5, 6];
+  const row = document.getElementById('loopStepperRow');
+  rangeNums.forEach((val) => {
+    const tile = document.createElement('div');
+    tile.className = 'list-tile';
+    tile.textContent = val;
+    row.appendChild(tile);
+  });
+  const tiles = row.querySelectorAll('.list-tile');
+
+  const readout = document.getElementById('loopStepperReadout');
+  const status = document.getElementById('loopStepperStatus');
+  const evenReadout = document.getElementById('evenReadout');
+  const oddReadout = document.getElementById('oddReadout');
+  const stepBtn = document.getElementById('loopStepBtn');
+  const playBtn = document.getElementById('loopPlayBtn');
+  const resetBtn = document.getElementById('loopResetBtn');
+  const lines = {
+    header: document.getElementById('pl2-header'),
+    cond: document.getElementById('pl2-cond'),
+    true_: document.getElementById('pl2-true'),
+    else_: document.getElementById('pl2-else'),
+    false_: document.getElementById('pl2-false'),
+    exit: document.getElementById('pl2-exit'),
+  };
+
+  let i = -1, phase = 'start', evenCount = 0, oddCount = 0, playTimer = null;
+
+  function clearActive(){ Object.values(lines).forEach(l => l.classList.remove('active','active-pass','active-fail')); }
+  function clearTiles(){ tiles.forEach(t => t.classList.remove('checking','pass','fail')); }
+  function updateCounters(){
+    evenReadout.textContent = 'Evens: ' + evenCount;
+    oddReadout.textContent = 'Odds: ' + oddCount;
+  }
+
+  function step(){
+    switch(phase){
+      case 'start':
+        i = 0;
+        clearActive(); lines.header.classList.add('active');
+        clearTiles(); tiles[i].classList.add('checking');
+        readout.textContent = 'i = ' + rangeNums[i];
+        status.textContent = 'Loop starts.';
+        phase = 'cond';
+        break;
+      case 'cond':
+        clearActive(); lines.header.classList.add('active'); lines.cond.classList.add('active');
+        status.textContent = 'Checking: is ' + rangeNums[i] + ' % 2 == 0?';
+        phase = (rangeNums[i] % 2 === 0) ? 'true' : 'false';
+        break;
+      case 'true':
+        clearActive(); lines.cond.classList.add('active-pass'); lines.true_.classList.add('active-pass');
+        tiles[i].classList.remove('checking'); tiles[i].classList.add('pass');
+        evenCount++; updateCounters();
+        status.textContent = 'Yes → prints "Even".';
+        phase = 'advance';
+        break;
+      case 'false':
+        clearActive(); lines.cond.classList.add('active-fail'); lines.else_.classList.add('active-fail'); lines.false_.classList.add('active-fail');
+        tiles[i].classList.remove('checking'); tiles[i].classList.add('fail');
+        oddCount++; updateCounters();
+        status.textContent = 'No → prints "Odd".';
+        phase = 'advance';
+        break;
+      case 'advance':
+        if (i + 1 < rangeNums.length) {
+          i++;
+          clearActive(); lines.header.classList.add('active');
+          tiles[i].classList.add('checking');
+          readout.textContent = 'i = ' + rangeNums[i];
+          status.textContent = 'Moved to the next number.';
+          phase = 'cond';
+        } else {
+          clearActive(); lines.exit.classList.add('active');
+          readout.textContent = 'no numbers left';
+          status.textContent = 'Every number has been checked — the loop ends.';
+          phase = 'done';
+          stepBtn.disabled = true;
+        }
+        break;
+    }
+  }
+
+  function reset(){
+    i = -1; phase = 'start'; evenCount = 0; oddCount = 0;
+    clearActive(); clearTiles(); updateCounters();
+    readout.textContent = 'not started';
+    status.textContent = 'Click Step to begin.';
+    stepBtn.disabled = false;
+    stopPlay();
+  }
+  function stopPlay(){
+    if (playTimer) { clearInterval(playTimer); playTimer = null; }
+    playBtn.textContent = 'Play';
+  }
+
+  stepBtn.addEventListener('click', step);
+  resetBtn.addEventListener('click', reset);
+  playBtn.addEventListener('click', function(){
+    if (playTimer) { stopPlay(); return; }
+    this.textContent = 'Pause';
+    playTimer = setInterval(() => {
+      if (phase === 'done') { stopPlay(); return; }
+      step();
+    }, 650);
+  });
+
+  reset();
+})();
+
+/* ---------- Quick check ---------- */
+(function(){
+  const btns = document.querySelectorAll('#quickCheck .choice-btn');
+  const status = document.getElementById('quickCheckStatus');
+  const correct = '2';
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      btns.forEach(b => b.classList.remove('correct','wrong'));
+      if (btn.dataset.val === correct) {
+        btn.classList.add('correct');
+        status.textContent = 'Correct — 45 and 40 both clear the 40 mark.';
+      } else {
+        btn.classList.add('wrong');
+        status.textContent = 'Not quite — check each score against the condition.';
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
