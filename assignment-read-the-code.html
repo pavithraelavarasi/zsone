@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Read the Code — Weather Alert Classifier</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#F5F7FA;
+    --ink:#16243A;
+    --body:#3A4A5C;
+    --amber:#C93634;
+    --pine:#2A537D;
+    --brick:#A62C2A;
+    --slate:#5C6B7A;
+    --card:#FFFFFF;
+    --card2:#EEF3F8;
+    --line:rgba(22,36,58,.10);
+    --terminal:#16273D;
+    --terminal-text:#EAF0F6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--body);font-family:'Inter',sans-serif;line-height:1.6;}
+  .wrap{max-width:940px;margin:0 auto;padding:56px 24px 120px;}
+  .eyebrow{font-family:'JetBrains Mono',monospace;color:var(--amber);font-size:13px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 10px;}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(30px,4.8vw,44px);margin:0 0 8px;color:var(--ink);}
+  .sub{color:var(--slate);font-size:16px;margin:0 0 34px;max-width:660px;}
+  .badge-row{display:flex;gap:10px;margin-bottom:44px;flex-wrap:wrap;}
+  .badge{font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 12px;border-radius:999px;border:1px solid rgba(201,54,52,.35);color:var(--amber);background:rgba(201,54,52,.08);}
+  section{margin-bottom:56px;}
+  .section-num{font-family:'JetBrains Mono',monospace;color:var(--amber);font-size:13px;letter-spacing:.1em;text-transform:uppercase;margin:0 0 4px;}
+  h2{font-family:'Space Grotesk',sans-serif;font-size:21px;color:var(--ink);margin:0 0 6px;}
+  .section-desc{color:var(--slate);font-size:15px;margin:0 0 20px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 28px;box-shadow:0 1px 2px rgba(22,36,58,.04), 0 10px 24px rgba(22,36,58,.05);}
+  p{margin:0 0 12px;}
+  code{background:rgba(22,36,58,.06);padding:1px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--ink);}
+
+  .code-block{background:var(--terminal);color:var(--terminal-text);border-radius:10px;padding:16px 18px;font-family:'JetBrains Mono',monospace;font-size:13.5px;line-height:1.7;overflow-x:auto;white-space:pre;}
+  .code-block .kw{color:#7BAFE0;}
+  .code-block .str{color:#E8A79C;}
+  .code-block .bug{background:rgba(166,44,42,.28);border-radius:3px;padding:0 2px;}
+
+  .lines-block{background:var(--terminal);border-radius:10px;padding:12px 0;font-family:'JetBrains Mono',monospace;font-size:13.5px;overflow-x:auto;}
+  .code-line{display:flex;padding:2px 18px;white-space:pre;}
+  .code-line.blank{background:rgba(201,54,52,.16);}
+  .ln{width:26px;flex-shrink:0;color:#7C8896;text-align:right;margin-right:16px;user-select:none;}
+  .lc{color:var(--terminal-text);}
+  .lc .kw{color:#7BAFE0;}
+  .lc .str{color:#E8A79C;}
+  .blank-marker{color:#7BAFE0;font-style:italic;margin-left:10px;}
+
+  textarea{width:100%;background:var(--terminal);color:var(--terminal-text);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:13.5px;line-height:1.6;resize:vertical;}
+  textarea::placeholder{color:#7C8896;}
+
+  button{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;border:none;border-radius:8px;padding:10px 18px;cursor:pointer;background:var(--amber);color:#FFFFFF;}
+  button.primary-large{font-size:14px;padding:13px 26px;}
+  .run-row{display:flex;gap:10px;margin-top:14px;align-items:center;flex-wrap:wrap;}
+  .status-line{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--slate);margin-top:12px;min-height:18px;}
+
+  .choice-row{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 4px;}
+  .choice-btn{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:9px 16px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--ink);cursor:pointer;}
+  .choice-btn:hover{border-color:var(--amber);}
+  .choice-btn.correct{border-color:var(--pine);background:rgba(42,83,125,.12);}
+  .choice-btn.wrong{border-color:var(--brick);background:rgba(166,44,42,.10);}
+  .choice-btn.picked{border-color:var(--amber);background:rgba(201,54,52,.12);}
+
+  table.trace-table{width:100%;border-collapse:collapse;margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:13px;}
+  table.trace-table th,table.trace-table td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;}
+  table.trace-table th{color:var(--amber);text-transform:uppercase;font-size:11px;letter-spacing:.06em;}
+  .reveal-box{margin-top:16px;background:rgba(201,54,52,.07);border:1px solid rgba(201,54,52,.25);border-radius:10px;padding:14px 16px;font-size:14.5px;display:none;}
+  .reveal-box.show{display:block;}
+
+  .side-by-side{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media (max-width:760px){.side-by-side{grid-template-columns:1fr;}}
+  .side-label{margin:0 0 8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;}
+
+  .finish-card{background:var(--ink);border-radius:14px;padding:32px 30px;text-align:center;}
+  .finish-card h2{color:#fff;border-left:none;padding-left:0;}
+  .finish-card p{color:#AEB8C2;}
+  .finish-card .status-line{color:#8B97A2;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Reading &amp; Reasoning Exercise</p>
+  <h1>Read the Code: Weather Alert Classifier</h1>
+  <p class="sub">
+    Same five moves as before — specify, trace, verify, tweak, compare — this time on a loop that has to make
+    a three-way decision every time round, not just a yes/no check.
+  </p>
+
+  <div class="badge-row">
+    <span class="badge">Concept: for loop over a list</span>
+    <span class="badge">Concept: if / elif / else</span>
+    <span class="badge">Difficulty: Beginner</span>
+  </div>
+
+  <!-- ============ THE CODE ============ -->
+  <section>
+    <p class="section-num">Start here</p>
+    <h2>Here's the code</h2>
+    <p class="section-desc">
+      Read it once, fully. The rule: 38&deg;C or above is a Heat Warning, 15&deg;C up to 37&deg;C is Pleasant,
+      anything below 15&deg;C is a Cold Alert.
+    </p>
+    <div class="card">
+      <div class="code-block">temps = [42, 28, 12, 35, 8, 39, 20]
+
+<span class="kw">for</span> temp <span class="kw">in</span> temps:
+    <span class="kw">if</span> temp &gt;= 38:
+        print(<span class="str">"Heat Warning"</span>)
+    <span class="kw">elif</span> temp &gt;= 15:
+        print(<span class="str">"Pleasant"</span>)
+    <span class="kw">else</span>:
+        print(<span class="str">"Cold Alert"</span>)</div>
+    </div>
+  </section>
+
+  <!-- ============ 1. SPECIFY ============ -->
+  <section>
+    <p class="section-num">Skill 1 — Specify</p>
+    <h2>Write the problem this code solves</h2>
+    <p class="section-desc">
+      Describe it as a problem statement, not a line-by-line summary: what's the input, what's the output,
+      and exactly where do the boundaries between categories fall?
+    </p>
+    <div class="card">
+      <textarea id="specAnswer" rows="5" placeholder="e.g. Given a list of daily temperatures, classify each day as..."></textarea>
+    </div>
+  </section>
+
+  <!-- ============ 2. TRACE ============ -->
+  <section>
+    <p class="section-num">Skill 2 — Trace</p>
+    <h2>Predict, don't run</h2>
+    <p class="section-desc">Consider, the input is changed to <code>temps = [10, 38, 20, 5]</code>. Before running the code, how many of the four do you think will say "Cold Alert"?</p>
+    <div class="card">
+      <div class="choice-row" id="traceChoices">
+        <button class="choice-btn" data-val="1">Once</button>
+        <button class="choice-btn" data-val="2">Twice</button>
+        <button class="choice-btn" data-val="3">Thrice</button>
+        <button class="choice-btn" data-val="4">Four times</button>
+      </div>
+      <textarea id="traceReasoning" rows="3" placeholder="Explain why, temperature by temperature..." style="margin-top:12px;"></textarea>
+      <div class="reveal-box" id="traceReveal">
+        <strong>Walking through it:</strong>
+        <table class="trace-table">
+          <thead><tr><th>temp</th><th>&gt;= 38 ?</th><th>&gt;= 15 ?</th><th>result</th></tr></thead>
+          <tbody>
+            <tr><td>10</td><td>No</td><td>No</td><td>Cold Alert</td></tr>
+            <tr><td>38</td><td>Yes</td><td>—</td><td>Heat Warning</td></tr>
+            <tr><td>20</td><td>No</td><td>Yes</td><td>Pleasant</td></tr>
+            <tr><td>5</td><td>No</td><td>No</td><td>Cold Alert</td></tr>
+          </tbody>
+        </table>
+        <p style="margin:10px 0 0;">Two lines read <code>Cold Alert</code> — the 10 and the 5.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3. VERIFY ============ -->
+  <section>
+    <p class="section-num">Skill 3 — Verify</p>
+    <h2>Is this version still correct?</h2>
+    <p class="section-desc">Here's a version someone else wrote, for the same rule above. Read the order of the checks closely.</p>
+    <div class="card">
+      <div class="code-block">temps = [42, 28, 12, 35, 8, 39, 20]
+
+<span class="kw">for</span> temp <span class="kw">in</span> temps:
+    <span class="kw">if</span> temp <span class="bug">&gt;= 15</span>:
+        print(<span class="str">"Pleasant"</span>)
+    <span class="kw">elif</span> temp &gt;= 38:
+        print(<span class="str">"Heat Warning"</span>)
+    <span class="kw">else</span>:
+        print(<span class="str">"Cold Alert"</span>)</div>
+
+      <p style="margin-top:16px;">Does this correctly implement the same three-way rule as the original?</p>
+      <div class="choice-row" id="verifyChoices">
+        <button class="choice-btn" data-verify="yes">Yes, it's correct</button>
+        <button class="choice-btn" data-verify="no">No, it's buggy</button>
+      </div>
+      <textarea id="verifyAnswer" rows="4" placeholder="Give a specific temperature that produces a wrong result, and explain what goes wrong." style="margin-top:12px;"></textarea>
+    </div>
+  </section>
+
+  <!-- ============ 4. TWEAK ============ -->
+  <section>
+    <p class="section-num">Skill 4 — Tweak</p>
+    <h2>Recognize what's missing</h2>
+    <p class="section-desc">
+      This version is meant to also count how many days fell into each category, and print the totals at
+      the end. Five lines are missing — each marked with its line number. Describe what belongs in each
+      one; you don't need to write runnable code.
+    </p>
+    <div class="card">
+      <div class="lines-block">
+        <div class="code-line"><span class="ln">1</span><span class="lc">temps = [42, 28, 12, 35, 8, 39, 20]</span></div>
+        <div class="code-line"><span class="ln">2</span><span class="lc">heat_count = 0</span></div>
+        <div class="code-line blank"><span class="ln">3</span><span class="lc">____________________<span class="blank-marker"># ← blank</span></span></div>
+        <div class="code-line blank"><span class="ln">4</span><span class="lc">____________________<span class="blank-marker"># ← blank</span></span></div>
+        <div class="code-line"><span class="ln">5</span><span class="lc">&nbsp;</span></div>
+        <div class="code-line"><span class="ln">6</span><span class="lc"><span class="kw">for</span> temp <span class="kw">in</span> temps:</span></div>
+        <div class="code-line"><span class="ln">7</span><span class="lc">&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> temp &gt;= 38:</span></div>
+        <div class="code-line"><span class="ln">8</span><span class="lc">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(<span class="str">"Heat Warning"</span>)</span></div>
+        <div class="code-line"><span class="ln">9</span><span class="lc">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;heat_count += 1</span></div>
+        <div class="code-line"><span class="ln">10</span><span class="lc">&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">elif</span> temp &gt;= 15:</span></div>
+        <div class="code-line"><span class="ln">11</span><span class="lc">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(<span class="str">"Pleasant"</span>)</span></div>
+        <div class="code-line blank"><span class="ln">12</span><span class="lc">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;____________________<span class="blank-marker"># ← blank</span></span></div>
+        <div class="code-line"><span class="ln">13</span><span class="lc">&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">else</span>:</span></div>
+        <div class="code-line"><span class="ln">14</span><span class="lc">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(<span class="str">"Cold Alert"</span>)</span></div>
+        <div class="code-line blank"><span class="ln">15</span><span class="lc">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;____________________<span class="blank-marker"># ← blank</span></span></div>
+        <div class="code-line"><span class="ln">16</span><span class="lc">&nbsp;</span></div>
+        <div class="code-line blank"><span class="ln">17</span><span class="lc">____________________<span class="blank-marker"># ← blank</span></span></div>
+      </div>
+      <textarea id="tweakBlanks" rows="8" placeholder="Line 3: ...&#10;Line 4: ...&#10;Line 12: ...&#10;Line 15: ...&#10;Line 17: ..." style="margin-top:14px;"></textarea>
+    </div>
+  </section>
+
+  <!-- ============ 5. COMPARE ============ -->
+  <section>
+    <p class="section-num">Skill 5 — Compare</p>
+    <h2>Two correct solutions — which would you pick?</h2>
+    <p class="section-desc">Both of these classify correctly today. They behave differently if the rules ever change.</p>
+    <div class="card">
+      <div class="side-by-side">
+        <div>
+          <p class="side-label">if / elif / else chain</p>
+          <div class="code-block"><span class="kw">if</span> temp &gt;= 38:
+    print(<span class="str">"Heat Warning"</span>)
+<span class="kw">elif</span> temp &gt;= 15:
+    print(<span class="str">"Pleasant"</span>)
+<span class="kw">else</span>:
+    print(<span class="str">"Cold Alert"</span>)</div>
+        </div>
+        <div>
+          <p class="side-label">Three independent ifs</p>
+          <div class="code-block"><span class="kw">if</span> temp &gt;= 38:
+    print(<span class="str">"Heat Warning"</span>)
+<span class="kw">if</span> 15 &lt;= temp &lt; 38:
+    print(<span class="str">"Pleasant"</span>)
+<span class="kw">if</span> temp &lt; 15:
+    print(<span class="str">"Cold Alert"</span>)</div>
+        </div>
+      </div>
+
+      <p style="margin-top:18px;">If the Heat Warning threshold changed from 38 to 35 next season, which version is safer to update — and why?</p>
+      <div class="choice-row">
+        <button class="choice-btn" data-compare="elif">The elif chain</button>
+        <button class="choice-btn" data-compare="ifs">The three ifs</button>
+      </div>
+      <textarea id="compareReasoning" rows="4" placeholder="Explain your choice..."></textarea>
+    </div>
+  </section>
+
+  <!-- ============ FINISH ============ -->
+  <section>
+    <div class="card finish-card">
+      <h2>Done? Download your responses</h2>
+      <p>This bundles everything you wrote above — spec, trace, verification, blanks, and comparison — into one PDF.</p>
+      <div class="run-row" style="justify-content:center;">
+        <button id="finishBtn" class="primary-large">Finish &amp; Download PDF ▾</button>
+      </div>
+      <div class="status-line" id="finishStatus"></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ---------- Skill 2: Trace ---------- */
+(function(){
+  const btns = document.querySelectorAll('#traceChoices .choice-btn');
+  const reveal = document.getElementById('traceReveal');
+  const reasoning = document.getElementById('traceReasoning');
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      btns.forEach(b => b.classList.remove('picked'));
+      btn.classList.add('picked');
+    });
+  });
+  reasoning.addEventListener('blur', () => {
+    if (reasoning.value.trim().length > 0) {
+      reveal.classList.add('show');
+    }
+  });
+})();
+
+/* ---------- Skill 3: Verify ---------- */
+(function(){
+  const btns = document.querySelectorAll('#verifyChoices .choice-btn');
+  const correct = 'no';
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      btns.forEach(b => b.classList.remove('correct','wrong'));
+      btn.classList.add(btn.dataset.verify === correct ? 'correct' : 'wrong');
+    });
+  });
+})();
+
+/* ---------- Skill 5: Compare ---------- */
+(function(){
+  const btns = document.querySelectorAll('[data-compare]');
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      btns.forEach(b => b.classList.remove('picked'));
+      btn.classList.add('picked');
+    });
+  });
+})();
+
+/* ---------- Finish: bundle all responses into a PDF ---------- */
+(function(){
+  const finishBtn = document.getElementById('finishBtn');
+  const finishStatus = document.getElementById('finishStatus');
+
+  function pickedText(selector){
+    const el = document.querySelector(selector);
+    return el ? el.textContent.trim() : '(not answered)';
+  }
+
+  finishBtn.addEventListener('click', () => {
+    if (!window.jspdf) {
+      finishStatus.textContent = 'The PDF library did not load — check your connection and try again.';
+      return;
+    }
+    finishStatus.textContent = 'Building your PDF…';
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const marginX = 48;
+    const maxWidth = 500;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let y = 60;
+
+    function ensureRoom(next){
+      if (y + next > pageHeight - 50) { doc.addPage(); y = 60; }
+    }
+    function addTitle(text){
+      ensureRoom(30);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(20);
+      doc.text(text, marginX, y);
+      y += 20;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5);
+    }
+    function addParagraph(text){
+      const lines = doc.splitTextToSize((text && text.trim()) ? text.trim() : '(no response)', maxWidth);
+      lines.forEach(line => {
+        ensureRoom(15);
+        doc.text(line, marginX, y);
+        y += 15;
+      });
+      y += 12;
+    }
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.setTextColor(20);
+    doc.text('Read the Code: Weather Alert Classifier', marginX, y); y += 22;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(110);
+    doc.text('Student responses — generated ' + new Date().toLocaleString(), marginX, y); y += 28;
+    doc.setTextColor(20);
+
+    addTitle('Skill 1 — Specify: the problem statement');
+    addParagraph(document.getElementById('specAnswer').value);
+
+    addTitle('Skill 2 — Trace: predicted output and reasoning');
+    addParagraph('Selected answer: ' + pickedText('#traceChoices .choice-btn.picked'));
+    addParagraph(document.getElementById('traceReasoning').value);
+
+    addTitle('Skill 3 — Verify: correctness judgement and counterexample');
+    addParagraph('Judged as: ' + pickedText('#verifyChoices .choice-btn.correct, #verifyChoices .choice-btn.wrong'));
+    addParagraph(document.getElementById('verifyAnswer').value);
+
+    addTitle('Skill 4 — Tweak: filling in the blanks');
+    addParagraph(document.getElementById('tweakBlanks').value);
+
+    addTitle('Skill 5 — Compare: which implementation, and why');
+    addParagraph('Chosen: ' + pickedText('[data-compare].picked'));
+    addParagraph(document.getElementById('compareReasoning').value);
+
+    doc.save('read-the-code-weather-alert-responses.pdf');
+    finishStatus.textContent = 'Downloaded — check your downloads folder.';
+  });
+})();
+</script>
+</body>
+</html>
