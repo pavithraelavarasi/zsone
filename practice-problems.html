@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Practice Problems — Loops</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F7FA;
+    --ink:#16243A;
+    --body:#3A4A5C;
+    --amber:#C93634;
+    --pine:#2A537D;
+    --brick:#A62C2A;
+    --slate:#5C6B7A;
+    --card:#FFFFFF;
+    --card2:#EEF3F8;
+    --line:rgba(22,36,58,.10);
+    --terminal:#16273D;
+    --terminal-text:#EAF0F6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--body);font-family:'Inter',sans-serif;line-height:1.6;}
+  .wrap{max-width:940px;margin:0 auto;padding:56px 24px 100px;}
+  .eyebrow{font-family:'JetBrains Mono',monospace;color:var(--amber);font-size:13px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 10px;}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(30px,4.8vw,44px);margin:0 0 8px;color:var(--ink);}
+  .sub{color:var(--slate);font-size:16px;margin:0 0 40px;max-width:680px;}
+  code{background:rgba(22,36,58,.06);padding:1px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--ink);}
+
+  .problem-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 26px;margin-bottom:16px;box-shadow:0 1px 2px rgba(22,36,58,.04), 0 8px 20px rgba(22,36,58,.04);}
+  .problem-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  .problem-title-row{display:flex;align-items:center;gap:12px;}
+  .problem-num{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--amber);border:1px solid rgba(201,54,52,.35);background:rgba(201,54,52,.08);border-radius:999px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .problem-title{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;color:var(--ink);}
+  .problem-title.done{text-decoration:line-through;color:var(--slate);}
+  .tag-row{display:flex;gap:6px;flex-wrap:wrap;}
+  .tag{font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--slate);white-space:nowrap;}
+  .tag.difficulty-warmup{border-color:rgba(42,83,125,.35);color:var(--pine);background:rgba(42,83,125,.08);}
+  .tag.difficulty-core{border-color:rgba(201,54,52,.35);color:var(--amber);background:rgba(201,54,52,.08);}
+  .tag.difficulty-stretch{border-color:rgba(166,44,42,.35);color:var(--brick);background:rgba(166,44,42,.08);}
+  .problem-statement{margin:14px 0 12px;color:var(--body);font-size:14.5px;}
+  .io-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media (max-width:600px){.io-row{grid-template-columns:1fr;}}
+  .io-block{background:var(--terminal);border-radius:8px;padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--terminal-text);}
+  .io-block .lbl{color:#93A0AB;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px;}
+  .check-row{display:flex;align-items:center;gap:8px;margin-top:14px;}
+  .check-row input{width:16px;height:16px;accent-color:var(--amber);cursor:pointer;}
+  .check-row label{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--slate);cursor:pointer;}
+
+  .footer-note{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin-top:36px;font-size:14.5px;color:var(--body);}
+  .footer-note strong{color:var(--ink);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Practice Set</p>
+  <h1>Loops: Try These, Then Come Talk</h1>
+  <p class="sub">
+    Eight problems, roughly in order of difficulty. Pick one, actually write and run it yourself, then bring
+    your solution back for review — what matters isn't just whether it works, but why you built it the way
+    you did.
+  </p>
+
+  <!-- 1 -->
+  <div class="problem-card">
+    <div class="problem-head">
+      <div class="problem-title-row">
+        <span class="problem-num">1</span>
+        <span class="problem-title">Sum of Numbers 1 to N</span>
+      </div>
+      <div class="tag-row"><span class="tag difficulty-warmup">Warm-up</span><span class="tag">for loop</span><span class="tag">range()</span></div>
+    </div>
+    <p class="problem-statement">Given a number n, add up all the whole numbers from 1 to n and print the total.</p>
+    <div class="io-row">
+      <div class="io-block"><span class="lbl">Input</span>n = 6</div>
+      <div class="io-block"><span class="lbl">Output</span>21</div>
+    </div>
+    <div class="check-row"><input type="checkbox" id="c1"><label for="c1">I've tried this one</label></div>
+  </div>
+
+  <!-- 2 -->
+  <div class="problem-card">
+    <div class="problem-head">
+      <div class="problem-title-row">
+        <span class="problem-num">2</span>
+        <span class="problem-title">Count the Vowels</span>
+      </div>
+      <div class="tag-row"><span class="tag difficulty-warmup">Warm-up</span><span class="tag">for loop</span><span class="tag">strings</span></div>
+    </div>
+    <p class="problem-statement">Given a word, loop through its letters and count how many are vowels (a, e, i, o, u).</p>
+    <div class="io-row">
+      <div class="io-block"><span class="lbl">Input</span>"programming"</div>
+      <div class="io-block"><span class="lbl">Output</span>3</div>
+    </div>
+    <div class="check-row"><input type="checkbox" id="c2"><label for="c2">I've tried this one</label></div>
+  </div>
+
+  <!-- 3 -->
+  <div class="problem-card">
+    <div class="problem-head">
+      <div class="problem-title-row">
+        <span class="problem-num">3</span>
+        <span class="problem-title">Largest Digit in a Number</span>
+      </div>
+      <div class="tag-row"><span class="tag difficulty-core">Core</span><span class="tag">for loop</span><span class="tag">if condition</span><span class="tag">strings</span></div>
+    </div>
+    <p class="problem-statement">
+      Given a number, loop through its digits and find the largest one — without using a built-in
+      <code>max()</code>. Keep track of "the biggest I've seen so far" as you loop.
+    </p>
+    <div class="io-row">
+      <div class="io-block"><span class="lbl">Input</span>47382</div>
+      <div class="io-block"><span class="lbl">Output</span>8</div>
+    </div>
+    <div class="check-row"><input type="checkbox" id="c3"><label for="c3">I've tried this one</label></div>
+  </div>
+
+  <!-- 4 -->
+  <div class="problem-card">
+    <div class="problem-head">
+      <div class="problem-title-row">
+        <span class="problem-num">4</span>
+        <span class="problem-title">Multiplication Table</span>
+      </div>
+      <div class="tag-row"><span class="tag difficulty-warmup">Warm-up</span><span class="tag">for loop</span><span class="tag">range()</span></div>
+    </div>
+    <p class="problem-statement">Given a number n, print its multiplication table from 1x to 10x.</p>
+    <div class="io-row">
+      <div class="io-block"><span class="lbl">Input</span>n = 4</div>
+      <div class="io-block"><span class="lbl">Output</span>4 x 1 = 4
+4 x 2 = 8
+...
+4 x 10 = 40</div>
+    </div>
+    <div class="check-row"><input type="checkbox" id="c4"><label for="c4">I've tried this one</label></div>
+  </div>
+
+  <!-- 5 -->
+  <div class="problem-card">
+    <div class="problem-head">
+      <div class="problem-title-row">
+        <span class="problem-num">5</span>
+        <span class="problem-title">Even or Odd, One to N</span>
+      </div>
+      <div class="tag-row"><span class="tag difficulty-core">Core</span><span class="tag">for loop</span><span class="tag">if condition</span><span class="tag">range()</span></div>
+    </div>
+    <p class="problem-statement">
+      Given a number n, loop from 1 to n and print whether each number is Even or Odd.
+    </p>
+    <div class="io-row">
+      <div class="io-block"><span class="lbl">Input</span>n = 4</div>
+      <div class="io-block"><span class="lbl">Output</span>1 Odd
+2 Even
+3 Odd
+4 Even</div>
+    </div>
+    <div class="check-row"><input type="checkbox" id="c5"><label for="c5">I've tried this one</label></div>
+  </div>
+
+  <!-- 6 -->
+  <div class="problem-card">
+    <div class="problem-head">
+      <div class="problem-title-row">
+        <span class="problem-num">6</span>
+        <span class="problem-title">Reverse the Digits of a Number</span>
+      </div>
+      <div class="tag-row"><span class="tag difficulty-core">Core</span><span class="tag">for loop</span><span class="tag">strings</span></div>
+    </div>
+    <p class="problem-statement">
+      Given a number, print it with its digits reversed — build the result yourself, one digit at a time,
+      without a built-in reverse function or slicing shortcut.
+    </p>
+    <div class="io-row">
+      <div class="io-block"><span class="lbl">Input</span>12345</div>
+      <div class="io-block"><span class="lbl">Output</span>54321</div>
+    </div>
+    <div class="check-row"><input type="checkbox" id="c6"><label for="c6">I've tried this one</label></div>
+  </div>
+
+  <!-- 7 -->
+  <div class="problem-card">
+    <div class="problem-head">
+      <div class="problem-title-row">
+        <span class="problem-num">7</span>
+        <span class="problem-title">Live Grade Reporter</span>
+      </div>
+      <div class="tag-row"><span class="tag difficulty-core">Core</span><span class="tag">for loop</span><span class="tag">if / elif / else</span><span class="tag">range()</span></div>
+    </div>
+    <p class="problem-statement">
+      Ask the user for n test scores, one at a time. For each score, print its letter grade immediately —
+      A for 90+, B for 80-89, C for 70-79, F below 70 — without storing the scores anywhere. Process each
+      one as it comes in, then move to the next.
+    </p>
+    <div class="io-row">
+      <div class="io-block"><span class="lbl">Input</span>n = 3
+scores entered one at a time: 95, 82, 61</div>
+      <div class="io-block"><span class="lbl">Output</span>A
+B
+F</div>
+    </div>
+    <div class="check-row"><input type="checkbox" id="c7"><label for="c7">I've tried this one</label></div>
+  </div>
+
+  <!-- 8 -->
+  <div class="problem-card">
+    <div class="problem-head">
+      <div class="problem-title-row">
+        <span class="problem-num">8</span>
+        <span class="problem-title">First Repeated Digit</span>
+      </div>
+      <div class="tag-row"><span class="tag difficulty-stretch">Stretch</span><span class="tag">for loop</span><span class="tag">if condition</span><span class="tag">strings</span></div>
+    </div>
+    <p class="problem-statement">
+      Given a number, find the first digit that has already appeared earlier in that same number. Keep track
+      of the digits you've seen so far in a string, not a list. If nothing repeats, say so.
+    </p>
+    <div class="io-row">
+      <div class="io-block"><span class="lbl">Input</span>4927492</div>
+      <div class="io-block"><span class="lbl">Output</span>4</div>
+    </div>
+    <div class="check-row"><input type="checkbox" id="c8"><label for="c8">I've tried this one</label></div>
+  </div>
+
+  <div class="footer-note">
+    <strong>Before you come for review:</strong> know what your loop variable represents at each step,
+    be ready to trace your own code by hand on a new input, and have one edge case in mind (n = 0,
+    a single-digit number, a tie) that you checked or at least thought about. That's usually a better use
+    of the conversation than just confirming the output matched.
+  </div>
+
+</div>
+
+<script>
+  document.querySelectorAll('.check-row input').forEach(box => {
+    box.addEventListener('change', () => {
+      const title = box.closest('.problem-card').querySelector('.problem-title');
+      title.classList.toggle('done', box.checked);
+    });
+  });
+</script>
+</body>
+</html>
